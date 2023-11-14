@@ -4,6 +4,7 @@ import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
 import Clientes from './views/Clientes';
 import Prefactura from './views/Prefactura';
+import Articulos from './views/Articulos';
 
 export default function App() {
   return (
@@ -11,8 +12,10 @@ export default function App() {
     //   <Text>Open up App.js to start working on your app!</Text>
     //   <StatusBar style="auto" />
     // </View>
+    // <Home/>
     // <Clientes/>
-    <Prefactura prefacturaNumero={4} odigoCliente="3456788" nombreCliente="Belen Parra" saldoCliente="32424.45"/>
+    // <Prefactura prefacturaNumero={4} odigoCliente="3456788" nombreCliente="Belen Parra" codigoCliente="45004" saldoCliente="32424.45"/>
+    <Articulos prefacturaNumero={7}/>
   );
 }
 
@@ -24,3 +27,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
