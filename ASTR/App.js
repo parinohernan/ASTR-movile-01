@@ -15,7 +15,7 @@ export default function App() {
     // <Home/>
     // <Clientes/>
     // <Prefactura prefacturaNumero={4} odigoCliente="3456788" nombreCliente="Belen Parra" codigoCliente="45004" saldoCliente="32424.45"/>
-    <Articulos prefacturaNumero={7}/>
+    <Articulos prefacturaNumero={4}/>
   );
 }
 

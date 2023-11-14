@@ -120,7 +120,7 @@ const prefacturas = [
       "fecha": "2023-11-12",
       "items": [
         {
-          "codigo": 1,
+          "codigo": '1',
           "descripcion": "Producto 1",
           "cantidad": 2,
           "precioUnitario": 100,
@@ -128,7 +128,7 @@ const prefacturas = [
           "precioTotal": 200
         },
         {
-          "codigo": 2,
+          "codigo": '2',
           "descripcion": "Producto 2",
           "cantidad": 1,
           "precioUnitario": 50,
@@ -144,7 +144,7 @@ const prefacturas = [
       "fecha": "2023-11-12",
       "items": [
         {
-          "codigo": 3,
+          "codigo": '3',
           "descripcion": "Producto 3",
           "cantidad": 3,
           "precioUnitario": 75,
@@ -152,7 +152,7 @@ const prefacturas = [
           "precioTotal": 215
         },
         {
-          "codigo": 4,
+          "codigo": '4',
           "descripcion": "Producto 4",
           "cantidad": 2,
           "precioUnitario": 150,
@@ -168,7 +168,7 @@ const prefacturas = [
       "fecha": "2023-11-12",
       "items": [
         {
-          "codigo": 5,
+          "codigo": '5',
           "descripcion": "Producto 5",
           "cantidad": 1,
           "precioUnitario": 200,
@@ -176,7 +176,7 @@ const prefacturas = [
           "precioTotal": 170
         },
         {
-          "codigo": 6,
+          "codigo": '6',
           "descripcion": "Producto 6",
           "cantidad": 4,
           "precioUnitario": 25,
@@ -192,7 +192,7 @@ const prefacturas = [
       "fecha": "2023-11-12",
       "items": [
         {
-          "codigo": 7,
+          "codigo": '7',
           "descripcion": "Producto 7",
           "cantidad": 2,
           "precioUnitario": 80,
@@ -200,7 +200,7 @@ const prefacturas = [
           "precioTotal": 160
         },
         {
-            "codigo": 5,
+            "codigo": '5',
             "descripcion": "Producto 5",
             "cantidad": 1,
             "precioUnitario": 200,
@@ -208,7 +208,7 @@ const prefacturas = [
             "precioTotal": 170
         },
           {
-            "codigo": 6,
+            "codigo": '6',
             "descripcion": "Producto 6",
             "cantidad": 4,
             "precioUnitario": 25,
@@ -216,7 +216,7 @@ const prefacturas = [
             "precioTotal": 100
         },
         {
-          "codigo": 8,
+          "codigo": '8',
           "descripcion": "Producto 8",
           "cantidad": 3,
           "precioUnitario": 60,
@@ -232,7 +232,7 @@ const prefacturas = [
       "fecha": "2023-11-12",
       "items": [
         {
-          "codigo": 9,
+          "codigo": '9',
           "descripcion": "Producto 9",
           "cantidad": 1,
           "precioUnitario": 300,
@@ -240,7 +240,7 @@ const prefacturas = [
           "precioTotal": 225
         },
         {
-          "codigo": 10,
+          "codigo": '10',
           "descripcion": "Producto 10",
           "cantidad": 2,
           "precioUnitario": 125,
@@ -256,7 +256,7 @@ const prefacturas = [
       "fecha": "2023-11-12",
       "items": [
         {
-          "codigo": 11,
+          "codigo": '11',
           "descripcion": "Producto 11",
           "cantidad": 3,
           "precioUnitario": 50,
@@ -264,7 +264,7 @@ const prefacturas = [
           "precioTotal": 150
         },
         {
-          "codigo": 12,
+          "codigo": '12',
           "descripcion": "Producto 12",
           "cantidad": 1,
           "precioUnitario": 150,

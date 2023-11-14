@@ -1,6 +1,6 @@
 const articulos = [
   {
-    "codigo": "1762",
+    "codigo": "6",
     "descripcion": "ZAPATILLA 2001 ACORDONADA NEGRA 37",
     "existencia": 4981,
     "PrecioCostoMasImp": 100,
@@ -12,7 +12,7 @@ const articulos = [
     "Lista5": 0
   },
   {
-    "codigo": "1065",
+    "codigo": "1",
     "descripcion": "ARROZ NOBLE LARGO FINO 1 KG",
     "existencia": 4239,
     "PrecioCostoMasImp": 575.96,
@@ -24,7 +24,7 @@ const articulos = [
     "Lista5": 0
   },
   {
-    "codigo": "1125",
+    "codigo": "2",
     "descripcion": "AFEITA BIC",
     "existencia": 3804,
     "PrecioCostoMasImp": 170.832519,
@@ -36,7 +36,7 @@ const articulos = [
     "Lista5": 0
   },
   {
-    "codigo": "4042",
+    "codigo": "3",
     "descripcion": "ACEITE GIRASOL CAÑUELAS 1.5 L",
     "existencia": 3396,
     "PrecioCostoMasImp": 910.583685,
@@ -48,7 +48,7 @@ const articulos = [
     "Lista5": 0
   },
   {
-    "codigo": "1073",
+    "codigo": "4",
     "descripcion": "PURE DE TOMATE NOEL X 210 G ",
     "existencia": 3360,
     "PrecioCostoMasImp": 136.9703421,
@@ -60,7 +60,7 @@ const articulos = [
     "Lista5": 0
   },
   {
-    "codigo": "2319",
+    "codigo": "7",
     "descripcion": "FOSFOROS 3 PATITOS X 222",
     "existencia": 3316,
     "PrecioCostoMasImp": 137.4257114,
@@ -72,7 +72,7 @@ const articulos = [
     "Lista5": 0
   },
   {
-    "codigo": "1329",
+    "codigo": "5",
     "descripcion": "MEDIATARDE SANDWICH 320 G.",
     "existencia": 2883,
     "PrecioCostoMasImp": 332.1763738,
