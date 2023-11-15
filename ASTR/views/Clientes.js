@@ -58,6 +58,7 @@ const Clientes = () => {
     flex: 1,
     padding: 20,
     backgroundColor: '#FAF7E6',
+    color
   },
   searchbar: {
     height: 50,

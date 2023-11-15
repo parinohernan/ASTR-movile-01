@@ -13,7 +13,7 @@ const Home = () => {
     // { name: 'Clientes', icon: 'account-group' },
     { name: 'Informes', icon: 'file-chart' },
     { name: 'Sincronizar', icon: 'sync' },
-    { name: 'Configuración', icon: 'cog' },
+    { name: 'Configuracion', icon: 'cog' },
   ];
 
   const handleOptionPress = (option) => {
@@ -25,6 +25,12 @@ const Home = () => {
         break;
       case 'Informes':
         navigation.navigate('Informes', {});
+        break;
+      case 'Sincronizar':
+        navigation.navigate('Sincronizar', {});
+        break;
+      case 'Configuracion':
+        navigation.navigate('Configuracion', {});
         break;
       // Agrega otros casos según sea necesario
       default:

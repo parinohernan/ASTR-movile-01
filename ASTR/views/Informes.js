@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Modal from 'react-native-modal';
 import { prefacturas } from '../assets/data';
 import Icon from 'react-native-vector-icons/FontAwesome';

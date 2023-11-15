@@ -8,6 +8,8 @@ import Clientes from './views/Clientes';
 import Prefactura from './views/Prefactura';
 import Articulos from './views/Articulos';
 import Informes from './views/Informes';
+import Sincronizar from './views/Sincronizar';
+import Configurar from './views/Configurar';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +26,12 @@ export default function App() {
         </Stack.Screen>
         <Stack.Screen name="Informes">
           {props => <Informes />}
+        </Stack.Screen>
+        <Stack.Screen name="Sincronizar">
+          {props => <Sincronizar />}
+        </Stack.Screen>
+        <Stack.Screen name="Configuracion">
+          {props => <Configurar />}
         </Stack.Screen>
         <Stack.Screen name="Articulos">
           {props => <Articulos />}

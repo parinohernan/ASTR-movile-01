@@ -28,7 +28,8 @@ const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
       <Text style={styles.label}>Cantidad:</Text>
       <TextInput
         style={styles.input}
-        onChangeText={setCantidad}
+        // onChangeText={setCantidad}
+        onChangeText={(text) => setCantidad(text.replace(/[^0-9]/g, ''))}
         value={cantidad}
         keyboardType="numeric"
         />

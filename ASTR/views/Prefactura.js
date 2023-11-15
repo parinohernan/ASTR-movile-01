@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { prefacturas } from '../assets/data';
 import Articulos from './Articulos'; // Ajusta la ruta según tu estructura de archivos
@@ -11,6 +11,21 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
   // Supongo que los datos de los items y el total se obtienen de prefacturas
   const factura = prefacturas.find(factura => factura.numero === prefacturaNumero);
   const { items, total } = factura || { items: [], total: 0 };
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [nota, setNota] = useState('');
+  const abrirModal = () => {
+    setIsModalVisible(true);
+  };
+  
+  const cerrarModal = () => {
+    setIsModalVisible(false);
+    guardarNota();
+  };
+
+  const guardarNota = () => {
+    // Aquí puedes implementar la lógica para guardar la nota en tu aplicación
+    console.log('Nota guardada:', nota);
+  };
 
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -30,6 +45,7 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
         <Text style={styles.headerText}>Precio Total</Text>
         <Text>{item.precioTotal}</Text>
       </View>
+
     </View>
   );
 
@@ -39,6 +55,7 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
   };
 
   return (
+    <View style={styles.container}>
     <SafeAreaView style={styles.container}>
       <View style={styles.rowContainer}>
         <Text>Código: {codigoCliente}</Text>
@@ -60,7 +77,7 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
         <TouchableOpacity onPress={abrirArticulos}>
           <Icon name="plus" size={30} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={abrirModal}>
           <Icon name="sticky-note" size={30} color="#000" />
         </TouchableOpacity>
       </View>
@@ -75,8 +92,29 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
       {mostrarArticulos && (<Articulos
           numeroPrefactura={prefacturaNumero}
           setMostrarArticulos={setMostrarArticulos}
-        />)}
-    </SafeAreaView>
+          />)}
+    </SafeAreaView>      
+        <Modal visible={isModalVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Escribir nota</Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Escribe una nota..."
+            value={nota}
+            onChangeText={setNota}
+            />
+          <View style={styles.modalButtonsContainer}>
+            <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+              <Text style={styles.modalButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+              <Text style={styles.modalButtonText}>Guardar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+</View>
   );
 };
 
@@ -115,46 +153,39 @@ const styles = StyleSheet.create({
   headerText: {
     fontWeight: 'bold',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalInput: {
+    width: '80%',
+    height: 40,
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+  },
+  modalButton: {
+    backgroundColor: 'blue',
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
 
 export default Prefactura;
 
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 20,
-//     backgroundColor: '#FAF7E6',
-//   },
-//   rowContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginBottom: 10,
-//   },
-//   iconBar: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-around',
-//     marginBottom: 10,
-//   },
-//   separator: {
-//     height: 1,
-//     backgroundColor: 'gray',
-//     marginVertical: 10,
-//   },
-//   item: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     borderBottomWidth: 1,
-//     borderBottomColor: 'gray',
-//     paddingVertical: 10,
-//   },
-//   cell: {
-//     flex: 1,
-//     alignItems: 'center',
-//   },
-//   headerText: {
-//     fontWeight: 'bold',
-//   },
-// });
-
-// export default Prefactura;
