@@ -24,7 +24,7 @@ const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
     <View style={styles.container}>
       <Text style={styles.articuloInfo}>{articulo.codigo}</Text>
       <Text style={styles.articuloInfo}>{articulo.descripcion}</Text>
-      <Text style={styles.articuloInfo}>{articulo.PrecioCostoMasImp * (1 + articulo.Lista1 / 100)}</Text>
+      {/* <Text style={styles.articuloInfo}>{articulo.precioFinal}</Text> */}
       <Text style={styles.label}>Cantidad:</Text>
       <TextInput
         style={styles.input}
@@ -32,12 +32,13 @@ const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
         value={cantidad}
         keyboardType="numeric"
         />
-      <Text style={styles.label}>Precio U:</Text>
+      <Text style={styles.label}>Precio total:</Text>
       <TextInput
         style={styles.input}
         onChangeText={setPrecioFinal}
-        value={precioFinal}
+        value= {(articulo.PrecioCostoMasImp * (1 + articulo.Lista1 / 100) * (cantidad))}
         keyboardType="numeric"
+        editable={false}
         />
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Agregar</Text>

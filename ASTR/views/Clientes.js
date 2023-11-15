@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { datosClientes } from '../assets/data';
+import { useNavigation } from '@react-navigation/native';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
   const [clientes, setClientes] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
     // Aquí puedes realizar cualquier lógica adicional al cargar los datos de clientes
@@ -17,6 +19,11 @@ const Clientes = () => {
       cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
       cliente.codigo.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleClienteClick = (codigoCliente) => {
+    // Navegar a la vista de Prefactura con parámetros
+    navigation.navigate('Prefactura', { prefacturaNumero: 100, codigoCliente });
+  };
 
   return (
     <View style={styles.container}>
@@ -30,20 +37,23 @@ const Clientes = () => {
         data={filteredClientes}
         keyExtractor={(item) => item.codigo}
         renderItem={({ item }) => (
-          <View style={styles.clienteItem}>
-            <View style={styles.clienteText}>
-              <Icon name="user" size={30} color="#000" style={styles.icon} />
-              <Text style={styles.text}>{item.descripcion}</Text>
-              <Text style={styles.codigo}>{item.codigo}</Text>
+          <TouchableOpacity onPress={() => handleClienteClick(item)}>
+            <View style={styles.clienteItem}>
+              <View style={styles.clienteText}>
+                <Icon name="user" size={30} color="#000" style={styles.icon} />
+                <Text style={styles.text}>{item.descripcion}</Text>
+                <Text style={styles.codigo}>{item.codigo}</Text>
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+ // ... (tu estilo existente)
+  const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
@@ -89,5 +99,8 @@ const styles = StyleSheet.create({
   },
 });
 
+
 export default Clientes;
+
+
 

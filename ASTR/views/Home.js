@@ -1,12 +1,16 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
 
 const Home = () => {
+
+  const navigation = useNavigation();
+
   const menuOptions = [
     { name: 'Preventa', icon: 'clipboard-check' },
-    { name: 'Cobro', icon: 'cash' },
-    { name: 'Clientes', icon: 'account-group' },
+    // { name: 'Cobro', icon: 'cash' },
+    // { name: 'Clientes', icon: 'account-group' },
     { name: 'Informes', icon: 'file-chart' },
     { name: 'Sincronizar', icon: 'sync' },
     { name: 'Configuración', icon: 'cog' },
@@ -15,6 +19,17 @@ const Home = () => {
   const handleOptionPress = (option) => {
     // Implementar lógica según la opción seleccionada
     console.log(`Seleccionaste: ${option.name}`);
+    switch (option.name) {
+      case 'Preventa':
+        navigation.navigate('Clientes', {});
+        break;
+      case 'Informes':
+        navigation.navigate('Informes', {});
+        break;
+      // Agrega otros casos según sea necesario
+      default:
+        break;
+    }
   };
 
   return (
