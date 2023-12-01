@@ -10,7 +10,7 @@ const Home = () => {
   const menuOptions = [
     { name: 'Preventa', icon: 'clipboard-check' },
     // { name: 'Cobro', icon: 'cash' },
-    // { name: 'Clientes', icon: 'account-group' },
+    { name: 'Usuarios', icon: 'account-group' },
     { name: 'Informes', icon: 'file-chart' },
     { name: 'Sincronizar', icon: 'sync' },
     { name: 'Configuracion', icon: 'cog' },
@@ -31,6 +31,9 @@ const Home = () => {
         break;
       case 'Configuracion':
         navigation.navigate('Configuracion', {});
+        break;
+      case 'Usuarios':
+        navigation.navigate('Usuarios', {});
         break;
       // Agrega otros casos según sea necesario
       default:

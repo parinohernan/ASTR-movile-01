@@ -10,6 +10,7 @@ import Articulos from './views/Articulos';
 import Informes from './views/Informes';
 import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
+import Usuarios from './views/Usuarios';
 
 const Stack = createStackNavigator();
 
@@ -17,7 +18,11 @@ export default function App() {
   // Puedes usar el estado para mantener el cliente y la prefactura seleccionados
   const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
   const [prefacturaSeleccionada, setPrefacturaSeleccionada] = React.useState(null);
+  // const sequelize = new Sequelize(config.development);
+  // // Inicializar modelos
+  // const Usuario = UsuarioModel(sequelize);
 
+ 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
@@ -35,6 +40,9 @@ export default function App() {
         </Stack.Screen>
         <Stack.Screen name="Articulos">
           {props => <Articulos />}
+        </Stack.Screen>
+        <Stack.Screen name="Usuarios">
+          {props => <Usuarios />}
         </Stack.Screen>
         <Stack.Screen name="Clientes">
           {props => <Clientes {...props} setClienteSeleccionado={setClienteSeleccionado} />}

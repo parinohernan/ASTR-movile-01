@@ -116,6 +116,8 @@ const datosClientes = [
 const prefacturas = [
     {
       "numero": 1,
+      "tipo": "PRF",
+      "sucursal": 1,
       "codigoCliente": 123456,
       "fecha": "2023-11-12",
       "items": [

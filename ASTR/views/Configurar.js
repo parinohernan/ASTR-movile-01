@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Switch, Alert } from 'react-native';
 import { CheckBox, Button } from 'react-native-elements';
+import { eliminarTodasLasTablas, insertUsuariosFromAPI } from '../database/database';
+import { actualizarAPP } from '../handlers/actualizarApp';
+// import limpiarDatos from "../database/database"r
 
 const Configurar = () => {
   const [webService, setWebService] = useState('');
@@ -20,17 +23,27 @@ const Configurar = () => {
   }, [webService, sucursal, cantidadMaximaArticulos]);
 
   const handleGuardar = () => {
-    if (guardarHabilitado) {
+    // if (guardarHabilitado) {
       // Implementa la lógica para guardar la configuración
-      console.log('Configuración guardada');
-    } else {
-      Alert.alert('Error', 'Completa todos los campos antes de guardar.');
-    }
+      console.log('Data insertada');
+      actualizarAPP();
+    // } else {
+    //   Alert.alert('Error', 'Completa todos los campos antes de guardar.');
+    // }
   };
 
   const handleCancelar = () => {
     // Implementa la lógica para cancelar la configuración
     console.log('Configuración cancelada');
+  };
+
+  const handleLimpiarSQLite = async () => {
+    try {
+      await  eliminarTodasLasTablas();
+      console.log('Limpieza finalizada');
+    } catch (error) {
+      console.error('Error al limpiar la base de datos: ', error);
+    }
   };
 
   return (
@@ -69,8 +82,9 @@ const Configurar = () => {
       />
 
       {/* Botones */}
-      <Button title="Guardar" onPress={handleGuardar} disabled={!guardarHabilitado} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
+      <Button title="Guardar" onPress={handleGuardar} /*disabled={!guardarHabilitado}*/ buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
       <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
+      <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} />
     </View>
   );
 };
