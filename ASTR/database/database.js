@@ -1,61 +1,48 @@
 // database.js
 import * as SQLite from 'expo-sqlite';
+// import {insertClientesFromAPI, getClientes } from './controllers/Clientes.Controler';
+// import { insertUsuariosFromAPI, getUsuarios } from './controllers/Usuarios.controler';
+// import {insertArticulosFromAPI, getArticulos} from './controllers/Articulos.Controler';
 
 const db = SQLite.openDatabase('database.db');
 
 const initDatabase = () => {
   db.transaction(tx => {
+    // Crea la tabla usuarios si no existe
     tx.executeSql(
-      'CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, codigo TEXT, descripcion TEXT, clave TEXT)',
+      'CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT)',
       [],
       () => console.log('Tabla usuarios creada exitosamente'),
       (_, error) => console.log('Error al crear la tabla usuarios', error)
     );
+
+    // Crea la tabla clientes si no existe
+    tx.executeSql(
+      'CREATE TABLE IF NOT EXISTS clientes (id TEXT PRIMARY KEY, descripcion TEXT, cuit TEXT, calle TEXT, numero TEXT, piso TEXT, departamento TEXT, codigoPostal TEXT, localidad TEXT, telefono TEXT, mail TEXT, contactoComercial TEXT, categoriaIva TEXT, listaPrecio TEXT, importeDeuda INTEGER, codigoVendedor TEXT, actualizado BOOLEAN, saldoNTCNoAplicado INTEGER, limiteCredito INTEGER)',
+      [],
+      () => console.log('Tabla clientes creada exitosamente'),
+      (_, error) => console.log('Error al crear la tabla clientes', error)
+    );
+    // Crea la tabla articulos si no existe
+    tx.executeSql(
+      'CREATE TABLE IF NOT EXISTS articulos (id TEXT PRIMARY KEY, descripcion TEXT, existencia INTEGER, existenciaMinima INTEGER, existenciaMaxima INTEGER, precioCostoMasImp REAL, porcentajeIVA1 INTEGER, porcentajeIVA2 INTEGER, precioCosto REAL, unidadVenta TEXT, lista1 REAL, lista2 REAL, lista3 REAL, lista4 REAL, lista5 REAL, proveedorCodigo TEXT, rubroCodigo TEXT, peso REAL, siempreSeDescarga BOOLEAN, iva2SobreNeto BOOLEAN, porcentajeVendedor REAL, descuentoXCantidad TEXT)',
+      [],
+      () => console.log('Tabla articulos creada exitosamente'),
+      (_, error) => console.log('Error al crear la tabla articulos', error)
+    );
   });
 };
 
-const getUsuarios = () => {
-  return new Promise((resolve, reject) => {
-    console.log("traigo los usuarios de la api");
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM usuarios', [], (_, { rows }) => {
-        resolve(rows._array);
-      }, (_, error) => {
-        reject(error);
-      });
-    });
-  });
-};
-
-
-
-const eliminarTodasLasTablas = () => {
-  db.transaction(tx => {
+//en verdad solo borra el contenido de las tablas
+const eliminarTodasLasTablas = async () => {
+  await db.transaction(tx => {
     // Ejecuta instrucciones SQL para eliminar cada tabla
-    tx.executeSql('DROP TABLE IF EXISTS usuarios', [], () => console.log('Tabla usuarios eliminada')),
-    (_, error) => console.log('Error al eliminar la tabla usuarios', error);
+    tx.executeSql('DELETE FROM usuarios', [], () => console.log('Datos usuarios eliminados'), (_, error) => console.log('Error al eliminar datos usuarios', error));
     // Añade instrucciones DROP para otras tablas si es necesario
+    tx.executeSql('DELETE FROM clientes', [], () => console.log('Datos clientes eliminados'), (_, error) => console.log('Error al eliminar datos clientes', error));
+    tx.executeSql('DELETE FROM articulos', [], () => console.log('Datos articulos eliminados'), (_, error) => console.log('Error al eliminar datos articulos', error));
   });
 };
 
-//actualiza los usuarios de la APP
-const insertUsuariosFromAPI = (data) => {
-  return new Promise((resolve, reject) => {
-    db.transaction(tx => {
-      data.forEach(item => {
-        tx.executeSql(
-          'INSERT INTO usuarios (codigo, descripcion, clave) VALUES (?, ?, ?)',
-          [item.codigo, item.descripcion, item.clave],
-          (_, result) => {
-            console.log('Usuario insertado con ID: ', result.insertId);
-          },
-          (_, error) => {
-            console.log('Error al insertar usuario: ', error);
-          }
-        );
-      });
-    }, undefined, resolve, reject);
-  });
-};
 
-export { db, initDatabase, getUsuarios, insertUsuariosFromAPI, eliminarTodasLasTablas };
+export { db, initDatabase, eliminarTodasLasTablas/*, insertClientesFromAPI, getClientes, insertArticulosFromAPI, getArticulos, getUsuarios, insertUsuariosFromAPI*/ };

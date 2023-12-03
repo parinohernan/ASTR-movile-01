@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { datosClientes } from '../assets/data';
+// import { datosClientes } from '../assets/data';
 import { useNavigation } from '@react-navigation/native';
+import { getClientes } from '../database/controllers/Clientes.Controler';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -10,17 +11,27 @@ const Clientes = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    // Aquí puedes realizar cualquier lógica adicional al cargar los datos de clientes
-    setClientes(datosClientes);
+    const fetchData = async () => {
+      
+      try {
+        const clientesFromDB = await getClientes();
+        setClientes(clientesFromDB);
+      } catch (error) {
+        console.error('Error al obtener o insertar clientes: ', error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const filteredClientes = clientes.filter(
     (cliente) =>
       cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-      cliente.codigo.toLowerCase().includes(search.toLowerCase())
+      cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleClienteClick = (codigoCliente) => {
+    console.log('Código del cliente:', codigoCliente);
     // Navegar a la vista de Prefactura con parámetros
     navigation.navigate('Prefactura', { prefacturaNumero: 100, codigoCliente });
   };
@@ -35,14 +46,14 @@ const Clientes = () => {
       />
       <FlatList
         data={filteredClientes}
-        keyExtractor={(item) => item.codigo}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleClienteClick(item)}>
+          <TouchableOpacity onPress={() => handleClienteClick(item.id)}> 
             <View style={styles.clienteItem}>
               <View style={styles.clienteText}>
-                <Icon name="user" size={30} color="#000" style={styles.icon} />
+                <Icon name="user" size={10} color="#000" style={styles.icon} />
                 <Text style={styles.text}>{item.descripcion}</Text>
-                <Text style={styles.codigo}>{item.codigo}</Text>
+                <Text style={styles.codigo}>{item.id}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -76,21 +87,21 @@ const Clientes = () => {
     width: '100%', 
   },
   clienteText: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', 
-    fontSize: 30,
-    width: '100%',
+    // flexDirection: 'row',
+    // justifyContent: 'space-between', 
+    // fontSize: 10,
+    // width: '100%',
   },
   text: {
     flexDirection: 'row',
     justifyContent: 'space-between', 
-    fontSize: 30,
+    fontSize: 16,
     width: '100%',
   },
   icon: {
     paddingRight: 24,
     marginLeft: 4,
-    fontSize: 40,
+    fontSize: 20,
   },
   codigo: {
     fontSize: 20,

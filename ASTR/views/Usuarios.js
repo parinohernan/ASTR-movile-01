@@ -2,8 +2,9 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Text, FlatList } from 'react-native';
-import { initDatabase, getUsuarios, insertUsuariosFromAPI } from '../database/database';
+// import { initDatabase, getUsuarios, insertUsuariosFromAPI } from '../database/database';
 
+import { getUsuarios } from '../database/controllers/Usuarios.controler';
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
 

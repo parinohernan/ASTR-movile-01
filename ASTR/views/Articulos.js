@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { articulos } from '../assets/dataArticulos';
 import { prefacturas } from '../assets/data';
 import { Searchbar } from 'react-native-paper';
+import { getArticulos } from '../database/controllers/Articulos.Controler';
 
 // Importa el componente AddArticulo
 import AddArticulo from '../components/AddArticulo';
@@ -17,33 +17,46 @@ const Articulos = ({ prefacturaNumero }) => {
   const [selectedArticulo, setSelectedArticulo] = useState(null);
 
   useEffect(() => {
-    // Cargar la lista de artículos y artículos en la prefactura (simulación)
-    setArticulosList(articulos);
-    const prefactura = prefacturas.find((factura) => factura.numero === prefacturaNumero);
-    if (prefactura) {
-      setArticulosEnPrefactura(prefactura.items.map((item) => item.codigo));
-    }
+   
+    const fetchData = async () => {
+      
+      try {
+        const articulosFromDB = await getArticulos();
+        setArticulosList(articulosFromDB);
+      } catch (error) {
+        console.error('Error al obtener o insertar articulos: ', error);
+      }
+    };
+
+    fetchData();
   }, [prefacturaNumero]);
+  
 
   useEffect(() => {
     // Filtrar la lista de artículos cada vez que cambie la búsqueda
-    const filtered = articulosList.filter(
-      (articulo) =>
-        articulo.codigo.toString().includes(search.toLowerCase()) ||
+    if (articulosList.length> 0) {
+      
+      const filtered = articulosList.filter(
+        (articulo) =>
+        // articulo.codigo.toLowerCase().includes(search.toLowerCase()) ||
         articulo.descripcion.toLowerCase().includes(search.toLowerCase())
-    );
-    setFilteredArticulos(filtered);
+        );
+        setFilteredArticulos(filtered);
+      }else{
+        setFilteredArticulos(articulosList);
+      }
   }, [search, articulosList]);
 
   const handleCheck = (codigo) => {
     // Lógica para marcar/desmarcar el artículo con el código proporcionado en la preventa
-    // Esto dependerá de cómo estés gestionando los datos de la preventa
+
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${prefacturaNumero}`);
   };
 
   const openModal = (articulo) => {
     // Establecer el artículo seleccionado y mostrar el modal
-    setSelectedArticulo(articulo);
+    console.log("articulo",articulo);
+    setSelectedArticulo(articulo.id);
     setModalVisible(true);
   };
 
@@ -84,7 +97,7 @@ const Articulos = ({ prefacturaNumero }) => {
       />
       <FlatList
         data={filteredArticulos}
-        keyExtractor={(item) => item.codigo.toString()}
+        keyExtractor={(item) => item.codigo}
         renderItem={renderItem}
       />
 

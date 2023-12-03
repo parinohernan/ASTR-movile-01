@@ -22,10 +22,10 @@ const Configurar = () => {
     }
   }, [webService, sucursal, cantidadMaximaArticulos]);
 
+  //esto en realidad sincroniza y actualiza la APP
   const handleGuardar = () => {
     // if (guardarHabilitado) {
-      // Implementa la lógica para guardar la configuración
-      console.log('Data insertada');
+      
       actualizarAPP();
     // } else {
     //   Alert.alert('Error', 'Completa todos los campos antes de guardar.');
@@ -82,7 +82,7 @@ const Configurar = () => {
       />
 
       {/* Botones */}
-      <Button title="Guardar" onPress={handleGuardar} /*disabled={!guardarHabilitado}*/ buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
+      <Button title="Sincronizar" onPress={handleGuardar} /*disabled={!guardarHabilitado}*/ buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
       <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
       <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} />
     </View>
