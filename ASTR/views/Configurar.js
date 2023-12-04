@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Switch, Alert } from 'react-native';
-import { CheckBox, Button } from 'react-native-elements';
+import { Button } from 'react-native-elements';
 import { eliminarTodasLasTablas, insertUsuariosFromAPI } from '../database/database';
 import { actualizarAPP } from '../handlers/actualizarApp';
 // import limpiarDatos from "../database/database"r

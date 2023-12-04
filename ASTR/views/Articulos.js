@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { prefacturas } from '../assets/data';
+// import { prefacturas } from '../assets/data';
 import { Searchbar } from 'react-native-paper';
 import { getArticulos } from '../database/controllers/Articulos.Controler';
-
-// Importa el componente AddArticulo
 import AddArticulo from '../components/AddArticulo';
 
-const Articulos = ({ prefacturaNumero }) => {
+const Articulos = ({route}) => {
+  const {params} = route;
+  const prefacturaNumero = params.numeroPrefactura;
+  console.log('ART12 en la preventa nº ', prefacturaNumero,params);
   const [search, setSearch] = useState('');
   const [filteredArticulos, setFilteredArticulos] = useState(articulosList);
   const [articulosList, setArticulosList] = useState([]);
@@ -38,7 +39,7 @@ const Articulos = ({ prefacturaNumero }) => {
       
       const filtered = articulosList.filter(
         (articulo) =>
-        // articulo.codigo.toLowerCase().includes(search.toLowerCase()) ||
+        articulo.id.toLowerCase().includes(search.toLowerCase()) ||
         articulo.descripcion.toLowerCase().includes(search.toLowerCase())
         );
         setFilteredArticulos(filtered);
@@ -49,14 +50,14 @@ const Articulos = ({ prefacturaNumero }) => {
 
   const handleCheck = (codigo) => {
     // Lógica para marcar/desmarcar el artículo con el código proporcionado en la preventa
-
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${prefacturaNumero}`);
   };
 
-  const openModal = (articulo) => {
+  const openModal = (articulo,numero) => {
     // Establecer el artículo seleccionado y mostrar el modal
-    console.log("articulo",articulo);
-    setSelectedArticulo(articulo.id);
+    console.log("articulo",articulo.descripcion);
+    console.log("preventa",numero);
+    setSelectedArticulo(articulo);
     setModalVisible(true);
   };
 
@@ -67,19 +68,19 @@ const Articulos = ({ prefacturaNumero }) => {
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => openModal(item)}>
+    <TouchableOpacity onPress={() => openModal(item,prefacturaNumero)}>
       <View style={styles.articuloItem}>
-        <Text style={styles.articuloInfo}>{item.codigo}</Text>
+        <Text style={styles.articuloInfo}>{item.id}</Text>
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>
         <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
         <Text style={styles.articuloInfo}>
-          Precio: ${item.PrecioCostoMasImp * (1 + item.Lista1 / 100)}
+          Precio: ${(item.precioCostoMasImp * (1 + item.lista1 / 100)).toFixed(2)}
         </Text>
-        <TouchableOpacity onPress={() => handleCheck(item.codigo)}>
+        <TouchableOpacity onPress={() => handleCheck(item.id)}>
           <Icon
             name="check"
             size={20}
-            color={articulosEnPrefactura.includes(item.codigo) ? 'blue' : 'whithe'}
+            color={articulosEnPrefactura.includes(item.id) ? 'blue' : '#fff'}
           />
         </TouchableOpacity>
       </View>
@@ -97,7 +98,7 @@ const Articulos = ({ prefacturaNumero }) => {
       />
       <FlatList
         data={filteredArticulos}
-        keyExtractor={(item) => item.codigo}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
       />
 
@@ -107,7 +108,7 @@ const Articulos = ({ prefacturaNumero }) => {
           <AddArticulo
             articulo={selectedArticulo}
             closeModal={closeModal}
-            prefacturaNumero={prefacturaNumero}
+            prefacturaNumero= {prefacturaNumero}
           />
         </View>
       </Modal>

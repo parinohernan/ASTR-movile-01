@@ -39,7 +39,11 @@ export default function App() {
           {props => <Configurar />}
         </Stack.Screen>
         <Stack.Screen name="Articulos">
-          {props => <Articulos />}
+        {props => (
+            <Articulos
+              {...props}
+            />
+          )}
         </Stack.Screen>
         <Stack.Screen name="Usuarios">
           {props => <Usuarios />}

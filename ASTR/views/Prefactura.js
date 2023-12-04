@@ -4,9 +4,16 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { prefacturas } from '../assets/data';
 import Articulos from './Articulos'; // Ajusta la ruta según tu estructura de archivos
 import { useNavigation } from '@react-navigation/native';
+import { getPreventas, nextPreventa } from '../database/controllers/Preventa.Controler';
 
-const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNumero }) => {
-  const [mostrarArticulos, setMostrarArticulos] = useState(false);
+const Prefactura = (props) => {
+  // const prefacturas = getPreventas;
+  const {route} = props;
+  const {params} = route;
+  const {cliente, codigoCliente, prefacturaNumero} = params;
+  // console.log("PREF cliente",cliente);
+  console.log("preprefactura cliente y nunmero PRF",params.cliente.id, params.prefacturaNumero);
+  // const [mostrarArticulos, setMostrarArticulos] = useState(false);
   const navigation = useNavigation();
   // Supongo que los datos de los items y el total se obtienen de prefacturas
   const factura = prefacturas.find(factura => factura.numero === prefacturaNumero);
@@ -20,6 +27,7 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
   const cerrarModal = () => {
     setIsModalVisible(false);
     guardarNota();
+    
   };
 
   const guardarNota = () => {
@@ -50,17 +58,19 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
   );
 
   const abrirArticulos = () => {
-    setMostrarArticulos(true);
+    // setMostrarArticulos(true);
+    console.log("PRF62 voy a abrir articu con la prop prefacNume ", prefacturaNumero );
     navigation.navigate('Articulos', { numeroPrefactura: prefacturaNumero });
   };
 
+  // console.log("PRF presiona  +  para agregar articulos...");
   return (
     <View style={styles.container}>
     <SafeAreaView style={styles.container}>
       <View style={styles.rowContainer}>
-        <Text>Código: {codigoCliente}</Text>
-        <Text>Nombre: {nombreCliente}</Text>
-        <Text>Saldo: {saldoCliente}</Text>
+        <Text>Código: {cliente.id}</Text>
+        <Text>Nombre: {cliente.descripcion}</Text>
+        <Text>Saldo: {cliente.importeDeuda}</Text>
       </View>
       <View style={styles.separator} />
 
@@ -89,10 +99,10 @@ const Prefactura = ({ codigoCliente, nombreCliente, saldoCliente, prefacturaNume
         renderItem={renderItem}
       />
 
-      {mostrarArticulos && (<Articulos
+      {/* {mostrarArticulos && (<Articulos
           numeroPrefactura={prefacturaNumero}
           setMostrarArticulos={setMostrarArticulos}
-          />)}
+          />)} */}
     </SafeAreaView>      
         <Modal visible={isModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>

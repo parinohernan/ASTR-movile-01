@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 // import { datosClientes } from '../assets/data';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controler';
+import { newPreventa } from '../database/controllers/Preventa.Controler';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -30,10 +31,11 @@ const Clientes = () => {
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleClienteClick = (codigoCliente) => {
-    console.log('Código del cliente:', codigoCliente);
+  const handleClienteClick = (cliente) => {
+    let prefacturaNumero = 1234;
+    console.log('c34 Código del cliente:', cliente, prefacturaNumero);
     // Navegar a la vista de Prefactura con parámetros
-    navigation.navigate('Prefactura', { prefacturaNumero: 100, codigoCliente });
+    navigation.navigate('Prefactura', { prefacturaNumero, cliente });
   };
 
   return (
@@ -48,10 +50,10 @@ const Clientes = () => {
         data={filteredClientes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleClienteClick(item.id)}> 
+          <TouchableOpacity onPress={() => handleClienteClick(item)}> 
             <View style={styles.clienteItem}>
               <View style={styles.clienteText}>
-                <Icon name="user" size={10} color="#000" style={styles.icon} />
+                <Icon name="user" size={10} color="red" style={styles.icon} />
                 <Text style={styles.text}>{item.descripcion}</Text>
                 <Text style={styles.codigo}>{item.id}</Text>
               </View>

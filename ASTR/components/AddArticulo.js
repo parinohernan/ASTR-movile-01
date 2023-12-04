@@ -18,11 +18,11 @@ const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
   
 
   
-//   <Text style={styles.articuloInfo}>{articulo ? articulo.codigo : ''}</Text>
+//   <Text style={styles.articuloInfo}>{articulo ? articulo.id : ''}</Text>
   if (articulo) {
     return (
     <View style={styles.container}>
-      <Text style={styles.articuloInfo}>{articulo.codigo}</Text>
+      <Text style={styles.articuloInfo}>{articulo.id}</Text>
       <Text style={styles.articuloInfo}>{articulo.descripcion}</Text>
       {/* <Text style={styles.articuloInfo}>{articulo.precioFinal}</Text> */}
       <Text style={styles.label}>Cantidad:</Text>
@@ -33,14 +33,14 @@ const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
         value={cantidad}
         keyboardType="numeric"
         />
-      <Text style={styles.label}>Precio total:</Text>
-      <TextInput
+      {/* <Text style={styles.label}>Precio total:</Text> */}
+      {/* <TextInput
         style={styles.input}
         onChangeText={setPrecioFinal}
         value= {(articulo.PrecioCostoMasImp * (1 + articulo.Lista1 / 100) * (cantidad))}
         keyboardType="numeric"
         editable={false}
-        />
+        /> */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Agregar</Text>
       </TouchableOpacity>

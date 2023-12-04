@@ -7,16 +7,16 @@ const insertArticulosFromAPI = (data) => {
   
         data.forEach(item => {
           tx.executeSql(
-            'INSERT INTO articulos (id, descripcion, existencia, existenciaMinima, existenciaMaxima, precioCostoMasImp, porcentajeIVA1, porcentajeIVA2, precioCosto, unidadVenta, lista1, lista2, lista3, lista4, lista5, proveedorCodigo, rubroCodigo, peso, siempreSeDescarga, iva2SobreNeto, porcentajeVendedor, descuentoXCantidad) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO articulos (id, descripcion, existencia, precioCostoMasImp, precioCosto, unidadVenta, lista1, lista2, lista3, lista4, lista5, rubroCodigo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
               item.codigo,
               item.descripcion,
               item.existencia,
-              item.existenciaMinima,
-              item.existenciaMaxima,
+            //   item.existenciaMinima,
+            //   item.existenciaMaxima,
               item.precioCostoMasImp,
-              item.porcentajeIVA1,
-              item.porcentajeIVA2,
+            //   item.porcentajeIVA1,
+            //   item.porcentajeIVA2,
               item.precioCosto,
               item.unidadVenta,
               item.lista1,
@@ -24,13 +24,13 @@ const insertArticulosFromAPI = (data) => {
               item.lista3,
               item.lista4,
               item.lista5,
-              item.proveedorCodigo,
+            //   item.proveedorCodigo,
               item.rubroCodigo,
-              item.peso,
-              item.siempreSeDescarga,
-              item.iva2SobreNeto,
-              item.porcentajeVendedor,
-              item.descuentoXCantidad
+            //   item.peso,
+            //   item.siempreSeDescarga,
+            //   item.iva2SobreNeto,
+            //   item.porcentajeVendedor,
+            //   item.descuentoXCantidad
             ],
             (_, result) => {
                 totalInsertados++;
@@ -53,7 +53,7 @@ const insertArticulosFromAPI = (data) => {
 
   const getArticulos = () => {
     return new Promise((resolve, reject) => {
-      console.log("traigo los articulos de la api");
+      console.log("traigo los articulos de la base de datos local");
       db.transaction(tx => {
         tx.executeSql('SELECT * FROM articulos', [], (_, { rows }) => {
           resolve(rows._array);

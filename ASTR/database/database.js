@@ -6,6 +6,7 @@ import * as SQLite from 'expo-sqlite';
 
 const db = SQLite.openDatabase('database.db');
 
+// inicializa todos los campos de la vase de datos
 const initDatabase = () => {
   db.transaction(tx => {
     // Crea la tabla usuarios si no existe
@@ -29,6 +30,20 @@ const initDatabase = () => {
       [],
       () => console.log('Tabla articulos creada exitosamente'),
       (_, error) => console.log('Error al crear la tabla articulos', error)
+    );
+    // Crea la tabla preventaCabeza si no existe
+    tx.executeSql(
+      'CREATE TABLE IF NOT EXISTS preventaCabeza (id INTEGER PRIMARY KEY, cliente TEXT, vendedor TEXT, fecha DATETIME, importeTotal INTEGER, cantidadItems INTEGER, observacion TEXT)',
+      [],
+      () => console.log('Tabla preventaCabeza creada exitosamente'),
+      (_, error) => console.log('Error al crear la tabla preventaCabeza', error)
+    );
+    // Crea la tabla preventaItem si no existe
+    tx.executeSql(
+      'CREATE TABLE IF NOT EXISTS preventaItem (id INTEGER, articulo TEXT, cantidad TEXT, importe INTEGER, FOREIGN KEY (id) REFERENCES preventaCabeza(id))',
+      [],
+      () => console.log('Tabla preventaItem creada exitosamente'),
+      (_, error) => console.log('Error al crear la tabla preventaItem', error)
     );
   });
 };
