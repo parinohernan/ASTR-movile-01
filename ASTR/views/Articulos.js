@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-// import { prefacturas } from '../assets/data';
+// import { preventas } from '../assets/data';
 import { Searchbar } from 'react-native-paper';
 import { getArticulos } from '../database/controllers/Articulos.Controler';
 import AddArticulo from '../components/AddArticulo';
 
 const Articulos = ({route}) => {
   const {params} = route;
-  const prefacturaNumero = params.numeroPrefactura;
-  console.log('ART12 en la preventa nº ', prefacturaNumero,params);
+  const preventaNumero = params.numeroPreventa;
+  console.log('ART12 en la preventa nº ', preventaNumero,params);
   const [search, setSearch] = useState('');
   const [filteredArticulos, setFilteredArticulos] = useState(articulosList);
   const [articulosList, setArticulosList] = useState([]);
-  const [articulosEnPrefactura, setArticulosEnPrefactura] = useState([]);
+  const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState(null);
 
@@ -30,7 +30,7 @@ const Articulos = ({route}) => {
     };
 
     fetchData();
-  }, [prefacturaNumero]);
+  }, [preventaNumero]);
   
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const Articulos = ({route}) => {
 
   const handleCheck = (codigo) => {
     // Lógica para marcar/desmarcar el artículo con el código proporcionado en la preventa
-    console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${prefacturaNumero}`);
+    console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
   };
 
   const openModal = (articulo,numero) => {
@@ -68,7 +68,7 @@ const Articulos = ({route}) => {
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => openModal(item,prefacturaNumero)}>
+    <TouchableOpacity onPress={() => openModal(item,preventaNumero)}>
       <View style={styles.articuloItem}>
         <Text style={styles.articuloInfo}>{item.id}</Text>
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>
@@ -80,7 +80,7 @@ const Articulos = ({route}) => {
           <Icon
             name="check"
             size={20}
-            color={articulosEnPrefactura.includes(item.id) ? 'blue' : '#fff'}
+            color={articulosEnPreventa.includes(item.id) ? 'blue' : '#fff'}
           />
         </TouchableOpacity>
       </View>
@@ -108,7 +108,7 @@ const Articulos = ({route}) => {
           <AddArticulo
             articulo={selectedArticulo}
             closeModal={closeModal}
-            prefacturaNumero= {prefacturaNumero}
+            preventaNumero= {preventaNumero}
           />
         </View>
       </Modal>

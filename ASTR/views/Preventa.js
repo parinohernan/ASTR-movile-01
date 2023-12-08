@@ -6,15 +6,17 @@ import Articulos from './Articulos'; // Ajusta la ruta según tu estructura de a
 import { useNavigation } from '@react-navigation/native';
 import { getPreventas, nextPreventa } from '../database/controllers/Preventa.Controler';
 
-const Prefactura = (props) => {
-  // const prefacturas = getPreventas;
+const Preventa = (props) => {
+  const preventas = getPreventas;
   const {route} = props;
   const {params} = route;
-  const {cliente, codigoCliente, prefacturaNumero} = params;
-  console.log("preprefactura cliente y nunmero PRF",params.cliente.id, params.prefacturaNumero);
+  const {cliente, codigoCliente, preventaNumero} = params;
+  console.log("prepreventa cliente y nunmero PRF",params.cliente.id, params.preventaNumero);
   const navigation = useNavigation();
-  const factura = prefacturas.find(factura => factura.numero === prefacturaNumero);
-  const { items, total } = factura || { items: [], total: 0 };
+
+  /*busco los items que ya esten cargados en la preventa*/ 
+  const venta = prefacturas.find(venta => venta.numero === preventaNumero);
+  const { items, total } = venta || { items: [], total: 0 };
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [nota, setNota] = useState('');
   const abrirModal = () => {
@@ -56,8 +58,8 @@ const Prefactura = (props) => {
 
   const abrirArticulos = () => {
     // setMostrarArticulos(true);
-    console.log("PRF62 voy a abrir articu con la prop prefacNume ", prefacturaNumero );
-    navigation.navigate('Articulos', { numeroPrefactura: prefacturaNumero });
+    console.log("PRF62 voy a abrir articu con la prop prefacNume ", preventaNumero );
+    navigation.navigate('Articulos', { numeroPreventa: preventaNumero });
   };
 
   // console.log("PRF presiona  +  para agregar articulos...");
@@ -72,9 +74,9 @@ const Prefactura = (props) => {
       <View style={styles.separator} />
 
       <View style={styles.rowContainer}>
-        <Text>Prefactura Número: {prefacturaNumero}</Text>
+        <Text>Preventa Número: {preventaNumero}</Text>
         <Text>Total: {total}</Text>
-      </View>
+      </View> 
       <View style={styles.separator} />
 
       <View style={styles.iconBar}>
@@ -96,10 +98,11 @@ const Prefactura = (props) => {
         renderItem={renderItem}
       />
 
-      {/* {mostrarArticulos && (<Articulos
-          numeroPrefactura={prefacturaNumero}
+      {/*mostrarArticulos && (<Articulos
+          numeroPreventa={preventaNumero}
           setMostrarArticulos={setMostrarArticulos}
-          />)} */}
+      />)*/}
+
     </SafeAreaView>      
         <Modal visible={isModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
@@ -194,5 +197,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Prefactura;
+export default Preventa;
 

@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native';
 import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
 import Clientes from './views/Clientes';
-import Prefactura from './views/Prefactura';
+import Preventa from './views/Preventa';
 import Articulos from './views/Articulos';
 import Informes from './views/Informes';
 import Sincronizar from './views/Sincronizar';
@@ -17,7 +17,7 @@ const Stack = createStackNavigator();
 export default function App() {
   // Puedes usar el estado para mantener el cliente y la prefactura seleccionados
   const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
-  const [prefacturaSeleccionada, setPrefacturaSeleccionada] = React.useState(null);
+  const [preventaSeleccionada, setPreventaSeleccionada] = React.useState(null);
 
   return (
     <NavigationContainer>
@@ -47,12 +47,12 @@ export default function App() {
         <Stack.Screen name="Clientes">
           {props => <Clientes {...props} setClienteSeleccionado={setClienteSeleccionado} />}
         </Stack.Screen>
-        <Stack.Screen name="Prefactura">
+        <Stack.Screen name="Preventa">
           {props => (
-            <Prefactura
+            <Preventa
               {...props}
               clienteSeleccionado={clienteSeleccionado}
-              setPrefacturaSeleccionada={setPrefacturaSeleccionada}
+              setPreventaSeleccionada={setPreventaSeleccionada}
             />
           )}
         </Stack.Screen>

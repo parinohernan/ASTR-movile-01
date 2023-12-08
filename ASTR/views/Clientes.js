@@ -32,12 +32,12 @@ const Clientes = () => {
   );
 
   const handleClienteClick = async (cliente) => {
-    let prefacturaNumero = await nextPreventa();
+    let preventaNumero = await nextPreventa();
     console.log('Código del cliente:', cliente.descripcion);
-    console.log('Prefactura Número:', prefacturaNumero);
+    console.log('Preventa Número:', preventaNumero);
   
     // Resto de tu lógica...
-    navigation.navigate('Prefactura', { prefacturaNumero, cliente });
+    navigation.navigate('Preventa', { preventaNumero, cliente });
   };
 
   return (
