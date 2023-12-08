@@ -11,11 +11,8 @@ const Prefactura = (props) => {
   const {route} = props;
   const {params} = route;
   const {cliente, codigoCliente, prefacturaNumero} = params;
-  // console.log("PREF cliente",cliente);
   console.log("preprefactura cliente y nunmero PRF",params.cliente.id, params.prefacturaNumero);
-  // const [mostrarArticulos, setMostrarArticulos] = useState(false);
   const navigation = useNavigation();
-  // Supongo que los datos de los items y el total se obtienen de prefacturas
   const factura = prefacturas.find(factura => factura.numero === prefacturaNumero);
   const { items, total } = factura || { items: [], total: 0 };
   const [isModalVisible, setIsModalVisible] = useState(false);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { articulos } from '../assets/dataArticulos';
+// import { articulos } from '../assets/dataArticulos';
 
 const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
   const [cantidad, setCantidad] = useState('');
@@ -8,16 +8,14 @@ const AddArticulo = ({ articulo, prefacturaNumero, closeModal }) => {
   const [precioFinal, setPrecioFinal] = useState('');
 
   const handleSave = () => {
-    console.log(`Agregando  ${cantidad} unidades del artículo ${articulo.codigo} a la preventa ${prefacturaNumero}`);
+    console.log(`AddArt11 Agregando  ${cantidad} unidades del artículo ${articulo.id} a la preventa ${prefacturaNumero}`);
     closeModal();
   };
 
   const handleCancel = () => {
     closeModal();
   };
-  
 
-  
 //   <Text style={styles.articuloInfo}>{articulo ? articulo.id : ''}</Text>
   if (articulo) {
     return (

@@ -59,5 +59,26 @@ const eliminarTodasLasTablas = async () => {
   });
 };
 
+// En tu controlador de base de datos
+export const getTables = async () => {
+  initDatabase();
+  try {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql('SELECT name FROM sqlite_master WHERE type="table";', [], (_, result) => {
+          // const tables = result.rows._array.map(row => row.name);
+          const tables = result.rows.raw().map(row => row.name);
+          resolve(tables);
+        }, (_, error) => {
+          console.error('Error al ejecutar la consulta:', error);
+          reject(error);
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error al obtener la lista de tablas:', error);
+    throw error;
+  }
+};
 
-export { db, initDatabase, eliminarTodasLasTablas/*, insertClientesFromAPI, getClientes, insertArticulosFromAPI, getArticulos, getUsuarios, insertUsuariosFromAPI*/ };
+export { db, initDatabase, eliminarTodasLasTablas /*, insertClientesFromAPI, getClientes, insertArticulosFromAPI, getArticulos, getUsuarios, insertUsuariosFromAPI*/ };

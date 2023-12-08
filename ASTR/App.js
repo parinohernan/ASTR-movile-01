@@ -18,11 +18,7 @@ export default function App() {
   // Puedes usar el estado para mantener el cliente y la prefactura seleccionados
   const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
   const [prefacturaSeleccionada, setPrefacturaSeleccionada] = React.useState(null);
-  // const sequelize = new Sequelize(config.development);
-  // // Inicializar modelos
-  // const Usuario = UsuarioModel(sequelize);
 
- 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">

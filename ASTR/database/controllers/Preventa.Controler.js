@@ -20,20 +20,23 @@ const deletePreventas = () => {
     tx.executeSql('DELETE FROM preventaCabeza', [], () => console.log('Datos prev cabeza eliminados'), (_, error) => console.log('Error al eliminar los cabeza', error));
     }; 
 
-async function nextPreventa() {
-    // try {
-    //     const result = await db.executeSql('SELECT MAX(id) AS maxNumero FROM preventas');
-    //     const maxNumero = result.rows.item(0).maxNumero;
-    //     const siguienteNumero = maxNumero !== null ? maxNumero + 1 : 1;
-    
-    //     return siguienteNumero;
-    // } catch (error) {
-    //     console.error('Error al obtener el siguiente número de preventa:', error);
-    //     throw error;
-    // }
-    console.log("deveria buscar el mumero correcto");
-    return 12;
-    }
+    async function nextPreventa() {
+        // return new Promise((resolve, reject) => {
+        //   db.transaction((tx) => {
+        //     tx.executeSql('SELECT MAX(id) AS maxNumero FROM preventas', [], (_, result) => {
+        //       const maxNumero = result.rows.item(0).maxNumero;
+        //       const siguienteNumero = maxNumero !== null ? maxNumero + 1 : 1;
+        //       resolve(siguienteNumero);
+        //     }, (_, error) => {
+        //       console.error('Error al obtener el siguiente número de preventa:', error);
+        //       reject(error);
+        //     });
+        //   });
+        // });
+        console.log("Prev.Cont36 next preventa, : 100");
+        return 100
+      }
+      
 
 const getPreventas = async () => {
 return new Promise((resolve, reject) => {

@@ -12,11 +12,7 @@ const insertArticulosFromAPI = (data) => {
               item.codigo,
               item.descripcion,
               item.existencia,
-            //   item.existenciaMinima,
-            //   item.existenciaMaxima,
               item.precioCostoMasImp,
-            //   item.porcentajeIVA1,
-            //   item.porcentajeIVA2,
               item.precioCosto,
               item.unidadVenta,
               item.lista1,
@@ -24,13 +20,7 @@ const insertArticulosFromAPI = (data) => {
               item.lista3,
               item.lista4,
               item.lista5,
-            //   item.proveedorCodigo,
               item.rubroCodigo,
-            //   item.peso,
-            //   item.siempreSeDescarga,
-            //   item.iva2SobreNeto,
-            //   item.porcentajeVendedor,
-            //   item.descuentoXCantidad
             ],
             (_, result) => {
                 totalInsertados++;

@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 // import { datosClientes } from '../assets/data';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controler';
-import { newPreventa } from '../database/controllers/Preventa.Controler';
+import { newPreventa, nextPreventa } from '../database/controllers/Preventa.Controler';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -31,10 +31,12 @@ const Clientes = () => {
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleClienteClick = (cliente) => {
-    let prefacturaNumero = 1234;
-    console.log('c34 Código del cliente:', cliente, prefacturaNumero);
-    // Navegar a la vista de Prefactura con parámetros
+  const handleClienteClick = async (cliente) => {
+    let prefacturaNumero = await nextPreventa();
+    console.log('Código del cliente:', cliente.descripcion);
+    console.log('Prefactura Número:', prefacturaNumero);
+  
+    // Resto de tu lógica...
     navigation.navigate('Prefactura', { prefacturaNumero, cliente });
   };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Switch, Alert } from 'react-native';
+import { View, Text, TextInput, Switch } from 'react-native';
 import { Button } from 'react-native-elements';
-import { eliminarTodasLasTablas, insertUsuariosFromAPI } from '../database/database';
+import { eliminarTodasLasTablas, getTables } from '../database/database';
 import { actualizarAPP } from '../handlers/actualizarApp';
 // import limpiarDatos from "../database/database"r
 
@@ -23,15 +23,18 @@ const Configurar = () => {
   }, [webService, sucursal, cantidadMaximaArticulos]);
 
   //esto en realidad sincroniza y actualiza la APP
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
+    
+    await actualizarAPP();
+ 
+  };
     // if (guardarHabilitado) {
-      
-      actualizarAPP();
     // } else {
     //   Alert.alert('Error', 'Completa todos los campos antes de guardar.');
     // }
+  const handleTablas =  () => {
+    console.log("tablas en BDD: ", getTables());
   };
-
   const handleCancelar = () => {
     // Implementa la lógica para cancelar la configuración
     console.log('Configuración cancelada');
@@ -56,7 +59,7 @@ const Configurar = () => {
       />
 
       <Text>Sucursal:</Text>
-      <TextInput
+      {/* <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
         value={sucursal}
         onChangeText={(text) => setSucursal(text.replace(/[^0-9]/g, ''))}
@@ -65,8 +68,8 @@ const Configurar = () => {
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
         <Text style={{ flex: 1 }}>Actualizar Datos</Text>
         <Switch value={modificacionPrecios} onValueChange={() => setModificacionPrecios(!modificacionPrecios)} />
-       {/* <Switch value={activarGeolocalizacion} onValueChange={() => setActivarGeolocalizacion(!activarGeolocalizacion)} /> */}
-      </View>
+       {/* <Switch value={activarGeolocalizacion} onValueChange={() => setActivarGeolocalizacion(!activarGeolocalizacion)} /> * /}
+      </View> */}
       <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 20 }}>
         <Text style={{ flex: 1 , padding: 5 }}>Activar Geolocalizacion</Text>
         {/* <Switch value={modificacionPrecios} onValueChange={() => setModificacionPrecios(!modificacionPrecios)} /> */}
@@ -83,6 +86,7 @@ const Configurar = () => {
 
       {/* Botones */}
       <Button title="Sincronizar" onPress={handleGuardar} /*disabled={!guardarHabilitado}*/ buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
+      <Button title="tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
       <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
       <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} />
     </View>

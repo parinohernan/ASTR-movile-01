@@ -44,7 +44,7 @@ const actualizarArticulos = async () => {
     }
     };
 
-const actualizarAPP = () =>{
+const actualizarAPP = async () =>{
     console.log("VENDEDORES ->");
     initDatabase();
     actualizarVendedores();
@@ -52,6 +52,5 @@ const actualizarAPP = () =>{
     actualizarClientes();
     console.log("ARTICULOS ->");
     actualizarArticulos();
-
 }
 export { actualizarAPP};
