@@ -1,26 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { prefacturas } from '../assets/data';
-// import Articulos from './Articulos'; // Ajusta la ruta según tu estructura de archivos
-import { useNavigation } from '@react-navigation/native';
-// import { getPreventas, nextPreventa } from '../database/controllers/Preventa.Controler';
-import { obtenerPreventa, contarItems } from "../src/utils/storageUtils";
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { obtenerPreventa, calcularTotal, limpiarPreventa } from "../src/utils/storageUtils";
 
 const Preventa = (props) => {
-  // const preventas = getPreventas;
   const {route} = props;
   const {params} = route;
-  const {cliente, codigoCliente, preventaNumero} = params;
+  const {cliente, preventaNumero} = params;
   console.log("prepreventa cliente y nunmero PRF",params.cliente.id, params.preventaNumero);
   const navigation = useNavigation();
 
   /*busco los items que ya esten cargados en la preventa*/ 
-  // const venta = prefacturas.find(venta => venta.numero === preventaNumero);
-  const  items = contarItems();
-  const total =  9999999 ;
+  
+  // const carritoItemsReducido = carritos.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion }));
+  const [carrito, setcarrito] = useState([]);
+  const [cantidadItems, setCantidadItems] = useState([]);
+  const [total, setTotal] = useState(9999999);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const carritoData = await obtenerPreventa();
+  //     // const itemsCantidad = await contarItems(); 
+  //     const totalData = await calcularTotal();
+
+  //     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion })));
+  //     setCantidadItems (itemsCantidad);
+  //     setTotal(totalData);
+  //     console.log("30 carrito reducido ", carrito);
+  //     // Puedes realizar otras operaciones con los datos obtenidos si es necesario
+  //   };
+
+  //   loadData();
+  // }, []); 
+
+  const cargarDatos = async () => {
+    const carritoData = await obtenerPreventa();
+    const totalData = await calcularTotal();
+
+    setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion })));
+    setTotal(totalData);
+    setIsLoaded(true);
+  };
+
+  const limpiarLaPreventa = async () => {
+    
+    await limpiarPreventa();
+    await cargarDatos();
+  };
+
+  console.log("PRV35. actual", carrito);
+  // const  items = contarItems();
+  // const total =  9999999 ;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [nota, setNota] = useState('');
+  
   const abrirModal = () => {
     setIsModalVisible(true);
   };
@@ -36,37 +71,24 @@ const Preventa = (props) => {
     console.log('Nota guardada:', nota);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.cell}>
-        <Text style={styles.headerText}>Descripción</Text>
-        <Text>{item.descripcion}</Text>
-      </View>
-      <View style={styles.cell}>
-        <Text style={styles.headerText}>Cantidad</Text>
-        <Text>{item.cantidad}</Text>
-      </View>
-      <View style={styles.cell}>
-        <Text style={styles.headerText}>Precio Unitario</Text>
-        <Text>{item.precioUnitario}</Text>
-      </View>
-      <View style={styles.cell}>
-        <Text style={styles.headerText}>Precio Total</Text>
-        <Text>{item.precioTotal}</Text>
-      </View>
-
-    </View>
-  );
-
   const abrirArticulos = () => {
     // setMostrarArticulos(true);
     console.log("PRF62 voy a abrir articu con la prop prefacNume ", preventaNumero );
     navigation.navigate('Articulos', { numeroPreventa: preventaNumero, codigoCliente: cliente.id });
   };
 
-  // console.log("PRF presiona  +  para agregar articulos...");
-  return (
-    <View style={styles.container}>
+ 
+    // Renderiza cada elemento del array reducido
+    const renderItem = ({ item }) => (
+      <View>
+        <Text>{`Descripción: ${item.descripcion}`}</Text>
+        <Text>{`Cantidad: ${item.cantidad}`}</Text>
+        <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
+      </View>
+    );
+  
+    return (
+      <View style={styles.container}>
     <SafeAreaView style={styles.container}>
       <View style={styles.rowContainer}>
         <Text>Código: {cliente.id}</Text>
@@ -76,8 +98,7 @@ const Preventa = (props) => {
       <View style={styles.separator} />
 
       <View style={styles.rowContainer}>
-        {/* <Text>Preventa Número: {preventaNumero}</Text> */}
-        <Text>Items: {0}</Text>
+        <Text>Items: {carrito.length.toString()}</Text>
         <Text>Total: {total}</Text>
       </View> 
       <View style={styles.separator} />
@@ -89,23 +110,24 @@ const Preventa = (props) => {
         <TouchableOpacity onPress={abrirArticulos}>
           <Icon name="plus" size={30} color="#000" />
         </TouchableOpacity>
+        <TouchableOpacity onPress={limpiarLaPreventa}>
+          <Icon name="minus" size={30} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={cargarDatos}>
+          <Icon name="rotate" size={30} color="#000" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={abrirModal}>
           <Icon name="sticky-note" size={30} color="#000" />
         </TouchableOpacity>
       </View>
       <View style={styles.separator} />
-
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.codigo.toString()}
-        renderItem={renderItem}
-      />
-
-      {/*mostrarArticulos && (<Articulos
-          numeroPreventa={preventaNumero}
-          setMostrarArticulos={setMostrarArticulos}
-      />)*/}
-
+      {carrito.length > 0 && 
+          <FlatList
+            data={carrito}
+            keyExtractor={(item, index) => index.toString()} // Puedes ajustar la clave según tus necesidades
+            renderItem={renderItem}
+          />
+      }
     </SafeAreaView>      
         <Modal visible={isModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
@@ -197,7 +219,19 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  }, 
+  itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'gray',
   },
+  itemText: {
+    flex: 1,
+    marginRight: 10,
+  },
+  
 });
 
 export default Preventa;

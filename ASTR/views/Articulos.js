@@ -5,8 +5,10 @@ import { Searchbar } from 'react-native-paper';
 import { getArticulos } from '../database/controllers/Articulos.Controler';
 import AddArticulo from '../src/components/AddArticulo';
 import { guardarPreventa, obtenerPreventa, limpiarPreventa } from "../src/utils/storageUtils";
+import { useNavigation } from '@react-navigation/native';
 
 const Articulos = ({ route }) => {
+  const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa;
   console.log('ART12 en la preventa nº ', preventaNumero, params);
@@ -47,9 +49,10 @@ const Articulos = ({ route }) => {
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
   };
 
-  const openModal = (articulo, numero) => {
-    setSelectedArticulo(articulo);
-    setModalVisible(true);
+  const openModal = (articulo) => {
+    // setSelectedArticulo(articulo);
+    // setModalVisible(true);
+    navigation.navigate('AddArticulo', { articulo });
   };
 
   const closeModal = () => {

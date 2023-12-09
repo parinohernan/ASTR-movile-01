@@ -12,6 +12,7 @@ import Informes from './views/Informes';
 import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
 import Usuarios from './views/Usuarios';
+import AddArticulo from './src/components/AddArticulo';
 
 const Stack = createStackNavigator();
 
@@ -39,6 +40,13 @@ export default function App() {
         {props => (
             <Articulos
               {...props}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="AddArticulo">
+          {props => (
+            <AddArticulo 
+              {...props} 
             />
           )}
         </Stack.Screen>

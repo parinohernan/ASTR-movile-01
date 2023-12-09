@@ -59,6 +59,25 @@ const contarItems = async () => {
     }
   };
   
+ // Ccalcula el total
+const calcularTotal = async () => {
+    try {
+      const preventa = await obtenerPreventa();
+      
+      // Verifica si la preventa es un array antes de contar los elementos
+      if (Array.isArray(preventa)) {
+        const cantidadItems = preventa.length;
+        console.log('Cantidad de items en la preventa:', cantidadItems);
+        return cantidadItems;
+      } else {
+        console.log('La preventa no es un array válido.');
+        return 0; // Puedes devolver 0 o manejarlo de acuerdo a tus necesidades.
+      }
+    } catch (error) {
+      console.error('Error al contar los items de la preventa:', error);
+      throw error;
+    }
+  }; 
 
 // Limpiar los datos de preventa almacenados en AsyncStorage
 const limpiarPreventa = async () => {
@@ -71,4 +90,4 @@ const limpiarPreventa = async () => {
   }
 };
 
-export { guardarPreventa, obtenerPreventa, limpiarPreventa, contarItems };
+export { guardarPreventa, obtenerPreventa, limpiarPreventa, contarItems, calcularTotal };
