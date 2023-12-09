@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { prefacturas } from '../assets/data';
-import Articulos from './Articulos'; // Ajusta la ruta según tu estructura de archivos
+// import Articulos from './Articulos'; // Ajusta la ruta según tu estructura de archivos
 import { useNavigation } from '@react-navigation/native';
-import { getPreventas, nextPreventa } from '../database/controllers/Preventa.Controler';
+// import { getPreventas, nextPreventa } from '../database/controllers/Preventa.Controler';
+import { obtenerPreventa, contarItems } from "../src/utils/storageUtils";
 
 const Preventa = (props) => {
-  const preventas = getPreventas;
+  // const preventas = getPreventas;
   const {route} = props;
   const {params} = route;
   const {cliente, codigoCliente, preventaNumero} = params;
@@ -15,8 +16,9 @@ const Preventa = (props) => {
   const navigation = useNavigation();
 
   /*busco los items que ya esten cargados en la preventa*/ 
-  const venta = prefacturas.find(venta => venta.numero === preventaNumero);
-  const { items, total } = venta || { items: [], total: 0 };
+  // const venta = prefacturas.find(venta => venta.numero === preventaNumero);
+  const  items = contarItems();
+  const total =  9999999 ;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [nota, setNota] = useState('');
   const abrirModal = () => {
@@ -59,7 +61,7 @@ const Preventa = (props) => {
   const abrirArticulos = () => {
     // setMostrarArticulos(true);
     console.log("PRF62 voy a abrir articu con la prop prefacNume ", preventaNumero );
-    navigation.navigate('Articulos', { numeroPreventa: preventaNumero });
+    navigation.navigate('Articulos', { numeroPreventa: preventaNumero, codigoCliente: cliente.id });
   };
 
   // console.log("PRF presiona  +  para agregar articulos...");
@@ -74,7 +76,8 @@ const Preventa = (props) => {
       <View style={styles.separator} />
 
       <View style={styles.rowContainer}>
-        <Text>Preventa Número: {preventaNumero}</Text>
+        {/* <Text>Preventa Número: {preventaNumero}</Text> */}
+        <Text>Items: {0}</Text>
         <Text>Total: {total}</Text>
       </View> 
       <View style={styles.separator} />

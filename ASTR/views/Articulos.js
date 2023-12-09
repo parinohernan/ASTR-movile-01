@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-// import { preventas } from '../assets/data';
 import { Searchbar } from 'react-native-paper';
 import { getArticulos } from '../database/controllers/Articulos.Controler';
-import AddArticulo from '../components/AddArticulo';
+import AddArticulo from '../src/components/AddArticulo';
+import { guardarPreventa, obtenerPreventa, limpiarPreventa } from "../src/utils/storageUtils";
 
-const Articulos = ({route}) => {
-  const {params} = route;
+const Articulos = ({ route }) => {
+  const { params } = route;
   const preventaNumero = params.numeroPreventa;
-  console.log('ART12 en la preventa nº ', preventaNumero,params);
+  console.log('ART12 en la preventa nº ', preventaNumero, params);
   const [search, setSearch] = useState('');
   const [filteredArticulos, setFilteredArticulos] = useState(articulosList);
   const [articulosList, setArticulosList] = useState([]);
@@ -18,9 +18,7 @@ const Articulos = ({route}) => {
   const [selectedArticulo, setSelectedArticulo] = useState(null);
 
   useEffect(() => {
-   
     const fetchData = async () => {
-      
       try {
         const articulosFromDB = await getArticulos();
         setArticulosList(articulosFromDB);
@@ -31,44 +29,37 @@ const Articulos = ({route}) => {
 
     fetchData();
   }, [preventaNumero]);
-  
 
   useEffect(() => {
-    // Filtrar la lista de artículos cada vez que cambie la búsqueda
-    if (articulosList.length> 0) {
-      
+    if (articulosList.length > 0) {
       const filtered = articulosList.filter(
         (articulo) =>
-        articulo.id.toLowerCase().includes(search.toLowerCase()) ||
-        articulo.descripcion.toLowerCase().includes(search.toLowerCase())
-        );
-        setFilteredArticulos(filtered);
-      }else{
-        setFilteredArticulos(articulosList);
-      }
+          articulo.id.toLowerCase().includes(search.toLowerCase()) ||
+          articulo.descripcion.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredArticulos(filtered);
+    } else {
+      setFilteredArticulos(articulosList);
+    }
   }, [search, articulosList]);
 
   const handleCheck = (codigo) => {
-    // Lógica para marcar/desmarcar el artículo con el código proporcionado en la preventa
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
   };
 
-  const openModal = (articulo,numero) => {
-    // Establecer el artículo seleccionado y mostrar el modal
-    console.log("articulo",articulo.descripcion);
-    console.log("preventa",numero);
+  const openModal = (articulo, numero) => {
     setSelectedArticulo(articulo);
     setModalVisible(true);
   };
 
   const closeModal = () => {
-    // Cerrar el modal y restablecer el artículo seleccionado
     setModalVisible(false);
     setSelectedArticulo(null);
   };
 
+  // limpiarPreventa();
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => openModal(item,preventaNumero)}>
+    <TouchableOpacity onPress={() => openModal(item, preventaNumero)}>
       <View style={styles.articuloItem}>
         <Text style={styles.articuloInfo}>{item.id}</Text>
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>
@@ -93,22 +84,19 @@ const Articulos = ({route}) => {
         placeholder="Buscar artículo..."
         onChangeText={(value) => setSearch(value)}
         value={search}
-        onIconPress={() => setFilteredArticulos([])} // Limpiar la lista al presionar la lupa
-        onSubmitEditing={() => setFilteredArticulos([])} // Limpiar la lista al confirmar la búsqueda
+        onIconPress={() => setFilteredArticulos([])}
+        onSubmitEditing={() => setFilteredArticulos([])}
       />
-      <FlatList
-        data={filteredArticulos}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-      />
+      <FlatList data={filteredArticulos} keyExtractor={(item) => item.id} renderItem={renderItem}  maxToRenderPerBatch={10} />
 
-      {/* Modal para agregar artículo */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <AddArticulo
             articulo={selectedArticulo}
             closeModal={closeModal}
-            preventaNumero= {preventaNumero}
+            guardarPreventa={guardarPreventa}
+            obtenerPreventa={obtenerPreventa}
+            limpiarPreventa={limpiarPreventa}
           />
         </View>
       </Modal>

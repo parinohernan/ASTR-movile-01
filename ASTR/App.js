@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StyleSheet } from 'react-native';
+
 import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
 import Clientes from './views/Clientes';
@@ -21,7 +22,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="Clientes">
         <Stack.Screen name="Home">
           {props => <Home />}
         </Stack.Screen>
