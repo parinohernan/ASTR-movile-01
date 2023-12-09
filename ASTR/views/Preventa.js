@@ -13,7 +13,6 @@ const Preventa = (props) => {
 
   /*busco los items que ya esten cargados en la preventa*/ 
   
-  // const carritoItemsReducido = carritos.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion }));
   const [carrito, setcarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
@@ -39,7 +38,7 @@ const Preventa = (props) => {
     const carritoData = await obtenerPreventa();
     const totalData = await calcularTotal();
 
-    setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion })));
+    setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal })));
     setTotal(totalData);
     setIsLoaded(true);
   };
@@ -51,8 +50,6 @@ const Preventa = (props) => {
   };
 
   console.log("PRV35. actual", carrito);
-  // const  items = contarItems();
-  // const total =  9999999 ;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [nota, setNota] = useState('');
   
@@ -83,6 +80,7 @@ const Preventa = (props) => {
       <View>
         <Text>{`Descripción: ${item.descripcion}`}</Text>
         <Text>{`Cantidad: ${item.cantidad}`}</Text>
+        <Text>{`$: ${String(item.precio)}`}</Text>
         <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
       </View>
     );
@@ -114,7 +112,7 @@ const Preventa = (props) => {
           <Icon name="minus" size={30} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity onPress={cargarDatos}>
-          <Icon name="rotate" size={30} color="#000" />
+          <Icon name="repeat" size={30} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity onPress={abrirModal}>
           <Icon name="sticky-note" size={30} color="#000" />

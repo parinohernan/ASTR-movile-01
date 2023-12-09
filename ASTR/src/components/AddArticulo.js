@@ -6,20 +6,20 @@ import { useNavigation } from '@react-navigation/native';
 const AddArticulo = ({route}) => {
   const {params} = route;
   const articulo = params.articulo;
-  console.log("addArt9. ",articulo);
-  const [cantidad, setCantidad] = useState(articulo.cantidad);
-  const [descuento, setDescuento] = useState(articulo.descuento);
-  const [precioFinal, setPrecioFinal] = useState(articulo.preciototal);
+  const [cantidad, setCantidad] = useState(0);
+  const [descuento, setDescuento] = useState(0);
+  const [precioFinal, setPrecioFinal] = useState(articulo.precioCostoMasImp.toFixed(2));
   const navigation = useNavigation();
-
+  const articuloConDetalles = {
+    ...articulo,
+    cantidad: parseInt(cantidad),
+    descuento: parseFloat(descuento),
+    precioFinal: parseFloat(precioFinal),
+  };
+  console.log("addArt19. ",articuloConDetalles);
+  
   const handleSave = async () => {
     // ... lógica para guardar el artículo en la preventa
-        const articuloConDetalles = {
-      ...articulo,
-      cantidad: parseInt(cantidad),
-      descuento: parseFloat(descuento),
-      precioFinal: parseFloat(precioFinal),
-    };
     // Obtener la preventa actualizada después de guardar el artículo
     const preventaActual = await obtenerPreventa();
     
@@ -29,6 +29,13 @@ const AddArticulo = ({route}) => {
     guardarPreventa(nuevaPreventa);
     navigation.goBack();
   };
+  
+  const handleCantidad = (text) => {
+    const cuenta = precioFinal * text;
+    console.log("Add37. preciofinal ..antes ",precioFinal, "x ",text," = ",cuenta);
+    setCantidad(text.replace(/[^0-9]/g, ''))
+    setPrecioFinal(cuenta)
+  }
 
   const handleCancel = () => {
     navigation.goBack();
@@ -36,30 +43,28 @@ const AddArticulo = ({route}) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.articuloInfo}>{articulo ? articulo.id : ''}</Text>
+      <Text style={styles.articuloInfo}>Codigo {articulo ? articulo.id : ''}</Text>
       <Text style={styles.articuloInfo}>{articulo ? articulo.descripcion : ''}</Text>
-
+      <Text style={styles.articuloInfo}> $ {articulo ? articulo.precioCostoMasImp.toFixed(2) : ''}</Text>
       <Text style={styles.label}>Cantidad:</Text>
-      <TextInput
+      {/* <TextInput
         style={styles.input}
-        onChangeText={(text) => setCantidad(text.replace(/[^0-9]/g, ''))}
-        value={cantidad}
+        onChangeText={(text) => handleCantidad(text)}
+        value={String(cantidad)}//comvierto a string
         keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Descuento:</Text>
+      /> */}
       <TextInput
         style={styles.input}
-        onChangeText={(text) => setDescuento(text.replace(/[^0-9.]/g, ''))}
-        value={descuento}
+        onChangeText={handleCantidad}
+        value={String(cantidad)}
         keyboardType="numeric"
       />
 
       <Text style={styles.label}>Precio total:</Text>
       <TextInput
         style={styles.input}
-        onChangeText={(text) => setPrecioFinal(text.replace(/[^0-9.]/g, ''))}
-        value={precioFinal}
+        // onChangeText={(text) => setPrecioFinal(text.replace(/[^0-9.]/g, ''))}
+        value={String(precioFinal)}
         keyboardType="numeric"
       />
 
