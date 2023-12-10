@@ -4,17 +4,18 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { Searchbar } from 'react-native-paper';
 import { getArticulos } from '../database/controllers/Articulos.Controler';
 import AddArticulo from '../src/components/AddArticulo';
-import { guardarPreventa, obtenerPreventa, limpiarPreventa } from "../src/utils/storageUtils";
+// import { guardarPreventa, obtenerPreventa, limpiarPreventa } from "../src/utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
+import { obtenerPreventa, guardarPreventa, limpiarPreventa } from "../src/utils/storageUtils"; //manejo del local storage
 
 const Articulos = ({ route }) => {
   const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa;
-  console.log('ART12 en la preventa nº ', preventaNumero, params);
+  console.log('ART14 en la preventa nº ', preventaNumero, params);
   const [search, setSearch] = useState('');
-  const [filteredArticulos, setFilteredArticulos] = useState(articulosList);
   const [articulosList, setArticulosList] = useState([]);
+  const [filteredArticulos, setFilteredArticulos] = useState(articulosList);
   const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState(null);
@@ -22,28 +23,37 @@ const Articulos = ({ route }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const seleccionados = await obtenerPreventa();
         const articulosFromDB = await getArticulos();
+        let codigosSeleccionados = seleccionados.map((e)=>{
+          return e.id;
+        })
+        console.log("seleccionados ",codigosSeleccionados);
+        setArticulosEnPreventa(codigosSeleccionados);
+        console.log("leng articulos", articulosFromDB.length);
+        setFilteredArticulos(articulosFromDB);
         setArticulosList(articulosFromDB);
       } catch (error) {
         console.error('Error al obtener o insertar articulos: ', error);
       }
     };
-
+    
     fetchData();
-  }, [preventaNumero]);
-
-  useEffect(() => {
-    if (articulosList.length > 0) {
-      const filtered = articulosList.filter(
+  }, []);
+  
+  const handleBuscar = (text) =>{
+    let filtered = articulosList;
+    setSearch(text)
+    if (articulosList.length > 0 ) {
+      console.log("filtro por ..." , text.toLowerCase(), "articulos :", articulosList.length);
+      filtered = articulosList.filter(
         (articulo) =>
-          articulo.id.toLowerCase().includes(search.toLowerCase()) ||
-          articulo.descripcion.toLowerCase().includes(search.toLowerCase())
+         articulo.id.toLowerCase().includes(text.toLowerCase()) ||
+         articulo.descripcion.toLowerCase().includes(text.toLowerCase())
       );
-      setFilteredArticulos(filtered);
-    } else {
-      setFilteredArticulos(articulosList);
+      setFilteredArticulos(filtered)
     }
-  }, [search, articulosList]);
+  }
 
   const handleCheck = (codigo) => {
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
@@ -60,7 +70,15 @@ const Articulos = ({ route }) => {
     setSelectedArticulo(null);
   };
 
-  // limpiarPreventa();
+  const estaElegido = (item) => {
+    if (articulosEnPreventa.includes(item)) {
+      console.log("MATCH", item);
+      return true
+    }
+    return false
+    // articulosEnPreventa.includes(item)
+  }
+ 
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => openModal(item, preventaNumero)}>
       <View style={styles.articuloItem}>
@@ -74,7 +92,7 @@ const Articulos = ({ route }) => {
           <Icon
             name="check"
             size={20}
-            color={articulosEnPreventa.includes(item.id) ? 'blue' : '#fff'}
+            color={estaElegido(item.id) ? 'blue' : '#fff'}
           />
         </TouchableOpacity>
       </View>
@@ -85,7 +103,7 @@ const Articulos = ({ route }) => {
     <View style={styles.container}>
       <Searchbar
         placeholder="Buscar artículo..."
-        onChangeText={(value) => setSearch(value)}
+        onChangeText={(value) => handleBuscar(value)}
         value={search}
         onIconPress={() => setFilteredArticulos([])}
         onSubmitEditing={() => setFilteredArticulos([])}

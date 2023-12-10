@@ -8,7 +8,7 @@ const guardarPreventa = async (preventa) => {
     try {
       if (preventa !== null && preventa !== undefined) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));
-        console.log('Preventa guardada con éxito');
+        // console.log('Preventa guardada con éxito');
       } else {
         console.error('Error: El valor de la preventa es null o undefined');
       }
@@ -61,20 +61,21 @@ const contarItems = async () => {
   
  // Ccalcula el total
 const calcularTotal = async () => {
+    // console.log("calculo total preventa ")
+    let total = 0;
     try {
       const preventa = await obtenerPreventa();
-      
+    //   console.log("calculo precioFinal preventa ",preventa);
       // Verifica si la preventa es un array antes de contar los elementos
-      if (Array.isArray(preventa)) {
-        const cantidadItems = preventa.length;
-        console.log('Cantidad de items en la preventa:', cantidadItems);
-        return cantidadItems;
-      } else {
-        console.log('La preventa no es un array válido.');
-        return 0; // Puedes devolver 0 o manejarlo de acuerdo a tus necesidades.
-      }
+     for (let i = 0; i < preventa.length; i++) {
+         const e = preventa[i]; 
+         console.log("item ", e.precioFinal);
+        total= total + e.precioFinal;
+     }
+    return total;
+      
     } catch (error) {
-      console.error('Error al contar los items de la preventa:', error);
+      console.error('Error al calcular total de la preventa:', error);
       throw error;
     }
   }; 

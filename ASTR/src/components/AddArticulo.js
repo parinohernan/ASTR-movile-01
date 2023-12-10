@@ -25,7 +25,7 @@ const AddArticulo = ({route}) => {
     
     // Actualizar la preventa con el nuevo artículo
     const nuevaPreventa = [...preventaActual, articuloConDetalles];
-    console.log("Add28. nueva prev", nuevaPreventa);
+    // console.log("Add28. nueva prev", nuevaPreventa);
     guardarPreventa(nuevaPreventa);
     navigation.goBack();
   };
