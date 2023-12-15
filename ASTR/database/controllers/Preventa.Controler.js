@@ -20,21 +20,21 @@ const deletePreventas = () => {
     tx.executeSql('DELETE FROM preventaCabeza', [], () => console.log('Datos prev cabeza eliminados'), (_, error) => console.log('Error al eliminar los cabeza', error));
     }; 
 
-async function nextPreventa() {
-  
-    console.log("Prev.Cont36 next preventa, : 100");
-    return 100
+function nextPreventa() {
+    let n= 101;
+    console.log("Prev.Cont25 siguiente preventa, : ", n);
+    return n
 }
 
 //grabara la cabeza de la preventa del storage en la BDD
 const grabarCabezaPreventaEnBDD = async (numero, nota, cliente) => {
-    console.log('PrvControler41. grabando cabeza en la bdd numero, cliente:', numero, nota, cliente);
+    console.log('PrvControler31. grabando cabeza en la bdd numero, cliente:', numero, nota, cliente);
     
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             // Insertar en la tabla preventaCabeza
             tx.executeSql(
-                'INSERT INTO preventaCabeza (numero, clienteId, nota) VALUES (?, ?, ?)',
+                'INSERT INTO preventaCabeza (id, cliente, observacion) VALUES (?, ?, ?)',
                 [numero, cliente.id, nota],
                 (_, cabezaResult) => {
                     console.log('Cabeza insertada con ID:', cabezaResult.insertId);
@@ -51,7 +51,7 @@ const grabarCabezaPreventaEnBDD = async (numero, nota, cliente) => {
 
 // Grabalos items de la preventa del storage en la BDD
 const grabarItemsPreventaEnBDD = async (numero, items) => {
-    console.log('PrvControler41. grabando items en la bdd para la cabeza ID:', numero);
+    console.log('PrvControler51. grabando items en la bdd para la cabeza ID:', numero);
     
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -75,10 +75,14 @@ const grabarItemsPreventaEnBDD = async (numero, items) => {
 };
 
 const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
+    if (items.length < 1) {
+        console.error("no tenes item cargado");
+        return
+    }
     try {
         await grabarCabezaPreventaEnBDD(numero, nota, cliente);
-        await grabarItemsPreventaEnBDD(numero, items);
-        console.log('PrvControler41. grabado en la bdd numero, cliente, cuantos items:', numero, nota, cliente, items[0]);
+        // await grabarItemsPreventaEnBDD(numero, items);
+        console.log('PrvControler81. grabado en la bdd CABEZA numero, nota, cliente, primer item:', numero, nota, cliente, items[0]);
     } catch (error) {
         console.error('Error al grabar preventa en la base de datos:', error);
         throw error;

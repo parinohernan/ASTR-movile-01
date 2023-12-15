@@ -1,0 +1,6 @@
+un avez tenemos la preventa creada banos a grabar a la bddlogal sqlite
+
+1. click en grabar.
+    .busca el numero de la prebenta
+    .va al controller gabar prebentaen BDD con los items el numero nota, cliente.
+        .graba la cabeza.

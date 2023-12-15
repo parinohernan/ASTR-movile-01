@@ -23,7 +23,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Clientes">
+      <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home">
           {props => <Home />}
         </Stack.Screen>

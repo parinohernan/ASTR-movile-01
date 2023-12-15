@@ -32,8 +32,9 @@ const Configurar = () => {
     // } else {
     //   Alert.alert('Error', 'Completa todos los campos antes de guardar.');
     // }
-  const handleTablas =  () => {
-    console.log("tablas en BDD: ", getTables());
+  const handleTablas =   () => {
+    console.log("tablas en BDD: ", getTables())
+    
   };
   const handleCancelar = () => {
     // Implementa la lógica para cancelar la configuración
