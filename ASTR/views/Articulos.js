@@ -4,9 +4,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { Searchbar } from 'react-native-paper';
 import { getArticulos } from '../database/controllers/Articulos.Controler';
 import AddArticulo from '../src/components/AddArticulo';
-// import { guardarPreventa, obtenerPreventa, limpiarPreventa } from "../src/utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
-import { obtenerPreventa, guardarPreventa, limpiarPreventa } from "../src/utils/storageUtils"; //manejo del local storage
+import { obtenerPreventa, guardarPreventa } from "../src/utils/storageUtils"; //manejo del local storage
 
 const Articulos = ({ route }) => {
   const navigation = useNavigation();
@@ -117,7 +116,6 @@ const Articulos = ({ route }) => {
             closeModal={closeModal}
             guardarPreventa={guardarPreventa}
             obtenerPreventa={obtenerPreventa}
-            limpiarPreventa={limpiarPreventa}
           />
         </View>
       </Modal>

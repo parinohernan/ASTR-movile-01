@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeArea
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { obtenerPreventa, calcularTotal, limpiarPreventa } from "../src/utils/storageUtils";
+import { nextPreventa, grabarPreventaEnBDD } from '../database/controllers/Preventa.Controler';
 
 const Preventa = (props) => {
   const {route} = props;
@@ -43,13 +44,28 @@ const Preventa = (props) => {
     setIsLoaded(true);
   };
 
+  const grabarPreventa = async () => {
+   
+    /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
+    /* todos los errores deben estar controlado */
+    /* preparo la cabeza */
+    const numero = await nextPreventa();
+    // const cliente = cliente.id;
+    const preventaItems = carrito;
+    await grabarPreventaEnBDD (numero, "esto es un comentario", cliente.id, preventaItems);
+    // despues tengo que limpiar la preventa y talvez actualizar el numero de preventa
+    // await limpiarLaPreventa();
+    
+  };
+
   const limpiarLaPreventa = async () => {
     
     await limpiarPreventa();
     await cargarDatos();
+
   };
 
-  console.log("PRV35. actual", carrito);
+  console.log("PRV67. actual", carrito);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [nota, setNota] = useState('');
   
@@ -102,7 +118,7 @@ const Preventa = (props) => {
       <View style={styles.separator} />
 
       <View style={styles.iconBar}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={grabarPreventa}>
           <Icon name="save" size={30} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity onPress={abrirArticulos}>

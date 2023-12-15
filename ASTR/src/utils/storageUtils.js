@@ -5,6 +5,7 @@ const STORAGE_KEY = '@MyApp:PreventaData';
 
 // Guardar una preventa en AsyncStorage
 const guardarPreventa = async (preventa) => {
+    console.log("grabando ",preventa);
     try {
       if (preventa !== null && preventa !== undefined) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));

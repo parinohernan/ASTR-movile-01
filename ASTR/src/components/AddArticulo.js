@@ -7,32 +7,57 @@ const AddArticulo = ({route}) => {
   const {params} = route;
   const articulo = params.articulo;
   const [cantidad, setCantidad] = useState(0);
-  const [descuento, setDescuento] = useState(0);
-  const [precioFinal, setPrecioFinal] = useState(articulo.precioCostoMasImp.toFixed(2));
+  // const [descuento, setDescuento] = useState(0);
+  const [precioFinal, setPrecioFinal] = useState(0); //useState(articulo.precioCostoMasImp.toFixed(2))
   const navigation = useNavigation();
   const articuloConDetalles = {
     ...articulo,
     cantidad: parseInt(cantidad),
-    descuento: parseFloat(descuento),
+    // descuento: parseFloat(descuento),
     precioFinal: parseFloat(precioFinal),
   };
+
+  const estaCargado= (codigo) =>{
+    const preventaActual = obtenerPreventa();
+    for (let i = 0; i < preventaActual.length; i++) {
+      const e = preventaActual[i];
+      if (e.id == articulo.id) {
+        setCantidad(e.cantidad);
+        setPrecioFinal(e.precioFinal);
+        console.log("ya estaba cargado");
+        return true;
+      }
+    }
+    return false
+  }
+
   console.log("addArt19. ",articuloConDetalles);
   
   const handleSave = async () => {
     // ... lógica para guardar el artículo en la preventa
     // Obtener la preventa actualizada después de guardar el artículo
     const preventaActual = await obtenerPreventa();
-    
-    // Actualizar la preventa con el nuevo artículo
+    for (let i = 0; i < preventaActual.length; i++) {
+      const e = preventaActual[i];
+      if (e.id == articulo.id) { //actualiza un articulo ya existente
+        preventaActual[i].cantidad=cantidad;
+        preventaActual[i].precioFinal=precioFinal;
+        console.log("gravo la preventa con el articulo modificado ",precioFinal);
+        guardarPreventa(preventaActual);
+        navigation.goBack();
+        return;
+      } 
+    }// Actualizar la preventa con el nuevo artículo
     const nuevaPreventa = [...preventaActual, articuloConDetalles];
-    // console.log("Add28. nueva prev", nuevaPreventa);
+    console.log("Add50. nueva prev", nuevaPreventa);
     guardarPreventa(nuevaPreventa);
     navigation.goBack();
+    return
   };
   
   const handleCantidad = (text) => {
-    const cuenta = precioFinal * text;
-    console.log("Add37. preciofinal ..antes ",precioFinal, "x ",text," = ",cuenta);
+    const cuenta = (articulo.precioCostoMasImp.toFixed(2)) * text;
+    console.log("Add37. preciofinal ..antes ",(articulo.precioCostoMasImp.toFixed(2)), "x ",text," = ",cuenta);
     setCantidad(text.replace(/[^0-9]/g, ''))
     setPrecioFinal(cuenta)
   }
@@ -47,12 +72,7 @@ const AddArticulo = ({route}) => {
       <Text style={styles.articuloInfo}>{articulo ? articulo.descripcion : ''}</Text>
       <Text style={styles.articuloInfo}> $ {articulo ? articulo.precioCostoMasImp.toFixed(2) : ''}</Text>
       <Text style={styles.label}>Cantidad:</Text>
-      {/* <TextInput
-        style={styles.input}
-        onChangeText={(text) => handleCantidad(text)}
-        value={String(cantidad)}//comvierto a string
-        keyboardType="numeric"
-      /> */}
+      
       <TextInput
         style={styles.input}
         onChangeText={handleCantidad}
@@ -63,7 +83,7 @@ const AddArticulo = ({route}) => {
       <Text style={styles.label}>Precio total:</Text>
       <TextInput
         style={styles.input}
-        // onChangeText={(text) => setPrecioFinal(text.replace(/[^0-9.]/g, ''))}
+        onChangeText={(text) => setPrecioFinal(text.replace(/[^0-9.]/g, ''))}
         value={String(precioFinal)}
         keyboardType="numeric"
       />

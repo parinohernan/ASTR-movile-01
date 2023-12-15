@@ -20,23 +20,71 @@ const deletePreventas = () => {
     tx.executeSql('DELETE FROM preventaCabeza', [], () => console.log('Datos prev cabeza eliminados'), (_, error) => console.log('Error al eliminar los cabeza', error));
     }; 
 
-    async function nextPreventa() {
-        // return new Promise((resolve, reject) => {
-        //   db.transaction((tx) => {
-        //     tx.executeSql('SELECT MAX(id) AS maxNumero FROM preventas', [], (_, result) => {
-        //       const maxNumero = result.rows.item(0).maxNumero;
-        //       const siguienteNumero = maxNumero !== null ? maxNumero + 1 : 1;
-        //       resolve(siguienteNumero);
-        //     }, (_, error) => {
-        //       console.error('Error al obtener el siguiente número de preventa:', error);
-        //       reject(error);
-        //     });
-        //   });
-        // });
-        console.log("Prev.Cont36 next preventa, : 100");
-        return 100
-      }
-      
+async function nextPreventa() {
+  
+    console.log("Prev.Cont36 next preventa, : 100");
+    return 100
+}
+
+//grabara la cabeza de la preventa del storage en la BDD
+const grabarCabezaPreventaEnBDD = async (numero, nota, cliente) => {
+    console.log('PrvControler41. grabando cabeza en la bdd numero, cliente:', numero, nota, cliente);
+    
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            // Insertar en la tabla preventaCabeza
+            tx.executeSql(
+                'INSERT INTO preventaCabeza (numero, clienteId, nota) VALUES (?, ?, ?)',
+                [numero, cliente.id, nota],
+                (_, cabezaResult) => {
+                    console.log('Cabeza insertada con ID:', cabezaResult.insertId);
+                    resolve(cabezaResult.insertId);
+                },
+                (_, error) => {
+                    console.error('Error al insertar cabeza:', error);
+                    reject(error);
+                }
+            );
+        });
+    });
+};
+
+// Grabalos items de la preventa del storage en la BDD
+const grabarItemsPreventaEnBDD = async (numero, items) => {
+    console.log('PrvControler41. grabando items en la bdd para la cabeza ID:', numero);
+    
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            // Insertar en la tabla preventaItem
+            items.forEach((item) => {
+                tx.executeSql(
+                    'INSERT INTO preventaItem (numero, cantidad, descripcion, precio) VALUES (?, ?, ?, ?)',
+                    [numero, item.cantidad, item.descripcion, item.precio],
+                    (_, itemResult) => {
+                        console.log('Item insertado con ID:', itemResult.insertId);
+                    },
+                    (_, error) => {
+                        console.error('Error al insertar item:', error);
+                        reject(error);
+                    }
+                );
+            });
+            resolve();
+        });
+    });
+};
+
+const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
+    try {
+        await grabarCabezaPreventaEnBDD(numero, nota, cliente);
+        await grabarItemsPreventaEnBDD(numero, items);
+        console.log('PrvControler41. grabado en la bdd numero, cliente, cuantos items:', numero, nota, cliente, items[0]);
+    } catch (error) {
+        console.error('Error al grabar preventa en la base de datos:', error);
+        throw error;
+    }
+};
+    
 
 const getPreventas = async () => {
 return new Promise((resolve, reject) => {
@@ -51,4 +99,4 @@ return new Promise((resolve, reject) => {
 });
 };
 
-export {newPreventa, getPreventas, syncPreventas, deletePreventas, nextPreventa}
+export {newPreventa, getPreventas, syncPreventas, deletePreventas, nextPreventa, grabarPreventaEnBDD}
