@@ -38,7 +38,7 @@ const Preventa = (props) => {
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventa();
     const totalData = await calcularTotal();
-    console.log("siguiente preventa ", nextPreventa());
+    // console.log("siguiente preventa ", nextPreventa());
     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal })));
     setTotal(totalData);
     setIsLoaded(true);
