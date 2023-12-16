@@ -14,9 +14,6 @@ const deletePreventas = () => {
     tx.executeSql('DELETE FROM preventaCabeza', [], () => console.log('Datos prev cabeza eliminados'), (_, error) => console.log('Error al eliminar los cabeza', error));
     }; 
 
-
-
-
 function nextPreventa() {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -45,9 +42,6 @@ function nextPreventa() {
         });
     });
 }
-    
-    
-
 
 //grabara la cabeza de la preventa del storage en la BDD
 const grabarCabezaPreventaEnBDD = async (numero, nota, cliente) => {

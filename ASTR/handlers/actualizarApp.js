@@ -10,7 +10,7 @@ const actualizarVendedores = async () => {
       const response = await axios.get('http://192.168.1.111:3000/vendedores');
       console.log("actu vende response",response.data);
       const data = response.data;
-    //   await initDatabase();
+      //await initDatabase();
       // Inserta los usuarios desde la API a la base de datos
       await insertUsuariosFromAPI(data);
     } catch (error) {

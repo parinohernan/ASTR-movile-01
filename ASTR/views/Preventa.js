@@ -19,50 +19,42 @@ const Preventa = (props) => {
   const [total, setTotal] = useState(9999999);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     const carritoData = await obtenerPreventa();
-  //     // const itemsCantidad = await contarItems(); 
-  //     const totalData = await calcularTotal();
+  useEffect(() => {
+    const loadData = async () => {
+      const carritoData = await obtenerPreventa();
+      
+      const totalData = await calcularTotal();
+      setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion })));
+      setCantidadItems (carritoData.length);
+      setTotal(totalData);
+      // console.log("30 carrito reducido ", carrito);
+      
+    };
 
-  //     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion })));
-  //     setCantidadItems (itemsCantidad);
-  //     setTotal(totalData);
-  //     console.log("30 carrito reducido ", carrito);
-  //     // Puedes realizar otras operaciones con los datos obtenidos si es necesario
-  //   };
-
-  //   loadData();
-  // }, []); 
+    loadData();
+  }, []); 
 
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventa();
     const totalData = await calcularTotal();
-    // console.log("siguiente preventa ", nextPreventa());
+    console.log("siguiente preventa ", nextPreventa());
     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal })));
     setTotal(totalData);
     setIsLoaded(true);
   };
 
   const grabarPreventa = async () => {
-   
     /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
     /* todos los errores deben estar controlado */
-    /* preparo la cabeza */
     const numero = await nextPreventa();
-    // const cliente = cliente.id;
     const preventaItems = carrito;
-    await grabarPreventaEnBDD (numero, "esto es un comentario", cliente.id, preventaItems);
-    // despues tengo que limpiar la preventa y talvez actualizar el numero de preventa
-    // await limpiarLaPreventa();
-    
+    await grabarPreventaEnBDD (numero, "esto es un comentario", cliente.id, preventaItems);    
   };
 
   const limpiarLaPreventa = async () => {
-    
+    // esta funcion se usa solo para test
     await limpiarPreventa();
     await cargarDatos();
-
   };
 
   console.log("PRV67. actual", carrito);
@@ -91,77 +83,77 @@ const Preventa = (props) => {
   };
 
  
-    // Renderiza cada elemento del array reducido
-    const renderItem = ({ item }) => (
-      <View>
-        <Text>{`Descripción: ${item.descripcion}`}</Text>
-        <Text>{`Cantidad: ${item.cantidad}`}</Text>
-        <Text>{`$: ${String(item.precio)}`}</Text>
-        <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
-      </View>
-    );
-  
-    return (
-      <View style={styles.container}>
-    <SafeAreaView style={styles.container}>
-      <View style={styles.rowContainer}>
-        <Text>Código: {cliente.id}</Text>
-        <Text>Nombre: {cliente.descripcion}</Text>
-        <Text>Saldo: {cliente.importeDeuda}</Text>
-      </View>
-      <View style={styles.separator} />
+  // Renderiza cada elemento del array reducido
+  const renderItem = ({ item }) => (
+    <View>
+      <Text>{`Descripción: ${item.descripcion}`}</Text>
+      <Text>{`Cantidad: ${item.cantidad}`}</Text>
+      <Text>{`$: ${String(item.precio)}`}</Text>
+      <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
+    </View>
+  );
 
-      <View style={styles.rowContainer}>
-        <Text>Items: {carrito.length.toString()}</Text>
-        <Text>Total: {total}</Text>
-      </View> 
-      <View style={styles.separator} />
+  return (
+    <View style={styles.container}>
+  <SafeAreaView style={styles.container}>
+    <View style={styles.rowContainer}>
+      <Text>Código: {cliente.id}</Text>
+      <Text>Nombre: {cliente.descripcion}</Text>
+      <Text>Saldo: {cliente.importeDeuda}</Text>
+    </View>
+    <View style={styles.separator} />
 
-      <View style={styles.iconBar}>
-        <TouchableOpacity onPress={grabarPreventa}>
-          <Icon name="save" size={30} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={abrirArticulos}>
-          <Icon name="plus" size={30} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={limpiarLaPreventa}>
-          <Icon name="minus" size={30} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={cargarDatos}>
-          <Icon name="repeat" size={30} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={abrirModal}>
-          <Icon name="sticky-note" size={30} color="#000" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.separator} />
-      {carrito.length > 0 && 
-          <FlatList
-            data={carrito}
-            keyExtractor={(item, index) => index.toString()} // Puedes ajustar la clave según tus necesidades
-            renderItem={renderItem}
+    <View style={styles.rowContainer}>
+      <Text>Items: {carrito.length.toString()}</Text>
+      <Text>Total: {total}</Text>
+    </View> 
+    <View style={styles.separator} />
+
+    <View style={styles.iconBar}>
+      <TouchableOpacity onPress={grabarPreventa}>
+        <Icon name="save" size={30} color="#000" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={abrirArticulos}>
+        <Icon name="plus" size={30} color="#000" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={limpiarLaPreventa}>
+        <Icon name="minus" size={30} color="#000" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={cargarDatos}>
+        <Icon name="repeat" size={30} color="#000" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={abrirModal}>
+        <Icon name="sticky-note" size={30} color="#000" />
+      </TouchableOpacity>
+    </View>
+    <View style={styles.separator} />
+    {carrito.length > 0 && 
+        <FlatList
+          data={carrito}
+          keyExtractor={(item, index) => index.toString()} // Puedes ajustar la clave según tus necesidades
+          renderItem={renderItem}
+        />
+    }
+  </SafeAreaView>      
+      <Modal visible={isModalVisible} animationType="slide" transparent>
+      <View style={styles.modalContainer}>
+        <Text style={styles.modalTitle}>Escribir nota</Text>
+        <TextInput
+          style={styles.modalInput}
+          placeholder="Escribe una nota..."
+          value={nota}
+          onChangeText={setNota}
           />
-      }
-    </SafeAreaView>      
-        <Modal visible={isModalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Escribir nota</Text>
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Escribe una nota..."
-            value={nota}
-            onChangeText={setNota}
-            />
-          <View style={styles.modalButtonsContainer}>
-            <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-              <Text style={styles.modalButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-              <Text style={styles.modalButtonText}>Guardar</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalButtonsContainer}>
+          <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+            <Text style={styles.modalButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+            <Text style={styles.modalButtonText}>Guardar</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </View>
+    </Modal>
 
 </View>
   );

@@ -13,6 +13,7 @@ import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
 import Usuarios from './views/Usuarios';
 import AddArticulo from './src/components/AddArticulo';
+import ListaPreventas from './src/components/ListaPreventas';
 
 const Stack = createStackNavigator();
 
@@ -28,7 +29,7 @@ export default function App() {
           {props => <Home />}
         </Stack.Screen>
         <Stack.Screen name="Informes">
-          {props => <Informes />}
+          {props => <ListaPreventas />}
         </Stack.Screen>
         <Stack.Screen name="Sincronizar">
           {props => <Sincronizar />}

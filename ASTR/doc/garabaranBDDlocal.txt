@@ -5,5 +5,6 @@ un avez tenemos la preventa creada banos a grabar a la bddlogal sqlite
     .va al controller gabar preventa en BDD con los items el numero nota, cliente.
         .graba la cabeza. (numero, nota, cliente) agregar la fecha y la ubicacion del getPreventas
         .graba los items. (cambian algunos nombres de los campos)
-    .limpia la preventa actual
+    .limpia la preventa actual del storage
+    
 

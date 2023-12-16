@@ -1,0 +1,15 @@
+Prioridad de 1 al 5. 5 es mucha importancia.
+
+5- la vista articulos cuando busca los incluidos recarga constantemente.
+
+1- la vista de preventa tiene que traer automaticamente la preventa en el localsotorage. ahora lo hace cuando doy click en el reload.
+
+4- no estamos creando ni guardando la nota de observaciones
+
+5- no esta permitiendo eliminar o editar items ya cargados en la preventa.
+
+
+
+
+
+
