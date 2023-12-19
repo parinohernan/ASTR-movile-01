@@ -71,7 +71,9 @@ const renderItem = ({ item }) => (
       case 'Editar':
         // Lógica para editar el elemento seleccionado
         console.log("Lista73, c",selectedItem);
-        navigation.navigate('Preventa', { numeroPreventa: selectedItem.numero , clienteCodigo: selectedItem.clienteCodigo });
+        const preventaNumero = selectedItem.numero;
+        const cliente = selectedItem.clienteCodigo;
+        navigation.navigate('Preventa', { preventaNumero, cliente });
         break;
       case 'Cancelar':
         closeModal();

@@ -2,23 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { obtenerPreventa, calcularTotal, limpiarPreventa } from "../src/utils/storageUtils";
+import { obtenerPreventa, preventaDesdeBDD, calcularTotal, limpiarPreventa } from "../src/utils/storageUtils";
 import { nextPreventa, grabarPreventaEnBDD } from '../database/controllers/Preventa.Controler';
+import { getClientes } from '../database/controllers/Clientes.Controler';
 
 const Preventa = (props) => {
   const {route} = props;
   const {params} = route;
-  const {cliente, preventaNumero} = params;
-  console.log("prepreventa cliente y nunmero PRF",params.cliente.id, params.preventaNumero);
+  let {cliente, preventaNumero} = params;
+  
+  
+  
   const navigation = useNavigation();
-
+  
   /*busco los items que ya esten cargados en la preventa*/ 
   
   const [carrito, setcarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [dCliente, setDCliente] = useState( cliente )
 
+  const siEstoyEditando = async () => {
+    const  clientes = await getClientes();
+    console.log("estoy editando la preventa ");
+    clientes.forEach(element => {
+        if (element.id == cliente) {
+          cliente = element;
+        } 
+    });
+    console.log("cliente rescatado =" ,cliente.descripcion);
+    // await preventaDesdeBDD(preventaNumero);//busca la preventa en la BDD y la carga al local storage
+  }
+  
+  
   useEffect(() => {
     const loadData = async () => {
       const carritoData = await obtenerPreventa();
@@ -28,9 +45,12 @@ const Preventa = (props) => {
       setCantidadItems (carritoData.length);
       setTotal(totalData);
       // console.log("30 carrito reducido ", carrito);
-      
+      if (typeof (cliente) == "string") {
+        // solo cuando edito una preventa
+        await siEstoyEditando();
+      }
+      setDCliente(cliente);
     };
-
     loadData();
   }, []); 
 
@@ -97,9 +117,9 @@ const Preventa = (props) => {
     <View style={styles.container}>
   <SafeAreaView style={styles.container}>
     <View style={styles.rowContainer}>
-      <Text>Código: {cliente.id}</Text>
-      <Text>Nombre: {cliente.descripcion}</Text>
-      <Text>Saldo: {cliente.importeDeuda}</Text>
+      <Text>Código: {dCliente.id}</Text>
+      <Text>Nombre: {dCliente.descripcion}</Text>
+      <Text>Saldo: {dCliente.importeDeuda}</Text>
     </View>
     <View style={styles.separator} />
 

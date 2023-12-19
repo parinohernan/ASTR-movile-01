@@ -1,5 +1,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '../../database/database';
 
 const STORAGE_KEY = '@MyApp:PreventaData';
 
@@ -37,6 +38,37 @@ const obtenerPreventa = async () => {
         console.error('Error al obtener la preventa desde AsyncStorage:', error);
         throw error;
     }
+};
+
+// Busca la prevenata en la BDD y la almacena en AsyncStorage
+const preventaDesdeBDD = async (numeroPreventa) => {
+  try {
+    // const preventa = await limpiarPreventa();
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'SELECT * FROM preventaCabeza WHERE id = ?',
+          [numeroPreventa],
+          (_, result) => {
+            const preventaBDD = result.rows.raw(); // Obtén la preventa directamente desde la base de datos
+            console.log('Preventa cargada desde la base de datos:', preventaBDD);
+
+            // Guarda la preventa en AsyncStorage
+            guardarPreventa(preventaBDD)
+              .then(() => resolve(preventaBDD))
+              .catch((error) => reject(error));
+          },
+          (_, error) => {
+            console.error('Error al cargar preventa desde la base de datos:', error);
+            reject(error);
+          }
+        );
+      });
+    });
+  } catch (error) {
+    console.error('Error en preventaDesdeBDD:', error);
+    throw error;
+  }
 };
 
 // Cuenta los items de preventa almacenada en AsyncStorage
@@ -91,4 +123,4 @@ const limpiarPreventa = async () => {
   }
 };
 
-export { guardarPreventa, obtenerPreventa, limpiarPreventa, contarItems, calcularTotal };
+export { guardarPreventa, preventaDesdeBDD, obtenerPreventa, limpiarPreventa, contarItems, calcularTotal };
