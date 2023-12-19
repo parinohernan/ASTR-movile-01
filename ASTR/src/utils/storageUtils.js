@@ -19,7 +19,6 @@ const guardarPreventa = async (preventa) => {
     }
   };
   
-
 // Obtener la preventa almacenada en AsyncStorage
 const obtenerPreventa = async () => {
     try {

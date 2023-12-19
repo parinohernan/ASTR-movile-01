@@ -22,9 +22,9 @@ const Preventa = (props) => {
   useEffect(() => {
     const loadData = async () => {
       const carritoData = await obtenerPreventa();
-      
+      console.log("25carritodata",carritoData[0]);
       const totalData = await calcularTotal();
-      setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion })));
+      setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, codigo: item.id })));
       setCantidadItems (carritoData.length);
       setTotal(totalData);
       // console.log("30 carrito reducido ", carrito);
@@ -38,7 +38,7 @@ const Preventa = (props) => {
     const carritoData = await obtenerPreventa();
     const totalData = await calcularTotal();
     console.log("siguiente preventa ", nextPreventa());
-    setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal })));
+    setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal, codigo: item.id })));
     setTotal(totalData);
     setIsLoaded(true);
   };
@@ -48,7 +48,7 @@ const Preventa = (props) => {
     /* todos los errores deben estar controlado */
     const numero = await nextPreventa();
     const preventaItems = carrito;
-    await grabarPreventaEnBDD (numero, "esto es un comentario", cliente.id, preventaItems);    
+    await grabarPreventaEnBDD (numero, nota , cliente.id, preventaItems);    
   };
 
   const limpiarLaPreventa = async () => {

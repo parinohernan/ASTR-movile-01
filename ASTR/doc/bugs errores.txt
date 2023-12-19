@@ -6,7 +6,7 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 4- no estamos creando ni guardando la nota de observaciones
 
-5- no esta permitiendo eliminar o editar items ya cargados en la preventa.
+5- no esta permitiendo eliminar o editar items ya cargados en la preventa. creo que si lo edita bien
 
 
 

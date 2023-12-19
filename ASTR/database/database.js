@@ -40,7 +40,7 @@ const initDatabase = () => {
     );
     // Crea la tabla preventaItem si no existe
     tx.executeSql(
-      'CREATE TABLE IF NOT EXISTS preventaItem (id INTEGER, articulo TEXT, cantidad TEXT, importe INTEGER, FOREIGN KEY (id) REFERENCES preventaCabeza(id))',
+      'CREATE TABLE IF NOT EXISTS preventaItem (id INTEGER PRIMARY KEY AUTOINCREMENT, idPreventa INTEGER, articulo TEXT, cantidad TEXT, importe INTEGER, FOREIGN KEY (id) REFERENCES preventaCabeza(id))',
       [],
       () => console.log('Tabla preventaItem creada exitosamente'),
       (_, error) => console.log('Error al crear la tabla preventaItem', error)

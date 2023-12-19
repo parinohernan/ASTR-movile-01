@@ -7,7 +7,7 @@ import { insertClientesFromAPI } from '../database/controllers/Clientes.Controle
 const actualizarVendedores = async () => {
     console.log("conectando...");
     try {
-      const response = await axios.get('http://192.168.1.111:3000/vendedores');
+      const response = await axios.get('http://192.168.1.110:3000/vendedores');
       console.log("actu vende response",response.data);
       const data = response.data;
       //await initDatabase();
@@ -20,7 +20,7 @@ const actualizarVendedores = async () => {
 
 const actualizarClientes = async () => {
 try {
-    const response = await axios.get('http://192.168.1.111:3000/clientes');
+    const response = await axios.get('http://192.168.1.110:3000/clientes');
     console.log("response");
     const data = response.data;
     // await initDatabase();
@@ -33,7 +33,7 @@ try {
 
 const actualizarArticulos = async () => {
     try {
-        const response = await axios.get('http://192.168.1.111:3000/articulos');
+        const response = await axios.get('http://192.168.1.110:3000/articulos');
         console.log("response");
         const data = response.data;
         // await initDatabase();
