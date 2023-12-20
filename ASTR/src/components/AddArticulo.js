@@ -56,8 +56,8 @@ const AddArticulo = ({route}) => {
   };
   
   const handleCantidad = (text) => {
-    const cuenta = (articulo.precioCostoMasImp.toFixed(2)) * text;
-    console.log("Add37. preciofinal ..antes ",(articulo.precioCostoMasImp.toFixed(2)), "x ",text," = ",cuenta);
+    const cuenta = (articulo.precio.toFixed(2)) * text; //talves no deberia redondear
+    console.log("Add37. preciofinal ..antes ",(articulo.precio.toFixed(2)), "x ",text," = ",cuenta);
     setCantidad(text.replace(/[^0-9]/g, ''))
     setPrecioFinal(cuenta)
   }
@@ -70,7 +70,7 @@ const AddArticulo = ({route}) => {
     <View style={styles.container}>
       <Text style={styles.articuloInfo}>Codigo {articulo ? articulo.id : ''}</Text>
       <Text style={styles.articuloInfo}>{articulo ? articulo.descripcion : ''}</Text>
-      <Text style={styles.articuloInfo}> $ {articulo ? articulo.precioCostoMasImp.toFixed(2) : ''}</Text>
+      <Text style={styles.articuloInfo}> $ {articulo ? articulo.precio.toFixed(2) : ''}</Text>
       <Text style={styles.label}>Cantidad:</Text>
       
       <TextInput

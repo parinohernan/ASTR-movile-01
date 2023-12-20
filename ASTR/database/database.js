@@ -26,7 +26,7 @@ const initDatabase = () => {
     );
     // Crea la tabla articulos si no existe
     tx.executeSql(
-      'CREATE TABLE IF NOT EXISTS articulos (id TEXT PRIMARY KEY, descripcion TEXT, existencia INTEGER, existenciaMinima INTEGER, existenciaMaxima INTEGER, precioCostoMasImp REAL, porcentajeIVA1 INTEGER, porcentajeIVA2 INTEGER, precioCosto REAL, unidadVenta TEXT, lista1 REAL, lista2 REAL, lista3 REAL, lista4 REAL, lista5 REAL, proveedorCodigo TEXT, rubroCodigo TEXT, peso REAL, siempreSeDescarga BOOLEAN, iva2SobreNeto BOOLEAN, porcentajeVendedor REAL, descuentoXCantidad TEXT)',
+      'CREATE TABLE IF NOT EXISTS articulos (id TEXT PRIMARY KEY, descripcion TEXT, existencia INTEGER, precio REAL, unidadVenta TEXT)',
       [],
       () => console.log('Tabla articulos creada exitosamente'),
       (_, error) => console.log('Error al crear la tabla articulos', error)

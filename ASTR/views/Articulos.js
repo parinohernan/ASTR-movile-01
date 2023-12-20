@@ -85,7 +85,7 @@ const Articulos = ({ route }) => {
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>
         <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
         <Text style={styles.articuloInfo}>
-          Precio: ${(item.precioCostoMasImp * (1 + item.lista1 / 100)).toFixed(2)}
+          Precio: ${item.precio.toFixed(2)}
         </Text>
         <TouchableOpacity onPress={() => handleCheck(item.id)}>
           <Icon
