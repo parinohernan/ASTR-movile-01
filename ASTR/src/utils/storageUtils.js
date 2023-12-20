@@ -20,6 +20,12 @@ const guardarPreventa = async (preventa) => {
     }
   };
   
+  const guardarPreventaEditando = async (preventa) => {
+    console.log("transformar ",preventa);
+    const preventaMapeada = preventa;
+    guardarPreventa(preventaMapeada);
+  };
+
 // Obtener la preventa almacenada en AsyncStorage
 const obtenerPreventa = async () => {
     try {
@@ -42,24 +48,24 @@ const obtenerPreventa = async () => {
 
 // Busca la prevenata en la BDD y la almacena en AsyncStorage
 const preventaDesdeBDD = async (numeroPreventa) => {
+  console.log("STORAGE45 numero preven", numeroPreventa);
   try {
-    // const preventa = await limpiarPreventa();
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
-          'SELECT * FROM preventaCabeza WHERE id = ?',
+          'SELECT * FROM preventaItem WHERE idPreventa = ?',
           [numeroPreventa],
           (_, result) => {
-            const preventaBDD = result.rows.raw(); // Obtén la preventa directamente desde la base de datos
-            console.log('Preventa cargada desde la base de datos:', preventaBDD);
-
-            // Guarda la preventa en AsyncStorage
-            guardarPreventa(preventaBDD)
-              .then(() => resolve(preventaBDD))
-              .catch((error) => reject(error));
+            const preventaItemsBDD = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              preventaItemsBDD.push(result.rows.item(i));
+            }
+            console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
+            guardarPreventaEditando(preventaItemsBDD);
+            resolve(preventaItemsBDD);
           },
           (_, error) => {
-            console.error('Error al cargar preventa desde la base de datos:', error);
+            console.error('Error al cargar items de preventa desde la base de datos:', error);
             reject(error);
           }
         );
@@ -70,6 +76,8 @@ const preventaDesdeBDD = async (numeroPreventa) => {
     throw error;
   }
 };
+
+
 
 // Cuenta los items de preventa almacenada en AsyncStorage
 const contarItems = async () => {

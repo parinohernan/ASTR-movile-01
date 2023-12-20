@@ -31,8 +31,8 @@ const Preventa = (props) => {
           cliente = element;
         } 
     });
+    await preventaDesdeBDD(preventaNumero);//busca la preventa en la BDD y la carga al local storage
     console.log("cliente rescatado =" ,cliente.descripcion);
-    // await preventaDesdeBDD(preventaNumero);//busca la preventa en la BDD y la carga al local storage
   }
   
   
