@@ -10,7 +10,7 @@ const Preventa = (props) => {
   const {route} = props;
   const {params} = route;
   let {cliente, preventaNumero} = params;
-  
+  console.log("PRV13 prevnumero y cliente",preventaNumero,cliente);
   
   
   const navigation = useNavigation();
@@ -20,7 +20,7 @@ const Preventa = (props) => {
   const [carrito, setcarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // const [isLoaded, setIsLoaded] = useState(false);
   const [dCliente, setDCliente] = useState( cliente )
 
   const siEstoyEditando = async () => {
@@ -36,20 +36,37 @@ const Preventa = (props) => {
   }
   
   
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const carritoData = await obtenerPreventa();
+  //     console.log("25carritodata",carritoData[0]);
+  //     const totalData = await calcularTotal();
+  //     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, codigo: item.id })));
+  //     setCantidadItems (carritoData.length);
+  //     setTotal(totalData);
+  //     // console.log("30 carrito reducido ", carrito);
+  //     if (typeof (cliente) == "string") {
+  //       // solo cuando edito una preventa
+  //       await siEstoyEditando();
+  //     }
+  //     setDCliente(cliente);
+  //   };
+  //   loadData();
+  // }, []); 
   useEffect(() => {
     const loadData = async () => {
-      const carritoData = await obtenerPreventa();
-      console.log("25carritodata",carritoData[0]);
-      const totalData = await calcularTotal();
-      setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, codigo: item.id })));
-      setCantidadItems (carritoData.length);
-      setTotal(totalData);
-      // console.log("30 carrito reducido ", carrito);
       if (typeof (cliente) == "string") {
         // solo cuando edito una preventa
         await siEstoyEditando();
       }
+      const carritoData = await obtenerPreventa();
       setDCliente(cliente);
+      console.log("25carritodata",carritoData[0]);
+      const totalData = await calcularTotal();
+      setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id })));
+      setCantidadItems (carritoData.length);
+      setTotal(totalData);
+      // console.log("30 carrito reducido ", carrito);
     };
     loadData();
   }, []); 
@@ -60,7 +77,7 @@ const Preventa = (props) => {
     console.log("siguiente preventa ", nextPreventa());
     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal, codigo: item.id })));
     setTotal(totalData);
-    setIsLoaded(true);
+    // setIsLoaded(true);
   };
 
   const grabarPreventa = async () => {
@@ -74,10 +91,10 @@ const Preventa = (props) => {
   const limpiarLaPreventa = async () => {
     // esta funcion se usa solo para test
     await limpiarPreventa();
-    await cargarDatos();
+    // await cargarDatos();
   };
 
-  console.log("PRV67. actual", carrito);
+  // console.log("PRV80. actual", carrito);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [nota, setNota] = useState('');
   
@@ -107,7 +124,7 @@ const Preventa = (props) => {
   const renderItem = ({ item }) => (
     <View>
       <Text>{`Descripción: ${item.descripcion}`}</Text>
-      <Text>{`Cantidad: ${item.cantidad}`}</Text>
+      <Text>{`Codigo : ${item.codigo}, Cantidad: ${item.cantidad}`}</Text>
       <Text>{`$: ${String(item.precio)}`}</Text>
       <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
     </View>
