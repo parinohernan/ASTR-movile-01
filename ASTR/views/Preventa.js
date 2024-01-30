@@ -20,10 +20,11 @@ const Preventa = (props) => {
   const [carrito, setcarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
-  // const [isLoaded, setIsLoaded] = useState(false);
-  const [dCliente, setDCliente] = useState( cliente )
+  const [nueva, setNueva] = useState(true);
+  const [dCliente, setDCliente] = useState( cliente );
 
   const siEstoyEditando = async () => {
+    setNueva(false);
     const  clientes = await getClientes();
     console.log("estoy editando la preventa ");
     clientes.forEach(element => {
@@ -33,6 +34,7 @@ const Preventa = (props) => {
     });
     await preventaDesdeBDD(preventaNumero);//busca la preventa en la BDD y la carga al local storage
     console.log("cliente rescatado =" ,cliente.descripcion);
+    setDCliente(cliente);
   }
   
   
@@ -58,13 +60,16 @@ const Preventa = (props) => {
       if (typeof (cliente) == "string") {
         // solo cuando edito una preventa
         await siEstoyEditando();
+        
+      }else{
+
+        // console.log("25carritodata",carritoData[0]);
       }
       const carritoData = await obtenerPreventa();
       setDCliente(cliente);
-      console.log("25carritodata",carritoData[0]);
-      const totalData = await calcularTotal();
       setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id })));
       setCantidadItems (carritoData.length);
+      const totalData = await calcularTotal();
       setTotal(totalData);
       // console.log("30 carrito reducido ", carrito);
     };
@@ -74,7 +79,7 @@ const Preventa = (props) => {
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventa();
     const totalData = await calcularTotal();
-    console.log("siguiente preventa ", nextPreventa());
+    console.log("siguiente preventa ",carrito, nextPreventa());
     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal, codigo: item.id })));
     setTotal(totalData);
     // setIsLoaded(true);
@@ -83,8 +88,12 @@ const Preventa = (props) => {
   const grabarPreventa = async () => {
     /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
     /* todos los errores deben estar controlado */
-    const numero = await nextPreventa();
+    let numero = preventaNumero
+    if (nueva) {
+      numero = await nextPreventa();
+    }
     const preventaItems = carrito;
+    console.log("carrito ooo ",carrito);
     await grabarPreventaEnBDD (numero, nota , cliente.id, preventaItems);    
   };
 

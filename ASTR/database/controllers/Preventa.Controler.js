@@ -51,22 +51,23 @@ const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, impor
     
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
-            // Insertar en la tabla preventaCabeza
+            // Insertar o reemplazar en la tabla preventaCabeza
             tx.executeSql(
-                'INSERT INTO preventaCabeza (id, cliente, vendedor, observacion, fecha, cantidadItems, importeTotal) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [numero, cliente, vendedor, nota, fecha, cantItems, importeTotal ],
+                'INSERT OR REPLACE INTO preventaCabeza (id, cliente, vendedor, observacion, fecha, cantidadItems, importeTotal) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [numero, cliente, vendedor, nota, fecha, cantItems, importeTotal],
                 (_, cabezaResult) => {
-                    console.log('Cabeza insertada con ID:', cabezaResult.insertId);
+                    console.log('Cabeza insertada o actualizada con ID:', cabezaResult.insertId);
                     resolve(cabezaResult.insertId);
                 },
                 (_, error) => {
-                    console.error('Error al insertar cabeza:', error);
+                    console.error('Error al insertar o actualizar cabeza:', error);
                     reject(error);
                 }
             );
         });
     });
 };
+
 
 // Grabalos items de la preventa del storage en la BDD
 const grabarItemsPreventaEnBDD = async (numero, items) => {
@@ -76,7 +77,7 @@ const grabarItemsPreventaEnBDD = async (numero, items) => {
         db.transaction((tx) => {
             // Insertar en la tabla preventaItem
             items.forEach((item) => {
-                // console.log("80grabo item ",numero, item.codigo, item.cantidad, item.precio);
+                console.log("80grabo BDD item ",numero, item.codigo, item.cantidad, item.precio);
                 tx.executeSql(
                     'INSERT INTO preventaItem (idPreventa, articulo, cantidad, importe) VALUES (?, ?, ?, ?)',
                     [numero, item.codigo, item.cantidad, item.precio],
@@ -104,7 +105,7 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
         console.error("no tenes item cargado");
         return
     }
-    console.log('PrvControler108. grabado en la bdd CABEZA numero, nota, cliente, primer item:', numero, nota, cliente, items[0]);
+    console.log('PrvControler108. grabado en la bdd CABEZA numero, nota', numero, nota, "cliente ", cliente);
     try {
         await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal );
         await grabarItemsPreventaEnBDD(numero, items);
