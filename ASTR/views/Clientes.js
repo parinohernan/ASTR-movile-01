@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 // import { datosClientes } from '../assets/data';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controler';
-import { newPreventa, nextPreventa } from '../database/controllers/Preventa.Controler';
+import { nextPreventa } from '../database/controllers/Preventa.Controler';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
