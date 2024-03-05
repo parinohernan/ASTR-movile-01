@@ -66,6 +66,9 @@ export default function App() {
             />
           )}
         </Stack.Screen>
+        {/* <Stack.Screen name="Preventa">
+  
+        </Stack.Screen> */}
         {/* <Stack.Screen name="Articulos" component={Articulos} /> */}
       </Stack.Navigator>
     </NavigationContainer>
