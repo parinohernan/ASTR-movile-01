@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StyleSheet } from 'react-native';
 
 import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
@@ -17,68 +16,39 @@ import ListaPreventas from './src/components/ListaPreventas';
 
 const Stack = createStackNavigator();
 
-export default function App() {
-  // Puedes usar el estado para mantener el cliente y la prefactura seleccionados
-  const [clienteSeleccionado, setClienteSeleccionado] = React.useState(null);
-  const [preventaSeleccionada, setPreventaSeleccionada] = React.useState(null);
+const App = () => {
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [preventaSeleccionada, setPreventaSeleccionada] = useState(null);
+
+  const RenderHomeScreen = (props) => <Home />;
+  const RenderListaPreventasScreen = (props) => <ListaPreventas />;
+  const RenderSincronizarScreen = (props) => <Sincronizar />;
+  const RenderConfigurarScreen = (props) => <Configurar />;
+  const RenderArticulosScreen = (props) => <Articulos {...props} />;
+  const RenderAddArticuloScreen = (props) => <AddArticulo {...props} />;
+  const RenderUsuariosScreen = (props) => <Usuarios />;
+  const RenderClientesScreen = (props) => <Clientes {...props} setClienteSeleccionado={setClienteSeleccionado} />;
+  const RenderPreventaScreen = (props) => <Preventa {...props} clienteSeleccionado={clienteSeleccionado} setPreventaSeleccionada={setPreventaSeleccionada} />;
+  
 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home">
-          {props => <Home />}
-        </Stack.Screen>
-        <Stack.Screen name="Informes">
-          {props => <ListaPreventas />}
-        </Stack.Screen>
-        <Stack.Screen name="Sincronizar">
-          {props => <Sincronizar />}
-        </Stack.Screen>
-        <Stack.Screen name="Configuracion">
-          {props => <Configurar />}
-        </Stack.Screen>
-        <Stack.Screen name="Articulos">
-        {props => (
-            <Articulos
-              {...props}
-            />
-          )}
-        </Stack.Screen>
-        <Stack.Screen name="AddArticulo">
-          {props => (
-            <AddArticulo 
-              {...props} 
-            />
-          )}
-        </Stack.Screen>
-        <Stack.Screen name="Usuarios">
-          {props => <Usuarios />}
-        </Stack.Screen>
-        <Stack.Screen name="Clientes">
-          {props => <Clientes {...props} setClienteSeleccionado={setClienteSeleccionado} />}
-        </Stack.Screen>
-        <Stack.Screen name="Preventa">
-          {props => (
-            <Preventa
-              {...props}
-              clienteSeleccionado={clienteSeleccionado}
-              setPreventaSeleccionada={setPreventaSeleccionada}
-            />
-          )}
-        </Stack.Screen>
-        {/* <Stack.Screen name="Articulos" component={Articulos} /> */}
+        <Stack.Screen name="Home" component={RenderHomeScreen} />
+        <Stack.Screen name="Informes" component={RenderListaPreventasScreen} />
+        <Stack.Screen name="Sincronizar" component={RenderSincronizarScreen} />
+        <Stack.Screen name="Configuracion" component={RenderConfigurarScreen} />
+        <Stack.Screen name="Articulos" component={RenderArticulosScreen} />
+        <Stack.Screen name="AddArticulo" component={RenderAddArticuloScreen} />
+        <Stack.Screen name="Usuarios" component={RenderUsuariosScreen} />
+        <Stack.Screen name="Clientes" component={RenderClientesScreen} />
+        <Stack.Screen name="Preventa" component={RenderPreventaScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
+export default App;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+
 
