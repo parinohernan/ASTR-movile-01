@@ -18,7 +18,7 @@ const Clientes = () => {
         const clientesFromDB = await getClientes();
         setClientes(clientesFromDB);
       } catch (error) {
-        console.error('Error al obtener o insertar clientes: ', error);
+        console.error('Error al obtener de bdd o insertar clientes: ', error);
       }
     };
 
