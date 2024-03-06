@@ -11,7 +11,7 @@ const Articulos = ({ route }) => {
   const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa;
-  console.log('ART14 linea en la preventa nº ', preventaNumero, params);
+  console.log('ART14 linea en la preventa numroº ', preventaNumero, params);
   const [search, setSearch] = useState('');
   const [articulosList, setArticulosList] = useState([]);
   const [filteredArticulos, setFilteredArticulos] = useState(articulosList);
