@@ -5,7 +5,7 @@ import { db } from '../../database/database';
 const STORAGE_KEY = '@MyApp:PreventaData';
 
 // Guardar una preventa en AsyncStorage
-const guardarPreventa = async (preventa) => {
+const guardarPreventaStorage = async (preventa) => {
     console.log("grabando ",preventa);
     try {
       if (preventa !== null && preventa !== undefined ) {
@@ -37,7 +37,7 @@ const obtenerPreventa = async () => {
         if (preventaString !== null && preventaString !== undefined) {
             return JSON.parse(preventaString);
         } else {
-            console.log("str32");
+            console.log("str40");
             // crea una preventa limpia
             guardarPreventa([])
             return null;
@@ -48,38 +48,8 @@ const obtenerPreventa = async () => {
     }
 };
 
-// Busca la prevenata en la BDD y la almacena en AsyncStorage
-// const preventaDesdeBDD = async (numeroPreventa) => {
-//   console.log("STORAGE53 numero preven", numeroPreventa);
-//   try {
-//     return new Promise((resolve, reject) => {
-//       db.transaction((tx) => {
-//         tx.executeSql(
-//           // 'SELECT * FROM preventaItem WHERE idPreventa = ?',
-//           'SELECT articulo as ArticuloCodigo cantidad id idPreventa as preventaNumero importe as precio FROM preventaItem WHERE idPreventa = ?',
-//           [numeroPreventa],
-//           (_, result) => {
-//             const preventaItemsBDD = [];
-//             for (let i = 0; i < result.rows.length; i++) {
-//               preventaItemsBDD.push(result.rows.item(i));
-//             }
-//             console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
-//             guardarPreventaEditando(preventaItemsBDD);
-//             resolve(preventaItemsBDD);
-//           },
-//           (_, error) => {
-//             console.error('Error al cargar items de preventa desde la base de datos:', error);
-//             reject(error);
-//           }
-//         );
-//       });
-//     });
-//   } catch (error) {
-//     console.error('Error en preventaDesdeBDD:', error);
-//     throw error;
-//   }
-// };
 const preventaDesdeBDD = async (numeroPreventa) => {
+  /* con el numero de preventa la traigo de la BDD locar y la coloco en locasStorege   */
   console.log("STORAGE83 numero preven", numeroPreventa);
   try {
     return new Promise((resolve, reject) => {
@@ -141,4 +111,4 @@ const limpiarPreventa = async () => {
   }
 };
 
-export { guardarPreventa, preventaDesdeBDD, obtenerPreventa, limpiarPreventa, calcularTotal };
+export { guardarPreventaStorage, preventaDesdeBDD, obtenerPreventa, limpiarPreventa, calcularTotal };

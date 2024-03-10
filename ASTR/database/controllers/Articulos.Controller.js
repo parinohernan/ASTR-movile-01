@@ -49,4 +49,19 @@ const insertArticulosFromAPI = (data) => {
     });
   };
 
-  export {insertArticulosFromAPI, getArticulos}
+  
+  /** La idea es filtrar y paginar todo en esta funcion */
+  const getArticulosFiltrados = (searchWord) => {
+    return new Promise((resolve, reject) => {
+      console.log("Obteniendo artículos filtrados de la base de datos local...");
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM articulos WHERE descripcion LIKE ?', [`%${searchWord}%`], (_, { rows }) => {
+          resolve(rows._array);
+        }, (_, error) => {
+          reject(error);
+        });
+      });
+    });
+  };
+
+  export {insertArticulosFromAPI, getArticulosFiltrados}
