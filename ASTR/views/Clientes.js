@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-// import { datosClientes } from '../assets/data';
 import { useNavigation } from '@react-navigation/native';
-import { getClientes } from '../database/controllers/Clientes.Controler';
-import { nextPreventa } from '../database/controllers/Preventa.Controler';
+import { getClientes } from '../database/controllers/Clientes.Controller';
+import { nextPreventa } from '../database/controllers/Preventa.Controller';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -13,7 +12,6 @@ const Clientes = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      
       try {
         const clientesFromDB = await getClientes();
         setClientes(clientesFromDB);
@@ -27,16 +25,16 @@ const Clientes = () => {
 
   const filteredClientes = clientes.filter(
     (cliente) =>
+      typeof cliente.id === 'string' &&
       cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleClienteClick = async (cliente) => {
+  const handleClientClick = async (cliente) => {
     let preventaNumero = await nextPreventa();
     console.log('Código del cliente:', cliente.descripcion);
     console.log('Preventa Número:', preventaNumero);
   
-    // Resto de tu lógica...
     navigation.navigate('Preventa', { preventaNumero, cliente });
   };
 
@@ -50,12 +48,12 @@ const Clientes = () => {
       />
       <FlatList
         data={filteredClientes}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.id}-${item.descripcion}`}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleClienteClick(item)}> 
+          <TouchableOpacity onPress={() => handleClientClick(item)}> 
             <View style={styles.clienteItem}>
               <View style={styles.clienteText}>
-                <Icon name="user" size={10} color="red" style={styles.icon} />
+                <Icon name="user" size={10} color="#121212" style={styles.icon} />
                 <Text style={styles.text}>{item.descripcion}</Text>
                 <Text style={styles.codigo}>{item.id}</Text>
               </View>
@@ -67,55 +65,38 @@ const Clientes = () => {
   );
 };
 
- // ... (tu estilo existente)
-  const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#FAF7E6',
+    backgroundColor: '#fff',
   },
   searchbar: {
-    height: 50,
-    borderColor: 'gray',
+    height: 40,
     borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
+    borderColor: '#ccc',
+    margin: 10,
+    padding: 10,
+    borderRadius: 5,
   },
   clienteItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: 'gray',
-    paddingVertical: 10,
-    width: '100%', 
+    borderBottomColor: '#ccc',
+    padding: 10,
   },
   clienteText: {
-    // flexDirection: 'row',
-    // justifyContent: 'space-between', 
-    // fontSize: 10,
-    // width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   text: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', 
-    fontSize: 16,
-    width: '100%',
+    marginLeft: 10,
   },
   icon: {
-    paddingRight: 24,
-    marginLeft: 4,
-    fontSize: 20,
+    fontSize: 10,
   },
   codigo: {
-    fontSize: 20,
-    color : "blue",
-    marginRight: 20,
+    marginLeft: 'auto',
+    color: 'blue',
   },
 });
 
-
 export default Clientes;
-
-
-

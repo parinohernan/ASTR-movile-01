@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { initDatabase} from '../database/database';
-import { insertArticulosFromAPI } from '../database/controllers/Articulos.Controler';
+import { insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
-import { insertClientesFromAPI } from '../database/controllers/Clientes.Controler';
+import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 
 const actualizarVendedores = async () => {
     console.log("conectando...");

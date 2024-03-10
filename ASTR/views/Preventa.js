@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeArea
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { obtenerPreventa, preventaDesdeBDD, calcularTotal, limpiarPreventa } from "../src/utils/storageUtils";
-import { nextPreventa, grabarPreventaEnBDD } from '../database/controllers/Preventa.Controler';
-import { getClientes } from '../database/controllers/Clientes.Controler';
+import { nextPreventa, grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
+import { getClientes } from '../database/controllers/Clientes.Controller';
 
 const Preventa = (props) => {
   const {route} = props;
