@@ -37,24 +37,6 @@ const Preventa = (props) => {
     setDCliente(cliente);
   }
   
-  
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     const carritoData = await obtenerPreventa();
-  //     console.log("25carritodata",carritoData[0]);
-  //     const totalData = await calcularTotal();
-  //     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, codigo: item.id })));
-  //     setCantidadItems (carritoData.length);
-  //     setTotal(totalData);
-  //     // console.log("30 carrito reducido ", carrito);
-  //     if (typeof (cliente) == "string") {
-  //       // solo cuando edito una preventa
-  //       await siEstoyEditando();
-  //     }
-  //     setDCliente(cliente);
-  //   };
-  //   loadData();
-  // }, []); 
   useEffect(() => {
     const loadData = async () => {
       if (typeof (cliente) == "string") {
@@ -124,8 +106,8 @@ const Preventa = (props) => {
 
   const abrirArticulos = () => {
     // setMostrarArticulos(true);
-    console.log("PRF62 voy a abrir articu con la prop prefacNume ", preventaNumero );
-    navigation.navigate('Articulos', { numeroPreventa: preventaNumero, codigoCliente: cliente.id });
+    console.log("PRF127 voy a abrir articu con la prop preventaNume sin clienteID", preventaNumero );
+    navigation.navigate('Articulos', { numeroPreventa: preventaNumero});
   };
 
  

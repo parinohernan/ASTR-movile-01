@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Switch } from 'react-native';
 import { Button } from 'react-native-elements';
 import { eliminarTodasLasTablas, getTables } from '../database/database';
-import { actualizarAPP } from '../handlers/actualizarApp';
+import { actualizarAPP, initDatabase } from '../handlers/actualizarApp';
 // import limpiarDatos from "../database/database"r
 
 const Configurar = () => {
@@ -33,7 +33,7 @@ const Configurar = () => {
     //   Alert.alert('Error', 'Completa todos los campos antes de guardar.');
     // }
   const handleTablas =   () => {
-    console.log("tablas en BDD: ", getTables())
+    console.log("creando tablas en BDD local: ", initDatabase())
     
   };
   const handleCancelar = () => {
@@ -86,10 +86,10 @@ const Configurar = () => {
       />
 
       {/* Botones */}
-      <Button title="Sincronizar" onPress={handleGuardar} /*disabled={!guardarHabilitado}*/ buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
-      <Button title="tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
-      <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
-      <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} />
+      
+      <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
+      {/* <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
+      <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} /> */}
     </View>
   );
 };

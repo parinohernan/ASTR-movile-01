@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa } from '../database/controllers/Preventa.Controller';
+import { Searchbar } from 'react-native-paper';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -19,7 +20,6 @@ const Clientes = () => {
         console.error('Error al obtener de bdd o insertar clientes: ', error);
       }
     };
-
     fetchData();
   }, []);
 
@@ -30,30 +30,38 @@ const Clientes = () => {
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
+  // const handleSearch = () => {
+  //   setSearch(search.trim()); // Trim any extra whitespace before filtering
+  //   filteredClientes();
+  // };
+
   const handleClientClick = async (cliente) => {
     let preventaNumero = await nextPreventa();
     console.log('Código del cliente:', cliente.descripcion);
     console.log('Preventa Número:', preventaNumero);
-  
     navigation.navigate('Preventa', { preventaNumero, cliente });
   };
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchbar}
+      <View style={styles.searchbar}      >
+      <Searchbar
         placeholder="Buscar cliente..."
+        onChangeText={(value) => setSearch(value)}
         value={search}
-        onChangeText={(text) => setSearch(text)}
+        // onIconPress={() => setFiltered  Articulos([])}
+        // onSubmitEditing={() => setFiltered  Articulos([])}
       />
+      </View>
+
       <FlatList
         data={filteredClientes}
         keyExtractor={(item) => `${item.id}-${item.descripcion}`}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleClientClick(item)}> 
             <View style={styles.clienteItem}>
-              <View style={styles.clienteText}>
-                <Icon name="user" size={10} color="#121212" style={styles.icon} />
+              <View >
+                <Icon name="user" size={24} color="#626262" />
                 <Text style={styles.text}>{item.descripcion}</Text>
                 <Text style={styles.codigo}>{item.id}</Text>
               </View>
@@ -68,35 +76,17 @@ const Clientes = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  searchbar: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    margin: 10,
-    padding: 10,
-    borderRadius: 5,
+    padding: 20,
+    backgroundColor: '#FAF7E6',
   },
   clienteItem: {
+    // display :'flex',
+    // flexDirection: 'row',  
+    // alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    padding: 10,
-  },
-  clienteText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  text: {
-    marginLeft: 10,
-  },
-  icon: {
-    fontSize: 10,
-  },
-  codigo: {
-    marginLeft: 'auto',
-    color: 'blue',
-  },
+    borderBottomColor: 'gray',
+    paddingVertical: 10,
+  }
 });
 
 export default Clientes;
