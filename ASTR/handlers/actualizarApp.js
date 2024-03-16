@@ -3,6 +3,7 @@ import { initDatabase} from '../database/database';
 import { insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
+import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
 
 const actualizarVendedores = async () => {
     console.log("Trayendo Vendedores...");
@@ -32,21 +33,6 @@ const actualizarClientes = async () => {
 }
 };
 
-// const actualizarArticulos = async () => {
-//     console.log("Trayendo Articulos...");
-    
-//     try {
-//         const response = await axios.get('http://192.168.1.123:3000/articulos');
-//         console.log("response",response.data);
-//         const data = response.data;
-//         // Inserta los clientes desde la API a la base de datos
-//         await insertArticulosFromAPI(data);
-//     } catch (error) {
-//         console.error('Error al obtener o insertar articulos: ', error);
-//     }
-    
-// };
-
 const actualizarArticulos = async () => {
     console.log("Trayendo Articulos...");
     
@@ -69,11 +55,42 @@ const actualizarArticulos = async () => {
             await insertArticulosFromAPI(batch);
             console.log(`Lote de ${batch.length} artículos insertado correctamente.`);
         }
-        
+
     } catch (error) {
         console.error('Error al obtener o insertar artículos: ', error);
     }
 };
+
+const actualizarPreventas = async (preventasJSON) => {
+    console.log("Enviando a host Preventas...",preventasJSON);
+    try {
+        const response = await axios.post('http://192.168.1.123:3000/preventas', preventasJSON);
+        console.log("response", response.data);
+        // Aquí puedes manejar la respuesta si es necesario
+        // const data = response.data;
+        // await initDatabase();
+       
+    } catch (error) {
+        console.error('Error al enviar preventas: ', error);
+    }
+};
+
+
+
+
+const enviarPreventas = async () => {
+    console.log("enviando preventas..");
+    let preventas = [];
+    //buscar en BDD local y transformarla en un ARRAY de JSON 
+    preventas= await preventasBDDToArray();
+    //adaptar el JSON
+
+    //enviarlas por post
+    for (let i = 0; i < preventas.length; i++) {
+        actualizarPreventas (preventas[i]);
+    }
+    // borrarlas de la aplicacion
+}
 
 const actualizarAPP = async () =>{
     console.log("VENDEDORES ->");
@@ -84,4 +101,5 @@ const actualizarAPP = async () =>{
     console.log("ARTICULOS ->");
     actualizarArticulos();
 }
-export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase};
+
+export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase, enviarPreventas};

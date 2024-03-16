@@ -3,6 +3,7 @@ import { View, Text, TextInput, Switch } from 'react-native';
 import { Button } from 'react-native-elements';
 import { eliminarTodasLasTablas, getTables } from '../database/database';
 import { actualizarAPP, initDatabase } from '../handlers/actualizarApp';
+import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
 // import limpiarDatos from "../database/database"r
 
 const Configurar = () => {
@@ -50,6 +51,10 @@ const Configurar = () => {
     }
   };
 
+const handleLimpiarPreventas = ()=>{
+  borrarContenidoPreventasEnBDD();
+}
+
   return (
     <View style={{ padding: 20, backgroundColor: '#FAF7E6' }}>
       <Text>WebService:</Text>
@@ -88,8 +93,8 @@ const Configurar = () => {
       {/* Botones */}
       
       <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
-      {/* <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
-      <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} /> */}
+      {/* <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} /> */}
+      <Button title="Limpiar Preventas" onPress={handleLimpiarPreventas} buttonStyle={{ marginTop: 40 }} />
     </View>
   );
 };

@@ -47,12 +47,13 @@ const Articulos = ({ route }) => {
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
   };
 
-  // const openModal = (articulo) => {
-  //    navigation.navigate('AddArticulo', { articulo });
-  // };
+  const openModal = (articulo) => {
+    console.log("articulo ",articulo); 
+    navigation.navigate('AddArticulo', { articulo });
+  };
  
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('AddArticulo', { item })}>
+    <TouchableOpacity onPress={() => openModal(item)}>
       <View style={styles.articuloItem}>
         <Text style={styles.articuloInfo}>{item.id}</Text>
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>

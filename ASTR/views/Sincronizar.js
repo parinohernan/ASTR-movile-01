@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Switch, ScrollView } from 'react-native';
 import { Button } from 'react-native-elements';
-import { actualizarClientes, actualizarVendedores, actualizarArticulos } from '../handlers/actualizarApp';
+import { actualizarClientes, actualizarVendedores, actualizarArticulos, enviarPreventas } from '../handlers/actualizarApp';
 
 const Sincronizar = () => {
   const [actualizarDatos, setActualizarDatos] = useState(false);
@@ -27,6 +27,11 @@ const Sincronizar = () => {
   const handleTraerArticulos = async () => {
     await actualizarArticulos();
   };
+
+  const handleEnviarPreventas = async () => {
+    await enviarPreventas();
+  };
+
   return (
     <ScrollView style={{ padding: 20, backgroundColor: '#FAF7E6'}}>
       {/* Switch para actualizar datos */}
@@ -47,6 +52,8 @@ const Sincronizar = () => {
       <Button title="Sincronizar vendedores" onPress={handleTraerVendedores} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
       <Button title="Sincronizar clientes" onPress={handleTraerClientes} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
       <Button title="Sincronizar Articulos" onPress={handleTraerArticulos} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
+      <Button title="Enviar 
+      preventass" onPress={handleEnviarPreventas} buttonStyle={{ marginTop: 40, backgroundColor:'#455544' }}/>
     </ScrollView>
   );
 };

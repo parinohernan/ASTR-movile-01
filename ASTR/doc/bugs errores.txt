@@ -10,6 +10,11 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 3- si doy guardar me duplica la preventa y no me borra los articulos.
 
+3- agregar check a los articulos
+
+3- mejorar la UX/UI
+
+
 
 
 
