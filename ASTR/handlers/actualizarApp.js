@@ -4,6 +4,7 @@ import { insertArticulosFromAPI } from '../database/controllers/Articulos.Contro
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
+import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
 
 const actualizarVendedores = async () => {
     console.log("Trayendo Vendedores...");
@@ -61,36 +62,60 @@ const actualizarArticulos = async () => {
     }
 };
 
-const actualizarPreventas = async (preventasJSON) => {
-    console.log("Enviando a host Preventas...",preventasJSON);
+const actualizarPreventas = async (preventasJSON, mensajes) => {
+    console.log("ACTUALIZAR BDD REMOTA");
     try {
         const response = await axios.post('http://192.168.1.123:3000/preventas', preventasJSON);
         console.log("response", response.data);
-        // Aquí puedes manejar la respuesta si es necesario
-        // const data = response.data;
-        // await initDatabase();
-       
+        // setLogs([...setLogs, response.data]);
     } catch (error) {
-        console.error('Error al enviar preventas: ', error);
+        mensajes.hayErrores = true;
+        mensajes.mensaje = ('Error al enviar preventas:' + error);
+        console.error('Error al enviar preventas:', error);
+        // setLogs([...setLogs, 'Tuvimos un error al enviar preventas']);
     }
-};
-
-
-
-
-const enviarPreventas = async () => {
-    console.log("enviando preventas..");
-    let preventas = [];
-    //buscar en BDD local y transformarla en un ARRAY de JSON 
-    preventas= await preventasBDDToArray();
-    //adaptar el JSON
-
-    //enviarlas por post
-    for (let i = 0; i < preventas.length; i++) {
-        actualizarPreventas (preventas[i]);
-    }
-    // borrarlas de la aplicacion
 }
+
+const handleLogs = (logs, mensaje) => {
+    return [...logs, mensaje];
+  };
+
+const enviarPreventas = async (setLogs) => {
+    let preventas = [];
+    let logs = [];
+    let mensajes = {hayErrores: false,
+                    mensaje: "No hay errores."};    
+    try {
+      // Buscar en BDD local y transformarla en un ARRAY de JSON
+      preventas = await preventasBDDToArray();
+      // Enviarlas por post
+      for (let i = 0; i < preventas.length; i++) {
+        try {
+          await actualizarPreventas(preventas[i], mensajes);
+          logs = handleLogs(logs, `enviando preventa ${i + 1}.`);
+        } catch (error) {
+          logs = handleLogs(logs, `Error al enviar la preventa ${i + 1}: ${error}`);
+          console.error('Error al enviar la preventa', i + 1);
+        }
+      }
+      logs = handleLogs(logs, mensajes.mensaje);
+  
+      // Borrarlas de la aplicación solo si no tuvimos errores
+      if (!mensajes.hayErrores) {
+          await borrarContenidoPreventasEnBDD();
+          logs = handleLogs(logs, "Preventas borradas correctamente");
+        
+      }else{
+          logs = handleLogs(logs, "no se borraron las preventas, pueden Haber errores");
+          console.error('no se borraron las preventas porque hay errores ')
+      }
+    } catch (error) {
+      logs = handleLogs(logs, `Error al enviar o borrar preventas: ${error}`);
+      console.error('Error al enviar o borrar preventas: ', error);
+    }
+  
+    setLogs(logs);
+  };
 
 const actualizarAPP = async () =>{
     console.log("VENDEDORES ->");

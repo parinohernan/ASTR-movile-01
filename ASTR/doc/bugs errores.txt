@@ -14,6 +14,9 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 3- mejorar la UX/UI
 
+5- si sincronizo se borran las preventas aunque tenga errores lo que hace perder informacion
+
+3- ver articulos frecuentes
 
 
 

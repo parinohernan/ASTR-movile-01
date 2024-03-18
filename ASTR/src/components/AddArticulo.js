@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 const AddArticulo = ({route}) => {
   const {params} = route;
   const articulo = params.articulo;
-  const [cantidad, setCantidad] = useState(0);
+  const [cantidad, setCantidad] = useState(2);
   // const [descuento, setDescuento] = useState(0);
   const [precioFinal, setPrecioFinal] = useState(0); //useState(articulo.precioCostoMasImp.toFixed(2))
   const navigation = useNavigation();
