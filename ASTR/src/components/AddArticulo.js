@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { guardarPreventa, obtenerPreventa} from "../utils/storageUtils";
+import { guardarPreventaEnStorage, obtenerPreventaDeStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
 
 const AddArticulo = ({route}) => {
   const {params} = route;
   const articulo = params.articulo;
-  const [cantidad, setCantidad] = useState(0);
+  const [cantidad, setCantidad] = useState(2);
   // const [descuento, setDescuento] = useState(0);
   const [precioFinal, setPrecioFinal] = useState(0); //useState(articulo.precioCostoMasImp.toFixed(2))
   const navigation = useNavigation();
@@ -16,41 +16,61 @@ const AddArticulo = ({route}) => {
     // descuento: parseFloat(descuento),
     precioFinal: parseFloat(precioFinal),
   };
-
-  const estaCargado= (codigo) =>{
-    const preventaActual = obtenerPreventa();
-    for (let i = 0; i < preventaActual.length; i++) {
-      const e = preventaActual[i];
-      if (e.id == articulo.id) {
-        setCantidad(e.cantidad);
-        setPrecioFinal(e.precioFinal);
-        console.log("ya estaba cargado");
-        return true;
-      }
-    }
-    return false
-  }
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      // necesito el numero de preventa?
+      console.log("fetch en AddArticulo");
+      // try {
+      //   setLoading(true);
+      //   const filteredArticulos = await getArticulosFiltrados(search);
+      //   setArticulosList(filteredArticulos);
+      //   setLoading(false);
+      //   console.log( filteredArticulos.length, 'artículos filtrados con: ',search);
+      // } catch (error) {
+      //   console.error('Error al obtener artículos filtrados: ', error);
+      //   setLoading(false);
+      // }
+    };
+    
+    fetchData();
+   
+  }, []);
+  // const estaCargado= (codigo) =>{
+  //   const preventaActual = obtenerPreventa();
+  //   for (let i = 0; i < preventaActual.length; i++) {
+  //     const e = preventaActual[i];
+  //     if (e.id == articulo.id) {
+  //       setCantidad(e.cantidad);
+  //       setPrecioFinal(e.precioFinal);
+  //       console.log("ya estaba cargado");
+  //       return true;
+  //     }
+  //   }
+  //   return false
+  // }
 
   console.log("addArt19. ",articuloConDetalles);
   
   const handleSave = async () => {
     // ... lógica para guardar el artículo en la preventa
     // Obtener la preventa actualizada después de guardar el artículo
-    const preventaActual = await obtenerPreventa();
+    const preventaActual = await obtenerPreventaDeStorage();
+    console.log("preventa tiene ",preventaActual);
     for (let i = 0; i < preventaActual.length; i++) {
       const e = preventaActual[i];
       if (e.id == articulo.id) { //actualiza un articulo ya existente
         preventaActual[i].cantidad=cantidad;
         preventaActual[i].precioFinal=precioFinal;
-        console.log("gravo la preventa con el articulo modificado ",precioFinal);
-        guardarPreventa(preventaActual);
+        console.log("grabo la preventa con el articulo modificado ",precioFinal);
+        guardarPreventaEnStorage(preventaActual);
         navigation.goBack();
         return;
       } 
     }// Actualizar la preventa con el nuevo artículo
     const nuevaPreventa = [...preventaActual, articuloConDetalles];
     console.log("Add50. nueva prev", nuevaPreventa);
-    guardarPreventa(nuevaPreventa);
+    guardarPreventaEnStorage(nuevaPreventa);
     navigation.goBack();
     return
   };
@@ -61,6 +81,10 @@ const AddArticulo = ({route}) => {
     setCantidad(text.replace(/[^0-9]/g, ''))
     setPrecioFinal(cuenta)
   }
+
+  const handleLimpiar = () => {
+    limpiarPreventaDeStorage();
+  };
 
   const handleCancel = () => {
     navigation.goBack();
@@ -94,6 +118,10 @@ const AddArticulo = ({route}) => {
 
       <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
         <Text style={styles.cancelButtonText}>Cancelar</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.cancelButton} onPress={handleLimpiar}>
+        <Text >LIMPIAR TODA PREV</Text>
       </TouchableOpacity>
     </View>
   );

@@ -3,6 +3,8 @@ import { initDatabase} from '../database/database';
 import { insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
+import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
+import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
 
 const actualizarVendedores = async () => {
     console.log("Trayendo Vendedores...");
@@ -32,21 +34,6 @@ const actualizarClientes = async () => {
 }
 };
 
-// const actualizarArticulos = async () => {
-//     console.log("Trayendo Articulos...");
-    
-//     try {
-//         const response = await axios.get('http://192.168.1.123:3000/articulos');
-//         console.log("response",response.data);
-//         const data = response.data;
-//         // Inserta los clientes desde la API a la base de datos
-//         await insertArticulosFromAPI(data);
-//     } catch (error) {
-//         console.error('Error al obtener o insertar articulos: ', error);
-//     }
-    
-// };
-
 const actualizarArticulos = async () => {
     console.log("Trayendo Articulos...");
     
@@ -69,11 +56,66 @@ const actualizarArticulos = async () => {
             await insertArticulosFromAPI(batch);
             console.log(`Lote de ${batch.length} artículos insertado correctamente.`);
         }
-        
+
     } catch (error) {
         console.error('Error al obtener o insertar artículos: ', error);
     }
 };
+
+const actualizarPreventas = async (preventasJSON, mensajes) => {
+    console.log("ACTUALIZAR BDD REMOTA");
+    try {
+        const response = await axios.post('http://192.168.1.123:3000/preventas', preventasJSON);
+        console.log("response", response.data);
+        // setLogs([...setLogs, response.data]);
+    } catch (error) {
+        mensajes.hayErrores = true;
+        mensajes.mensaje = ('Error al enviar preventas:' + error);
+        console.error('Error al enviar preventas:', error);
+        // setLogs([...setLogs, 'Tuvimos un error al enviar preventas']);
+    }
+}
+
+const handleLogs = (logs, mensaje) => {
+    return [...logs, mensaje];
+  };
+
+const enviarPreventas = async (setLogs) => {
+    let preventas = [];
+    let logs = [];
+    let mensajes = {hayErrores: false,
+                    mensaje: "No hay errores."};    
+    try {
+      // Buscar en BDD local y transformarla en un ARRAY de JSON
+      preventas = await preventasBDDToArray();
+      // Enviarlas por post
+      for (let i = 0; i < preventas.length; i++) {
+        try {
+          await actualizarPreventas(preventas[i], mensajes);
+          logs = handleLogs(logs, `enviando preventa ${i + 1}.`);
+        } catch (error) {
+          logs = handleLogs(logs, `Error al enviar la preventa ${i + 1}: ${error}`);
+          console.error('Error al enviar la preventa', i + 1);
+        }
+      }
+      logs = handleLogs(logs, mensajes.mensaje);
+  
+      // Borrarlas de la aplicación solo si no tuvimos errores
+      if (!mensajes.hayErrores) {
+          await borrarContenidoPreventasEnBDD();
+          logs = handleLogs(logs, "Preventas borradas correctamente");
+        
+      }else{
+          logs = handleLogs(logs, "no se borraron las preventas, pueden Haber errores");
+          console.error('no se borraron las preventas porque hay errores ')
+      }
+    } catch (error) {
+      logs = handleLogs(logs, `Error al enviar o borrar preventas: ${error}`);
+      console.error('Error al enviar o borrar preventas: ', error);
+    }
+  
+    setLogs(logs);
+  };
 
 const actualizarAPP = async () =>{
     console.log("VENDEDORES ->");
@@ -84,4 +126,5 @@ const actualizarAPP = async () =>{
     console.log("ARTICULOS ->");
     actualizarArticulos();
 }
-export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase};
+
+export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase, enviarPreventas};

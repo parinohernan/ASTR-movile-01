@@ -5,12 +5,12 @@ import { db } from '../../database/database';
 const STORAGE_KEY = '@MyApp:PreventaData';
 
 // Guardar una preventa en AsyncStorage
-const guardarPreventaStorage = async (preventa) => {
+const guardarPreventaEnStorage = async (preventa) => {
     console.log("grabando ",preventa);
     try {
       if (preventa !== null && preventa !== undefined ) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));
-        console.log('Preventa guardada con éxito');
+        console.log('Preventa guardada con éxito en Storage');
       } else {
         console.error('Error: El valor de la preventa es null o undefined');
       }
@@ -28,10 +28,10 @@ const guardarPreventaStorage = async (preventa) => {
   };
 
 // Obtener la preventa almacenada en AsyncStorage
-const obtenerPreventa = async () => {
+const obtenerPreventaDeStorage = async () => {
     try {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
-        console.log("STR34 obteniendo preventa");
+        console.log("STR34 obteniendo preventa de Storage");
 
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
@@ -39,7 +39,7 @@ const obtenerPreventa = async () => {
         } else {
             console.log("str40");
             // crea una preventa limpia
-            guardarPreventa([])
+            guardarPreventaEnStorage([])
             return null;
         }
     } catch (error) {
@@ -84,7 +84,7 @@ const calcularTotal = async () => {
     // console.log("calculo total preventa ")
     let total = 0;
     try {
-      const preventa = await obtenerPreventa();
+      const preventa = await obtenerPreventaDeStorage();
     //   console.log("calculo precioFinal preventa ",preventa);
       // Verifica si la preventa es un array antes de contar los elementos
      for (let i = 0; i < preventa.length; i++) {
@@ -101,8 +101,8 @@ const calcularTotal = async () => {
   }; 
 
 // Limpiar los datos de preventa almacenados en AsyncStorage
-const limpiarPreventa = async () => {
-    console.log("STR44 limiando preventa");
+const limpiarPreventaDeStorage = async () => {
+    console.log("STR44 limpiando preventa Storage");
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
   } catch (error) {
@@ -111,4 +111,4 @@ const limpiarPreventa = async () => {
   }
 };
 
-export { guardarPreventaStorage, preventaDesdeBDD, obtenerPreventa, limpiarPreventa, calcularTotal };
+export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal };

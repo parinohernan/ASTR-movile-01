@@ -1,6 +1,5 @@
 Prioridad de 1 al 5. 5 es mucha importancia.
 
-5- la vista articulos cuando busca los incluidos recarga constantemente.
 
 1- la vista de preventa tiene que traer automaticamente la preventa en el localsotorage. ahora lo hace cuando doy click en el reload.
 
@@ -9,6 +8,13 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 5- no esta permitiendo eliminar o editar items ya cargados en la preventa. creo que si lo edita bien
 
 3- si doy guardar me duplica la preventa y no me borra los articulos.
+
+3- agregar check a los articulos
+3- ver articulos frecuentes
+
+3- mejorar la UX/UI
+
+
 
 
 

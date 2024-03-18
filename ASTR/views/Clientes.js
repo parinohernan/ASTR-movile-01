@@ -3,7 +3,7 @@ import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Pressabl
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
-import { nextPreventa } from '../database/controllers/Preventa.Controller';
+import { nextPreventa } from '../src/utils/storageConfigData';
 import { Searchbar } from 'react-native-paper';
 
 const Clientes = () => {
@@ -30,14 +30,9 @@ const Clientes = () => {
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  // const handleSearch = () => {
-  //   setSearch(search.trim()); // Trim any extra whitespace before filtering
-  //   filteredClientes();
-  // };
-
   const handleClientClick = async (cliente) => {
     let preventaNumero = await nextPreventa();
-    console.log('Código del cliente:', cliente.descripcion);
+    // console.log('Código del cliente:', cliente.descripcion);
     console.log('Preventa Número:', preventaNumero);
     navigation.navigate('Preventa', { preventaNumero, cliente });
   };
@@ -49,8 +44,6 @@ const Clientes = () => {
         placeholder="Buscar cliente..."
         onChangeText={(value) => setSearch(value)}
         value={search}
-        // onIconPress={() => setFiltered  Articulos([])}
-        // onSubmitEditing={() => setFiltered  Articulos([])}
       />
       </View>
 
