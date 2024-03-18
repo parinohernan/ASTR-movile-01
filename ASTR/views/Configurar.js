@@ -10,16 +10,10 @@ import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from '../sr
 
 
 const Configurar = () => {
-  // const [configuracion.endPoint, setconfiguracion.endPoint] = useState('');
-  // const [sucursal, setSucursal] = useState('');
-  // const [modificacionPrecios, setModificacionPrecios] = useState(false);
-  // const [activarGeolocalizacion, setActivarGeolocalizacion] = useState(false);
-  // const [cantidadMaximaArticulos, setCantidadMaximaArticulos] = useState('');
-  const [guardarHabilitado, setGuardarHabilitado] = useState(false);
-  
+ 
   const [configuracion, setConfiguracion]= useState({
     endPoint:"http://localhost:3000/preventas",
-    siguientePreventa: 0,
+    siguientePreventa: 100,//este dato solo se visualiza, se actualiza automaticamente
     vendedor: "0001",
     usaGeolocalizacion: true,
     cantidadMaximaArticulos: "18",
@@ -66,6 +60,13 @@ const Configurar = () => {
         value={configuracion.cantidadMaximaArticulos}
         onChangeText={(text) => setConfiguracion({ ...configuracion, cantidadMaximaArticulos: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
+      />
+      <Text>Siguente preventa:</Text>
+      <TextInput
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        value={configuracion.siguientePreventa}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, siguientePreventa: text.replace(/[^0-9]/g, '') })}
+        // editable:false
       />
 
       {/* Botones */}

@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { log } from 'react-native-sqlite-storage/lib/sqlite.core';
 
 const STORAGE_KEY = '@MyApp:ConfigData';
 
@@ -32,6 +31,18 @@ const getConfiguracionDelStorage = async () => {
     }
 };
 
+async function nextPreventa() {
+  let conf= await getConfiguracionDelStorage();
+  return conf.siguientePreventa
+}
+
+async function mas1NexPreventa() {
+    let conf = await getConfiguracionDelStorage();
+    let numero = +conf.siguientePreventa + 1;
+    console.log("sumo 1 a preventa", numero);
+    guardarConfiguracionEnStorage({...conf, siguientePreventa: String(numero)})
+  }
+
 // no creo que use esta funcion - Limpiar los datos de configuracion almacenados en AsyncStorage
 const limpiarConfiguracionDelStorage = async () => {
     console.log("STR44 limpiando CONFIGURACION Storage");
@@ -43,4 +54,4 @@ const limpiarConfiguracionDelStorage = async () => {
   }
 };
 
-export { getConfiguracionDelStorage, guardarConfiguracionEnStorage };
+export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa, mas1NexPreventa };

@@ -1,125 +1,12 @@
 import { db } from '../database';
 import { limpiarPreventa, limpiarPreventaDeStorage } from '../../src/utils/storageUtils';
+import { mas1NexPreventa } from '../../src/utils/storageConfigData';
 // import { log } from 'react-native-sqlite-storage/lib/sqlite.core';
 
 const syncPreventas = () => {
     //sube las preventas a la BDD del servidor
     console.log("Subiento preventas al servidor");
   };
-
-function nextPreventa() {
-    return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-            // Consulta para obtener el siguiente número de preventa
-            tx.executeSql(
-                'SELECT siguientePreventa FROM configuracion',
-                [],
-                (_, result) => {
-                    // Verificar si se obtuvo algún resultado
-                    if (result.rows.length > 0) {
-                        // Obtener el siguiente número de preventa desde el resultado
-                        const siguientePreventa = result.rows.item(0).siguientePreventa;
-                        // Resolver la promesa con el siguiente número de preventa
-                        resolve(siguientePreventa);
-                    } else {
-                        // Si no se obtiene ningún resultado, rechazar la promesa con un mensaje de error
-                        reject(new Error('No se encontró el siguiente número de preventa.'));
-                    }
-                },
-                (_, error) => {
-                    // Si hay un error al ejecutar la consulta, rechazar la promesa con el error
-                    console.error('Error al obtener el último número de preventa:', error);
-                    reject(error);
-                }
-            );
-        });
-    });
-}
-
-
-
-// function setEndPoint(texto) {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx) => {
-//             tx.executeSql(
-//                 `UPDATE configuracion SET endPoint = ?`,
-//                 [texto],
-//                 () => {
-//                     console.log(`Valor de endPoint actualizado a ${texto} correctamente.`);
-//                     resolve();
-//                 },
-//                 (_, error) => {
-//                     console.error('Error al actualizar el valor de endPoint:', error);
-//                     reject(error);
-//                 }
-//             );
-//         });
-//     });
-// }
-
-// function setVendedor (texto) {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx) => {
-//             tx.executeSql(
-//                 `UPDATE configuracion SET vendedor = ?`,
-//                 [texto],
-//                 () => {
-//                     console.log(`Valor de vendedor actualizado a ${texto} correctamente.`);
-//                     resolve();
-//                 },
-//                 (_, error) => {
-//                     console.error('Error al actualizar el valor de vendedor:', error);
-//                     reject(error);
-//                 }
-//             );
-//         });
-//     });
-// }
-
-// function setCantidadMaximaArticu los(numero) {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx) => {
-//             tx.executeSql(
-//                 `UPDATE configuracion SET cantidadMaximaArticulos = ?`,
-//                 [numero],
-//                 () => {
-//                     console.log(`Valor de cantidadMaximaArticulos actualizado a ${numero} correctamente.`);
-//                     resolve();
-//                 },
-//                 (_, error) => {
-//                     console.error('Error al actualizar el valor de cantidadMaximaArticulos:', error);
-//                     reject(error);
-//                 }
-//             );
-//         });
-//     });
-// }
-
-// function setSiguientePreventa(numero) {
-//     return new Promise((resolve, reject) => {
-//         db.transaction((tx) => {
-//             tx.executeSql(
-//                 `UPDATE configuracion SET siguientePreventa = ? WHERE id = 1`,
-//                 [numero],
-//                 () => {
-//                     console.log(`Valor de siguientePreventa actualizado a ${numero} correctamente.`);
-//                     resolve();
-//                 },
-//                 (_, error) => {
-//                     console.error('Error al actualizar el valor de siguientePreventa:', error);
-//                     reject(error);
-//                 }
-//             );
-//         });
-//     });
-// }
-
-
-// Función para configurar la tabla y asignar el valor inicial
-
-
-
-
 
 const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, importeTotal) => {
     const fecha = new Date().toISOString();  // Formato ISO 8601
@@ -146,11 +33,8 @@ const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, impor
     });
 };
 
-
 // Grabalos items de la preventa del storage en la BDD
 const grabarItemsPreventaEnBDD = async (numero, items) => {
-    //console.log('PrvControler74. grabando items en la bdd para la cabeza ID:', numero);
-    
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             // Insertar en la tabla preventaItem
@@ -189,6 +73,7 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
         await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal );
         await grabarItemsPreventaEnBDD(numero, items);
         limpiarPreventaDeStorage();
+        mas1NexPreventa();
     } catch (error) {
         console.error('Error al grabar preventa en la base de datos:', error);
         throw error;
@@ -329,4 +214,4 @@ const borrarContenidoPreventasEnBDD = async () => {
 };
 
 
-export { syncPreventas, nextPreventa, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD}
+export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD}
