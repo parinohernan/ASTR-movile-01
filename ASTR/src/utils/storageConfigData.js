@@ -24,17 +24,24 @@ const getConfiguracionDelStorage = async () => {
     try {
         const configuracionStr = await AsyncStorage.getItem(STORAGE_KEY);
         console.log("STR34 obteniendo configuracion de Storage", configuracionStr);
-        return JSON.parse(configuracionStr);
+        if (configuracionStr.length > 1) {  
+        }
+        return JSON.parse('{"endPoint":"http://localhost:3000/preventas","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
     } catch (error) {
         console.error('Error al obtener la preventa desde AsyncStorage:', error);
         throw error;
     }
 };
 
-async function nextPreventa() {
+async function configuracionVendedor() {
   let conf= await getConfiguracionDelStorage();
-  return conf.siguientePreventa
+  return conf.vendedor
 }
+
+async function nextPreventa() {
+    let conf= await getConfiguracionDelStorage();
+    return conf.siguientePreventa
+  }
 
 async function mas1NexPreventa() {
     let conf = await getConfiguracionDelStorage();
@@ -54,4 +61,4 @@ const limpiarConfiguracionDelStorage = async () => {
   }
 };
 
-export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa, mas1NexPreventa };
+export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa, mas1NexPreventa, configuracionVendedor };

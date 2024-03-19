@@ -10,11 +10,18 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 3- si doy guardar me duplica la preventa y no me borra los articulos.
 
 3- agregar check a los articulos
+
 3- ver articulos frecuentes
 
 3- mejorar la UX/UI
 
+1- si hay preventas en el webserver y instalamos un nuevo cel con los mismos datos, hay problemas al enviar preventas. igualmente no se deberian borral las preventas.
 
+5- tomar los datos del endPoint y cantidad de items desde la config y usarlos.
+
+5- permitir eliminar items de la preventa actual.
+
+5 -permitir modificar una preventa en BDD local.
 
 
 
