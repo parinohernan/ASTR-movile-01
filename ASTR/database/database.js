@@ -48,18 +48,6 @@ const initDatabase = () => {
   });
 };
 
-//en verdad solo borra el contenido de las tablas
-const eliminarTodasLasTablas = async () => {
-  // await db.transaction(tx => {
-  //   // Ejecuta instrucciones SQL para eliminar cada tabla
-  //   tx.executeSql('DELETE FROM usuarios', [], () => console.log('Datos usuarios eliminados'), (_, error) => console.log('Error al eliminar datos usuarios', error));
-  //   // Añade instrucciones DROP para otras tablas si es necesario
-  //   tx.executeSql('DELETE FROM clientes', [], () => console.log('Datos clientes eliminados'), (_, error) => console.log('Error al eliminar datos clientes', error));
-  //   tx.executeSql('DELETE FROM articulos', [], () => console.log('Datos articulos eliminados'), (_, error) => console.log('Error al eliminar datos articulos', error));
-  // });
-  await eliminarBaseDeDatos()
-};
-
 // En tu controlador de base de datos
 export const getTables = async () => {
   initDatabase();
@@ -82,34 +70,34 @@ export const getTables = async () => {
   }
 };
 
-const eliminarBaseDeDatos = async () => {
+// const eliminarBaseDeDatos = async () => {
   
-  try {
-    console.log("Eliminando todas las tablas...");
-    await db.transaction(async (tx) => {
-      // Verifica y elimina la tabla usuarios
-      await tx.executeSql('DROP TABLE IF EXISTS usuarios', [], (_, result) => console.log('Tabla usuarios eliminada', result), (_, error) => console.log('Error al eliminar tabla usuarios', error));
+//   try {
+//     console.log("Eliminando todas las tablas...");
+//     await db.transaction(async (tx) => {
+//       // Verifica y elimina la tabla usuarios
+//       await tx.executeSql('DROP TABLE IF EXISTS usuarios', [], (_, result) => console.log('Tabla usuarios eliminada', result), (_, error) => console.log('Error al eliminar tabla usuarios', error));
 
-      // Verifica y elimina la tabla clientes
-      await tx.executeSql('DROP TABLE IF EXISTS clientes', [], (_, result) => console.log('Tabla clientes eliminada', result), (_, error) => console.log('Error al eliminar tabla clientes', error));
+//       // Verifica y elimina la tabla clientes
+//       await tx.executeSql('DROP TABLE IF EXISTS clientes', [], (_, result) => console.log('Tabla clientes eliminada', result), (_, error) => console.log('Error al eliminar tabla clientes', error));
 
-      // Verifica y elimina la tabla articulos
-      await tx.executeSql('DROP TABLE IF EXISTS articulos', [], (_, result) => console.log('Tabla articulos eliminada', result), (_, error) => console.log('Error al eliminar tabla articulos', error));
+//       // Verifica y elimina la tabla articulos
+//       await tx.executeSql('DROP TABLE IF EXISTS articulos', [], (_, result) => console.log('Tabla articulos eliminada', result), (_, error) => console.log('Error al eliminar tabla articulos', error));
 
-      // Verifica y elimina la tabla preventaCabeza
-      await tx.executeSql('DROP TABLE IF EXISTS preventaCabeza', [], (_, result) => console.log('Tabla preventaCabeza eliminada', result), (_, error) => console.log('Error al eliminar tabla preventaCabeza', error));
+//       // Verifica y elimina la tabla preventaCabeza
+//       await tx.executeSql('DROP TABLE IF EXISTS preventaCabeza', [], (_, result) => console.log('Tabla preventaCabeza eliminada', result), (_, error) => console.log('Error al eliminar tabla preventaCabeza', error));
 
-      // Verifica y elimina la tabla preventaItem
-      await tx.executeSql('DROP TABLE IF EXISTS preventaItem', [], (_, result) => console.log('Tabla preventaItem eliminada', result), (_, error) => console.log('Error al eliminar tabla preventaItem', error));
-    });
+//       // Verifica y elimina la tabla preventaItem
+//       await tx.executeSql('DROP TABLE IF EXISTS preventaItem', [], (_, result) => console.log('Tabla preventaItem eliminada', result), (_, error) => console.log('Error al eliminar tabla preventaItem', error));
+//     });
 
-    console.log("Todas las tablas eliminadas correctamente.");
-  } catch (error) {
-    console.error('Error al eliminar todas las tablas:', error);
-    throw error;
-  }
+//     console.log("Todas las tablas eliminadas correctamente.");
+//   } catch (error) {
+//     console.error('Error al eliminar todas las tablas:', error);
+//     throw error;
+//   }
   
   
-};
+// };
 
-export { db, initDatabase, eliminarTodasLasTablas/*,, getClientes, insertArticulosFromAPI, getArticulos, getUsuarios, insertUsuariosFromAPI*/ };
+export { db, initDatabase /*,, getClientes, insertArticulosFromAPI, getArticulos, getUsuarios, insertUsuariosFromAPI*/ };

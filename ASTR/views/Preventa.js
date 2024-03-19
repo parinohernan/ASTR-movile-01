@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { obtenerPreventa, preventaDesdeBDD, calcularTotal, limpiarPreventa } from "../src/utils/storageUtils";
-import { nextPreventa, grabarPreventaEnBDD } from '../database/controllers/Preventa.Controler';
-import { getClientes } from '../database/controllers/Clientes.Controler';
+import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
+import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
+import { getClientes } from '../database/controllers/Clientes.Controller';
+import { nextPreventa } from '../src/utils/storageConfigData';
 
 const Preventa = (props) => {
   const {route} = props;
@@ -17,7 +18,7 @@ const Preventa = (props) => {
   
   /*busco los items que ya esten cargados en la preventa*/ 
   
-  const [carrito, setcarrito] = useState([]);
+  const [carrito, setCarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
   const [nueva, setNueva] = useState(true);
@@ -37,24 +38,6 @@ const Preventa = (props) => {
     setDCliente(cliente);
   }
   
-  
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     const carritoData = await obtenerPreventa();
-  //     console.log("25carritodata",carritoData[0]);
-  //     const totalData = await calcularTotal();
-  //     setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, codigo: item.id })));
-  //     setCantidadItems (carritoData.length);
-  //     setTotal(totalData);
-  //     // console.log("30 carrito reducido ", carrito);
-  //     if (typeof (cliente) == "string") {
-  //       // solo cuando edito una preventa
-  //       await siEstoyEditando();
-  //     }
-  //     setDCliente(cliente);
-  //   };
-  //   loadData();
-  // }, []); 
   useEffect(() => {
     const loadData = async () => {
       if (typeof (cliente) == "string") {
@@ -65,24 +48,30 @@ const Preventa = (props) => {
 
         // console.log("25carritodata",carritoData[0]);
       }
-      const carritoData = await obtenerPreventa();
-      setDCliente(cliente);
-      setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id })));
-      setCantidadItems (carritoData.length);
-      const totalData = await calcularTotal();
-      setTotal(totalData);
-      // console.log("30 carrito reducido ", carrito);
+      cargarDatos();
+      // const carritoData = await obtenerPreventaDeStorage();
+      // setDCliente(cliente);
+      // // if (carritoData == []) {
+        
+      //   setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioFinal })));
+      // // }
+      // setCantidadItems (carritoData.length);
+      // const totalData = await calcularTotal();
+      // setTotal(totalData);
+      console.log("30 carrito reducido ", carrito);
     };
     loadData();
   }, []); 
 
   const cargarDatos = async () => {
-    const carritoData = await obtenerPreventa();
+    const carritoData = await obtenerPreventaDeStorage();
+    setDCliente(cliente);
+    if (carritoData.length != 0) {
+      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioFinal })));
+    }
+    setCantidadItems (carritoData.length);
     const totalData = await calcularTotal();
-    console.log("siguiente preventa ",carrito, nextPreventa());
-    setcarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, precio: item.precioFinal, codigo: item.id })));
     setTotal(totalData);
-    // setIsLoaded(true);
   };
 
   const grabarPreventa = async () => {
@@ -92,14 +81,14 @@ const Preventa = (props) => {
     if (nueva) {
       numero = await nextPreventa();
     }
-    const preventaItems = carrito;
     console.log("carrito ooo ",carrito);
-    await grabarPreventaEnBDD (numero, nota , cliente.id, preventaItems);    
+    await grabarPreventaEnBDD (numero, nota , cliente.id, carrito);
+    setCarrito ([]);    
   };
 
   const limpiarLaPreventa = async () => {
     // esta funcion se usa solo para test
-    await limpiarPreventa();
+    await limpiarPreventaDeStorage();
     // await cargarDatos();
   };
 
@@ -124,8 +113,8 @@ const Preventa = (props) => {
 
   const abrirArticulos = () => {
     // setMostrarArticulos(true);
-    console.log("PRF62 voy a abrir articu con la prop prefacNume ", preventaNumero );
-    navigation.navigate('Articulos', { numeroPreventa: preventaNumero, codigoCliente: cliente.id });
+    console.log("PRF127 voy a abrir articu con la prop preventaNume sin clienteID", preventaNumero );
+    navigation.navigate('Articulos', { numeroPreventa: preventaNumero});
   };
 
  
@@ -133,7 +122,8 @@ const Preventa = (props) => {
   const renderItem = ({ item }) => (
     <View>
       <Text>{`Descripción: ${item.descripcion}`}</Text>
-      <Text>{`Codigo : ${item.codigo}, Cantidad: ${item.cantidad}`}</Text>
+      <Text>{`Codigo : ${item.id}, Cantidad: ${item.cantidad}`}</Text>
+      {/* <Text>{`Codigo : ${item.}, precio: ${item.precio}`}</Text> */}
       <Text>{`$: ${String(item.precio)}`}</Text>
       <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
     </View>
@@ -143,10 +133,10 @@ const Preventa = (props) => {
     <View style={styles.container}>
   <SafeAreaView style={styles.container}>
     <View style={styles.rowContainer}>
-      <Text>Código: {dCliente.id}</Text>
-      <Text>Nombre: {dCliente.descripcion}</Text>
-      <Text>Saldo: {dCliente.importeDeuda}</Text>
+      <Text>{dCliente.descripcion}</Text>
     </View>
+    <View />
+      <Text>Código: {dCliente.id}  Saldo: $ -{dCliente.importeDeuda}</Text>
     <View style={styles.separator} />
 
     <View style={styles.rowContainer}>
@@ -241,6 +231,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   modalContainer: {
+    backgroundColor: '#A2BAB6',
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

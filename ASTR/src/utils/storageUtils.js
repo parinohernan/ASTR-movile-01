@@ -5,12 +5,12 @@ import { db } from '../../database/database';
 const STORAGE_KEY = '@MyApp:PreventaData';
 
 // Guardar una preventa en AsyncStorage
-const guardarPreventa = async (preventa) => {
+const guardarPreventaEnStorage = async (preventa) => {
     console.log("grabando ",preventa);
     try {
       if (preventa !== null && preventa !== undefined ) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));
-        console.log('Preventa guardada con éxito');
+        console.log('Preventa guardada con éxito en Storage');
       } else {
         console.error('Error: El valor de la preventa es null o undefined');
       }
@@ -28,18 +28,18 @@ const guardarPreventa = async (preventa) => {
   };
 
 // Obtener la preventa almacenada en AsyncStorage
-const obtenerPreventa = async () => {
+const obtenerPreventaDeStorage = async () => {
     try {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
-        console.log("STR34 obteniendo preventa");
+        console.log("STR34 obteniendo preventa de Storage");
 
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
             return JSON.parse(preventaString);
         } else {
-            console.log("str32");
+            console.log("str40");
             // crea una preventa limpia
-            guardarPreventa([])
+            guardarPreventaEnStorage([])
             return null;
         }
     } catch (error) {
@@ -48,38 +48,8 @@ const obtenerPreventa = async () => {
     }
 };
 
-// Busca la prevenata en la BDD y la almacena en AsyncStorage
-// const preventaDesdeBDD = async (numeroPreventa) => {
-//   console.log("STORAGE53 numero preven", numeroPreventa);
-//   try {
-//     return new Promise((resolve, reject) => {
-//       db.transaction((tx) => {
-//         tx.executeSql(
-//           // 'SELECT * FROM preventaItem WHERE idPreventa = ?',
-//           'SELECT articulo as ArticuloCodigo cantidad id idPreventa as preventaNumero importe as precio FROM preventaItem WHERE idPreventa = ?',
-//           [numeroPreventa],
-//           (_, result) => {
-//             const preventaItemsBDD = [];
-//             for (let i = 0; i < result.rows.length; i++) {
-//               preventaItemsBDD.push(result.rows.item(i));
-//             }
-//             console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
-//             guardarPreventaEditando(preventaItemsBDD);
-//             resolve(preventaItemsBDD);
-//           },
-//           (_, error) => {
-//             console.error('Error al cargar items de preventa desde la base de datos:', error);
-//             reject(error);
-//           }
-//         );
-//       });
-//     });
-//   } catch (error) {
-//     console.error('Error en preventaDesdeBDD:', error);
-//     throw error;
-//   }
-// };
 const preventaDesdeBDD = async (numeroPreventa) => {
+  /* con el numero de preventa la traigo de la BDD locar y la coloco en locasStorege   */
   console.log("STORAGE83 numero preven", numeroPreventa);
   try {
     return new Promise((resolve, reject) => {
@@ -114,7 +84,7 @@ const calcularTotal = async () => {
     // console.log("calculo total preventa ")
     let total = 0;
     try {
-      const preventa = await obtenerPreventa();
+      const preventa = await obtenerPreventaDeStorage();
     //   console.log("calculo precioFinal preventa ",preventa);
       // Verifica si la preventa es un array antes de contar los elementos
      for (let i = 0; i < preventa.length; i++) {
@@ -131,8 +101,8 @@ const calcularTotal = async () => {
   }; 
 
 // Limpiar los datos de preventa almacenados en AsyncStorage
-const limpiarPreventa = async () => {
-    console.log("STR44 limiando preventa");
+const limpiarPreventaDeStorage = async () => {
+    console.log("STR44 limpiando preventa Storage");
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
   } catch (error) {
@@ -141,4 +111,4 @@ const limpiarPreventa = async () => {
   }
 };
 
-export { guardarPreventa, preventaDesdeBDD, obtenerPreventa, limpiarPreventa, calcularTotal };
+export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal };

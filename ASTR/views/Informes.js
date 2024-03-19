@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Modal from 'react-native-modal';
-import { prefacturas } from '../assets/data';
+// import { prefacturas } from '../assets/data';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const Informes = () => {
@@ -44,8 +44,8 @@ const Informes = () => {
         )}
       />
 
-      {/* Modal */}
-      <Modal isVisible={isModalVisible}>
+  {/* Modal */}
+  <Modal isVisible={isModalVisible}>
   <View style={styles.modalContainer}>
     <TouchableOpacity onPress={handleEdit}>
       <View style={styles.modalOption}>
@@ -66,8 +66,8 @@ const Informes = () => {
       </View>
     </TouchableOpacity>
   </View>
-</Modal>
-    </View>
+  </Modal>
+  </View>
   );
 };
 

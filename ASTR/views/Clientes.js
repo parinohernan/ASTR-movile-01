@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-// import { datosClientes } from '../assets/data';
 import { useNavigation } from '@react-navigation/native';
-import { getClientes } from '../database/controllers/Clientes.Controler';
-import { nextPreventa } from '../database/controllers/Preventa.Controler';
+import { getClientes } from '../database/controllers/Clientes.Controller';
+import { nextPreventa } from '../src/utils/storageConfigData';
+import { Searchbar } from 'react-native-paper';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -13,7 +13,6 @@ const Clientes = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      
       try {
         const clientesFromDB = await getClientes();
         setClientes(clientesFromDB);
@@ -21,41 +20,41 @@ const Clientes = () => {
         console.error('Error al obtener de bdd o insertar clientes: ', error);
       }
     };
-
     fetchData();
   }, []);
 
   const filteredClientes = clientes.filter(
     (cliente) =>
+      typeof cliente.id === 'string' &&
       cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleClienteClick = async (cliente) => {
+  const handleClientClick = async (cliente) => {
     let preventaNumero = await nextPreventa();
-    console.log('Código del cliente:', cliente.descripcion);
+    // console.log('Código del cliente:', cliente.descripcion);
     console.log('Preventa Número:', preventaNumero);
-  
-    // Resto de tu lógica...
     navigation.navigate('Preventa', { preventaNumero, cliente });
   };
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchbar}
+      <View style={styles.searchbar}      >
+      <Searchbar
         placeholder="Buscar cliente..."
+        onChangeText={(value) => setSearch(value)}
         value={search}
-        onChangeText={(text) => setSearch(text)}
       />
+      </View>
+
       <FlatList
         data={filteredClientes}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.id}-${item.descripcion}`}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleClienteClick(item)}> 
+          <TouchableOpacity onPress={() => handleClientClick(item)}> 
             <View style={styles.clienteItem}>
-              <View style={styles.clienteText}>
-                <Icon name="user" size={10} color="red" style={styles.icon} />
+              <View >
+                <Icon name="user" size={24} color="#626262" />
                 <Text style={styles.text}>{item.descripcion}</Text>
                 <Text style={styles.codigo}>{item.id}</Text>
               </View>
@@ -67,55 +66,20 @@ const Clientes = () => {
   );
 };
 
- // ... (tu estilo existente)
-  const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: '#FAF7E6',
   },
-  searchbar: {
-    height: 50,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
-  },
   clienteItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    // display :'flex',
+    // flexDirection: 'row',  
+    // alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: 'gray',
     paddingVertical: 10,
-    width: '100%', 
-  },
-  clienteText: {
-    // flexDirection: 'row',
-    // justifyContent: 'space-between', 
-    // fontSize: 10,
-    // width: '100%',
-  },
-  text: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', 
-    fontSize: 16,
-    width: '100%',
-  },
-  icon: {
-    paddingRight: 24,
-    marginLeft: 4,
-    fontSize: 20,
-  },
-  codigo: {
-    fontSize: 20,
-    color : "blue",
-    marginRight: 20,
-  },
+  }
 });
 
-
 export default Clientes;
-
-
-
