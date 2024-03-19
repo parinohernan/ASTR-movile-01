@@ -19,14 +19,15 @@ const Configurar = () => {
     cantidadMaximaArticulos: "18",
   })
 
+  const [changes, setChanges]= useState(false);
+
   useEffect(() => {
     handleGetConfiguracion()
   }, []);
 
-  
-  const handleTablas =   () => {
-    initDatabase()
-  };
+  useEffect(() => {
+    setChanges(true)
+  }, [configuracion]);
 
   const handleGetConfiguracion = async ()=>{
     let config = await getConfiguracionDelStorage();
@@ -36,6 +37,7 @@ const Configurar = () => {
 
   const handleGuardarConfiguracion = ()=>{
     guardarConfiguracionEnStorage(configuracion);
+    setChanges( !changes)
   }
 
   return (
@@ -64,14 +66,15 @@ const Configurar = () => {
       <Text>Siguente preventa:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
-        value={configuracion.siguientePreventa}
+        value={String(configuracion.siguientePreventa)}
         onChangeText={(text) => setConfiguracion({ ...configuracion, siguientePreventa: text.replace(/[^0-9]/g, '') })}
         // editable:false
       />
 
       {/* Botones */}
-      <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
-      <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} />
+      {/* <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} /> */}
+      { changes? <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> : ""}
+      {/* <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> */}
     </View>
   );
 };

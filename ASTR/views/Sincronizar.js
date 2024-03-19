@@ -3,6 +3,7 @@ import { View, Text, Switch, ScrollView } from 'react-native';
 import { Button } from 'react-native-elements';
 import { actualizarClientes, actualizarVendedores, actualizarArticulos, enviarPreventas } from '../handlers/actualizarApp';
 import ConsoleComponent from '../src/components/ConsoleComponent';
+import { initDatabase } from '../handlers/actualizarApp';
 
 const Sincronizar = () => {
   const [actualizarDatos, setActualizarDatos] = useState(false);
@@ -19,20 +20,25 @@ const Sincronizar = () => {
   };
 
   const handleTraerVendedores = async () => {
-    await actualizarVendedores();
+    await actualizarVendedores(setLogs);
   };
 
   const handleTraerClientes = async () => {
-    await actualizarClientes();
+    await actualizarClientes(setLogs);
   };
 
   const handleTraerArticulos = async () => {
-    await actualizarArticulos();
+    await actualizarArticulos(setLogs);
   };
 
   const handleEnviarPreventas = async () => {
     await enviarPreventas(setLogs);
 
+  };
+
+  const handleTablas =  async () => {
+    //inicializa las tablas en BDD sqlite
+    await initDatabase(setLogs)
   };
 
   const handleLog =  (mensaje) => {
@@ -60,8 +66,9 @@ const Sincronizar = () => {
       {/* <ConsoleComponent logs="logs mostrar" /> */}
       <ConsoleComponent logs={logs} />
       {/* Botones */}
-      <Button title="Sincronizar" onPress={handleSincronizar} />
-      <Button title="Atrás" onPress={handleAtras} buttonStyle={{ marginTop: 10 }} />
+      <Button title="Crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
+      {/* <Button title="Sincronizar" onPress={handleSincronizar} />
+      <Button title="Atrás" onPress={handleAtras} buttonStyle={{ marginTop: 10 }} /> */}
       <Button title="Sincronizar vendedores" onPress={handleTraerVendedores} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
       <Button title="Sincronizar clientes" onPress={handleTraerClientes} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
       <Button title="Sincronizar Articulos" onPress={handleTraerArticulos} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>

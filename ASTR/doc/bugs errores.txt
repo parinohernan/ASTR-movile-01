@@ -13,19 +13,19 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 3- ver articulos frecuentes
 
-3- mejorar la UX/UI
+2- mejorar la UX/UI
 
 1- si hay preventas en el webserver y instalamos un nuevo cel con los mismos datos, hay problemas al enviar preventas. igualmente no se deberian borral las preventas.
 
-5- tomar los datos del endPoint y cantidad de items desde la config y usarlos.
+4- tomar los datos del endPoint y cantidad de items desde la config y usarlos.
 
-5- permitir eliminar items de la preventa actual.
+4- permitir eliminar items de la preventa actual.
 
-5 -permitir modificar una preventa en BDD local.
+4 -permitir modificar una preventa en BDD local.
 
+4 - mostrar un progress al sincronisar.
 
+5 - ver que pasa cuando hay actualizacion de precios
 
-
-
-
+--> 5 - en el build no conecta al endpoint.
 

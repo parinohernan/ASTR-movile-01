@@ -23,12 +23,16 @@ const guardarConfiguracionEnStorage = async (configuracion) => {
 const getConfiguracionDelStorage = async () => {
     try {
         const configuracionStr = await AsyncStorage.getItem(STORAGE_KEY);
-        console.log("STR34 obteniendo configuracion de Storage", configuracionStr);
-        if (configuracionStr.length > 1) {  
-        }
-        return JSON.parse('{"endPoint":"http://localhost:3000/preventas","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
+        console.log("STRCONF 26 obteniendo configuracion de Storage", configuracionStr);
+        // if (configuracionStr.length > 1) {  
+            if (configuracionStr == null) {
+                return JSON.parse('{"endPoint":"http://192.168.1.123:3000/","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
+            }
+            else {
+              return JSON.parse(configuracionStr)
+            }
     } catch (error) {
-        console.error('Error al obtener la preventa desde AsyncStorage:', error);
+        console.error('Error al obtener la configuracion desde AsyncStorage:', error);
         throw error;
     }
 };
@@ -37,6 +41,17 @@ async function configuracionVendedor() {
   let conf= await getConfiguracionDelStorage();
   return conf.vendedor
 }
+
+async function configuracionEndPoint() {
+  let conf= await getConfiguracionDelStorage();
+  return conf.endPoint
+}
+
+async function configuracionCantidadMaximaArticulos() {
+  let conf= await getConfiguracionDelStorage();
+  return conf.cantidadMaximaArticulos
+}
+
 
 async function nextPreventa() {
     let conf= await getConfiguracionDelStorage();
@@ -61,4 +76,4 @@ const limpiarConfiguracionDelStorage = async () => {
   }
 };
 
-export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa, mas1NexPreventa, configuracionVendedor };
+export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa, mas1NexPreventa, configuracionVendedor, configuracionEndPoint };

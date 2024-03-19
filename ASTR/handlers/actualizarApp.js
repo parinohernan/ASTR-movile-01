@@ -5,41 +5,53 @@ import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controle
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
 import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
+import { configuracionEndPoint } from '../src/utils/storageConfigData';
 
-const actualizarVendedores = async () => {
+const handleLogs = (logs, mensaje, setLogs) => {
+  console.log("L M ",mensaje);
+  setLogs( [...logs, mensaje]);
+  return [...logs, mensaje];
+};
+
+const actualizarVendedores = async (setLogs) => {
     console.log("Trayendo Vendedores...");
+    let logs=[];
+    let endPoint = await configuracionEndPoint() + 'vendedores'
+    
     try {
-      const response = await axios.get('http://192.168.1.123:3000/vendedores');
-      console.log("actu vende response",response.data);
+      const response = await axios.get(endPoint);
+      logs = handleLogs(logs,("actualizando vendedores..."),setLogs);
       const data = response.data;
-      //await initDatabase();
+      //console.log("data",data);
       // Inserta los usuarios desde la API a la base de datos
-      await insertUsuariosFromAPI(data);
+      await insertUsuariosFromAPI(data, setLogs);
     } catch (error) {
-      console.error('Error al obtener o insertar usuarios: ', error);
+      console.log(error);
+      logs = handleLogs(logs,('Error al obtener o insertar vendedores: '),setLogs);
     }
   };
 
-const actualizarClientes = async () => {
+const actualizarClientes = async (setLogs) => {
     console.log("Trayendo Clientes...");
+    let logs=[];
     try {
-    const response = await axios.get('http://192.168.1.123:3000/clientes');
-    console.log("response");
+    const response = await axios.get(await configuracionEndPoint() + 'clientes');
+    logs = handleLogs(logs,("actualizando clientes..."),setLogs);
     const data = response.data;
     // await initDatabase();
     // Inserta los clientes desde la API a la base de datos
     await insertClientesFromAPI(data);
 } catch (error) {
-    console.error('Error al obtener o insertar clientes: ', error);
+  logs = handleLogs(logs,('Error al obtener o insertar clientes: '),setLogs);
 }
 };
 
-const actualizarArticulos = async () => {
+const actualizarArticulos = async (setLogs) => {
     console.log("Trayendo Articulos...");
-    
+    let logs=[];
     try {
-        const response = await axios.get('http://192.168.1.123:3000/articulos');
-        console.log("response", response.data);
+        const response = await axios.get(await configuracionEndPoint() + 'articulos');
+        logs = handleLogs(logs,("actualizando articulos..."),setLogs);
         const data = response.data;
 
         // Define el tamaño del lote
@@ -54,18 +66,18 @@ const actualizarArticulos = async () => {
         // Inserta cada lote en la base de datos
         for (const batch of batches) {
             await insertArticulosFromAPI(batch);
-            console.log(`Lote de ${batch.length} artículos insertado correctamente.`);
+            handleLogs(logs,(`Lote de ${batch.length} artículos actualizado correctamente.`),setLogs);
         }
 
     } catch (error) {
-        console.error('Error al obtener o insertar artículos: ', error);
+      logs = handleLogs(logs,('Error al obtener o insertar articulos: '),setLogs);
     }
 };
 
 const actualizarPreventas = async (preventasJSON, mensajes) => {
     console.log("ACTUALIZAR BDD REMOTA");
     try {
-        const response = await axios.post('http://192.168.1.123:3000/preventas', preventasJSON);
+        const response = await axios.post(configuracionEndPoint() + '/preventas', preventasJSON);
         console.log("response", response.data);
         // setLogs([...setLogs, response.data]);
     } catch (error) {
@@ -76,9 +88,9 @@ const actualizarPreventas = async (preventasJSON, mensajes) => {
     }
 }
 
-const handleLogs = (logs, mensaje) => {
-    return [...logs, mensaje];
-  };
+// const handleLogs = (logs, mensaje) => {
+//     return [...logs, mensaje];
+//   };
 
 const enviarPreventas = async (setLogs) => {
     let preventas = [];
@@ -92,29 +104,27 @@ const enviarPreventas = async (setLogs) => {
       for (let i = 0; i < preventas.length; i++) {
         try {
           await actualizarPreventas(preventas[i], mensajes);
-          logs = handleLogs(logs, `enviando preventa ${i + 1}.`);
+          logs = handleLogs(logs,(`enviando preventa ${i + 1}.`) , setLogs);
         } catch (error) {
-          logs = handleLogs(logs, `Error al enviar la preventa ${i + 1}: ${error}`);
+          logs = handleLogs(logs, (`Error al enviar la preventa ${i + 1}: ${error}`),setLogs);
           console.error('Error al enviar la preventa', i + 1);
         }
       }
-      logs = handleLogs(logs, mensajes.mensaje);
-  
+       
       // Borrarlas de la aplicación solo si no tuvimos errores
       if (!mensajes.hayErrores) {
           await borrarContenidoPreventasEnBDD();
-          logs = handleLogs(logs, "Preventas borradas correctamente");
+          logs = handleLogs(logs, ("Preventas borradas correctamente"),setLogs);
         
       }else{
-          logs = handleLogs(logs, "no se borraron las preventas, pueden Haber errores");
+          logs = handleLogs(logs, ("no se borraron las preventas, pueden Haber errores"),setLogs);
           console.error('no se borraron las preventas porque hay errores ')
       }
     } catch (error) {
-      logs = handleLogs(logs, `Error al enviar o borrar preventas: ${error}`);
+      logs = handleLogs(logs, (`Error al enviar o borrar preventas: ${error}`),setLogs);
       console.error('Error al enviar o borrar preventas: ', error);
     }
   
-    setLogs(logs);
   };
 
 const actualizarAPP = async () =>{

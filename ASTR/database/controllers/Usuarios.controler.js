@@ -1,6 +1,15 @@
 import { db } from '../database';
-const insertUsuariosFromAPI = (data) => {
-    return new Promise((resolve, reject) => {
+
+const handleLogs = (logs, mensaje, setLogs) => {
+  console.log("L M ",mensaje);
+  setLogs( [...logs, mensaje]);
+  return [...logs, mensaje];
+};
+
+const insertUsuariosFromAPI = (data, setLogs) => {
+  let logs=[];  
+  logs = handleLogs(logs,("vendedores..."),setLogs);
+  return new Promise((resolve, reject) => {
       db.transaction(tx => {
         data.forEach(item => {
           tx.executeSql(
@@ -10,7 +19,8 @@ const insertUsuariosFromAPI = (data) => {
               console.log('Usuario insertado con ID: ', result.insertId);
             },
             (_, error) => {
-              console.log('Error al insertar usuario: ', error, item.codigo, item.descripcion, item.clave,);
+              console.log('Error al insertar usuario: ', error, item.codigo, item.descripcion, item.clave);
+              logs = handleLogs(logs,('Error al insertar usuario: '+ error + item.descripcion ),setLogs);
             }
           );
         });

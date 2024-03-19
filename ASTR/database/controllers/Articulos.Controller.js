@@ -7,7 +7,7 @@ const insertArticulosFromAPI = (data) => {
 
       data.forEach(item => {
         tx.executeSql(
-          'INSERT INTO articulos (id, descripcion, existencia, precio, unidadVenta) VALUES (?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO articulos (id, descripcion, existencia, precio, unidadVenta) VALUES (?, ?, ?, ?, ?)',
           [
             item.codigo,
             item.descripcion,

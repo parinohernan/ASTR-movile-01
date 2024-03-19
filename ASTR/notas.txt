@@ -1,1 +1,37 @@
 backgroundColor: '#FAF7E6'
+
+ crear el build
+
+ inslado eas:                               npm install -g eas-cli  
+ me logeo o miro si estoy logueado:         eas whoami
+
+ configuro el proyecto                      eas build:configure
+    esto me crea el eas.json                  "android":{
+    agrego esta configuracion                 "buildType": "apk"
+                                            {
+                                            "cli": {
+                                                "version": ">= 7.6.0"
+                                            },
+                                            "build": {
+                                                "development": {
+                                                "developmentClient": true,
+                                                "distribution": "internal"
+                                                },
+                                                "preview": {
+                                                "ios": {
+                                                    "simulator": true
+                                                },
+                                                "android":{
+                                                    "buildType":"apk"
+                                                }
+                                                },
+                                                "production": {}
+                                            },
+                                            "submit": {
+                                                "production": {}
+                                            }
+                                            }  
+                                            },
+
+comando magico                              eas build -p android --profile preview
+

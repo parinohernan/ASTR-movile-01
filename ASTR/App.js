@@ -7,7 +7,7 @@ import Home from './views/Home';
 import Clientes from './views/Clientes';
 import Preventa from './views/Preventa';
 import Articulos from './views/Articulos';
-import Informes from './views/Informes';
+// import Informes from './views/Informes';
 import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
 import Usuarios from './views/Usuarios';

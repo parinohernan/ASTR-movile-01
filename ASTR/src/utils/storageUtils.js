@@ -31,7 +31,7 @@ const guardarPreventaEnStorage = async (preventa) => {
 const obtenerPreventaDeStorage = async () => {
     try {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
-        console.log("STR34 obteniendo preventa de Storage");
+        console.log("STR34 obteniendo preventa de Storage nn");
 
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
