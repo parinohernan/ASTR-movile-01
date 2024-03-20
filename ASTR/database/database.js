@@ -9,7 +9,7 @@ const handleLogs = (logs, mensaje, setLogs) => {
   return [...logs, mensaje];
 };
 // inicializa todos los campos de la vase de datos
-const initDatabase = (setLogs) => {
+const initDatabase = async (setLogs) => {
   let logs=[];
 
   db.transaction(tx => {

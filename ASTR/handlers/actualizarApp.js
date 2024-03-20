@@ -75,22 +75,14 @@ const actualizarArticulos = async (setLogs) => {
 };
 
 const actualizarPreventas = async (preventasJSON, mensajes) => {
-    console.log("ACTUALIZAR BDD REMOTA");
     try {
-        const response = await axios.post(configuracionEndPoint() + '/preventas', preventasJSON);
-        console.log("response", response.data);
-        // setLogs([...setLogs, response.data]);
+        const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
     } catch (error) {
         mensajes.hayErrores = true;
         mensajes.mensaje = ('Error al enviar preventas:' + error);
         console.error('Error al enviar preventas:', error);
-        // setLogs([...setLogs, 'Tuvimos un error al enviar preventas']);
     }
 }
-
-// const handleLogs = (logs, mensaje) => {
-//     return [...logs, mensaje];
-//   };
 
 const enviarPreventas = async (setLogs) => {
     let preventas = [];
@@ -127,14 +119,20 @@ const enviarPreventas = async (setLogs) => {
   
   };
 
-const actualizarAPP = async () =>{
-    console.log("VENDEDORES ->");
-    initDatabase();
-    actualizarVendedores();
-    console.log("CLIENTES ->");
-    actualizarClientes();
-    console.log("ARTICULOS ->");
-    actualizarArticulos();
-}
+  const actualizarAPP = async (esCompleta, setLogs) => {
+    let logs= [];
+    await enviarPreventas(setLogs);   
+    esCompleta 
+      ? (
+          console.log("Sincronizando todos los datos."),
+          logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs),
+          await initDatabase(setLogs),
+          await actualizarVendedores(setLogs),
+          await actualizarClientes(setLogs),
+          await enviarPreventas(setLogs),
+          logs = handleLogs(logs, "Sincronizacion completa.", setLogs)
+        )
+      : logs = handleLogs(logs, "Preventas enviadas.", setLogs);
+  }
 
 export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase, enviarPreventas};

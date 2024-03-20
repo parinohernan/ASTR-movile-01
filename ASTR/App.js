@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-
 import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
 import Clientes from './views/Clientes';
@@ -33,7 +32,9 @@ const App = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="Home" screenOptions={{
+    headerShown: false
+  }}>
         <Stack.Screen name="Home" component={RenderHomeScreen} />
         <Stack.Screen name="Informes" component={RenderListaPreventasScreen} />
         <Stack.Screen name="Sincronizar" component={RenderSincronizarScreen} />

@@ -13,7 +13,7 @@ const insertUsuariosFromAPI = (data, setLogs) => {
       db.transaction(tx => {
         data.forEach(item => {
           tx.executeSql(
-            'INSERT INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)',
+            'INSERT OR REPLACE INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)',
             [item.codigo, item.descripcion, item.clave],
             (_, result) => {
               console.log('Usuario insertado con ID: ', result.insertId);

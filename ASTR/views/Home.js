@@ -43,16 +43,23 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.titulo}>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subtituloText}>La aplicacion movil para astrial</Text>
+      </View>
       {menuOptions.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={styles.menuItem}
           onPress={() => handleOptionPress(option)}
         >
-          <MaterialCommunityIcons name={option.icon} size={60} color="blue" />
+          <MaterialCommunityIcons name={option.icon} size={40} color="blue" />
           <Text style={styles.menuItemText}>{option.name}</Text>
         </TouchableOpacity>
       ))}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Version 0.0.4 - hernanpa Dev </Text>
+      </View>
     </View>
   );
 };
@@ -64,7 +71,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-around',
     alignItems: 'center',
-    padding: 20,
+    // padding: 20,
+    marginTop:40,
     backgroundColor: '#FAF7E6',
   },
   menuItem: {
@@ -74,6 +82,46 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 20,
     marginTop: 10,
+  },
+  tituloText: {
+    alignContent: "center",
+    fontSize: 40,
+    marginBottom: 5,
+    color: '#FAF7E6'
+  },
+  subtituloText: {
+    alignContent: "center",
+    fontSize: 18,
+    marginBottom: 5,
+    color: '#FAF7E6'
+  },
+  titulo: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: '100%',
+    // borderTopRightRadius: 35,
+    borderTopLeftRadius: 35,
+    backgroundColor: "#1212ef",
+    marginBottom: 20,
+  },
+  footer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: '100%',
+    borderBottomEndRadius: 35,
+    borderBottonLeftRadius: 35,
+    backgroundColor: "#1212ef",
+    marginBottom: 0,
+  },
+  footerText: {
+
+    borderBlockColor: "black",
+    alignContent: "center",
+    fontSize: 18,
+    marginBottom: 0,
+    color: '#FAF7E6'
   },
 });
 

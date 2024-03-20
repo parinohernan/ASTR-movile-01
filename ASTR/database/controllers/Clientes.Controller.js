@@ -29,7 +29,7 @@ const insertClientesFromAPI = (data) => {
           } = item;
   
           tx.executeSql(
-            'INSERT INTO clientes (id, descripcion, cuit, calle, numero, piso, departamento, codigoPostal, localidad, telefono, mail, contactoComercial, categoriaIva, listaPrecio, importeDeuda, codigoVendedor, actualizado, saldoNTCNoAplicado, limiteCredito) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT OR REPLACE INTO clientes (id, descripcion, cuit, calle, numero, piso, departamento, codigoPostal, localidad, telefono, mail, contactoComercial, categoriaIva, listaPrecio, importeDeuda, codigoVendedor, actualizado, saldoNTCNoAplicado, limiteCredito) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
               codigo,
               descripcion,
