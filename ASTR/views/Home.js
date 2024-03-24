@@ -3,13 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 
-const Home = () => {
+const Home = ({user}) => {
 
   const navigation = useNavigation();
 
   const menuOptions = [
-    { name: 'Preventa', icon: 'clipboard-check' },
-    // { name: 'Cobro', icon: 'cash' },
+    // { name: 'Preventa', icon: 'clipboard-check' },
+    // { name: 'Acerca de', icon: 'AppShortcut' },
     { name: 'Usuarios', icon: 'account-group' },
     { name: 'Informes', icon: 'file-chart' },
     { name: 'Sincronizar', icon: 'sync' },
@@ -20,12 +20,12 @@ const Home = () => {
     // Implementar lógica según la opción seleccionada
     console.log(`Seleccionaste: ${option.name}`);
     switch (option.name) {
-      case 'Preventa':
-        navigation.navigate('Clientes', {});
-        break;
-      case 'Informes':
-        navigation.navigate('Informes', {});
-        break;
+      // case 'Preventa':
+      //   navigation.navigate('Clientes', {});
+      //   break;
+      // case 'Informes':
+      //   navigation.navigate('Informes', {});
+      //   break;
       case 'Sincronizar':
         navigation.navigate('Sincronizar', {});
         break;
@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: '#FAF7E6'
   },
+  
   titulo: {
     flex: 1,
     justifyContent: "center",
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
 
-    borderBlockColor: "black",
+    
     alignContent: "center",
     fontSize: 18,
     marginBottom: 0,

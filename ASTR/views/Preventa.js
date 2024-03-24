@@ -117,16 +117,22 @@ const Preventa = (props) => {
     navigation.navigate('Articulos', { numeroPreventa: preventaNumero});
   };
 
- 
+  const openModal = (articulo) => {
+    console.log("articulo ",articulo); 
+    navigation.navigate('AddArticulo', { articulo });
+  };
+
   // Renderiza cada elemento del array reducido
   const renderItem = ({ item }) => (
-    <View>
+    // <View>
+       <TouchableOpacity onPress={() => openModal(item)}>
       <Text>{`Descripción: ${item.descripcion}`}</Text>
       <Text>{`Codigo : ${item.id}, Cantidad: ${item.cantidad}`}</Text>
       {/* <Text>{`Codigo : ${item.}, precio: ${item.precio}`}</Text> */}
       <Text>{`$: ${String(item.precio)}`}</Text>
       <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
-    </View>
+      </TouchableOpacity>
+    //</View>  
   );
 
   return (

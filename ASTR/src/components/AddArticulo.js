@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { guardarPreventaEnStorage, obtenerPreventaDeStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
+import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage} from "../utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
+
+const cantidadCargados= async (codigo) =>{  //articulo.id
+  // console.log("la cantidad en la preventa ::", codigo);
+  const preventaActual = await obtenerPreventaDeStorage();
+  // console.log("preventa actual",preventaActual);
+  for (let i = 0; i < preventaActual.length; i++) {
+    if (preventaActual[i].id == codigo) {
+      // console.log("EEEEEEEEste ya esta ",codigo, " cantidad: ",preventaActual[i].cantidad);
+      return preventaActual[i].cantidad;
+    }
+    
+  }
+  // console.log("NO estaba cargado el codigo ",codigo, " cantidad: ",0);
+  return 0;
+}
 
 const AddArticulo = ({route}) => {
   const {params} = route;
   const articulo = params.articulo;
-  const [cantidad, setCantidad] = useState(2);
+  console.log("que tene el articulo.. ",articulo);
+  const [cantidad, setCantidad] = useState(articulo.cantidad? articulo.cantidad : 0 );
   // const [descuento, setDescuento] = useState(0);
   const [precioFinal, setPrecioFinal] = useState(0); //useState(articulo.precioCostoMasImp.toFixed(2))
   const navigation = useNavigation();
@@ -17,63 +33,61 @@ const AddArticulo = ({route}) => {
     precioFinal: parseFloat(precioFinal),
   };
   
-  useEffect(() => {
-    const fetchData = async () => {
-      // necesito el numero de preventa?
-      console.log("fetch en AddArticulo");
-      // try {
-      //   setLoading(true);
-      //   const filteredArticulos = await getArticulosFiltrados(search);
-      //   setArticulosList(filteredArticulos);
-      //   setLoading(false);
-      //   console.log( filteredArticulos.length, 'artículos filtrados con: ',search);
-      // } catch (error) {
-      //   console.error('Error al obtener artículos filtrados: ', error);
-      //   setLoading(false);
-      // }
-    };
-    
-    fetchData();
-   
-  }, []);
-  // const estaCargado= (codigo) =>{
-  //   const preventaActual = obtenerPreventa();
-  //   for (let i = 0; i < preventaActual.length; i++) {
-  //     const e = preventaActual[i];
-  //     if (e.id == articulo.id) {
-  //       setCantidad(e.cantidad);
-  //       setPrecioFinal(e.precioFinal);
-  //       console.log("ya estaba cargado");
-  //       return true;
-  //     }
-  //   }
-  //   return false
-  // }
-
-  console.log("addArt19. ",articuloConDetalles);
-  
-  const handleSave = async () => {
-    // ... lógica para guardar el artículo en la preventa
-    // Obtener la preventa actualizada después de guardar el artículo
+  const estaCargado= async (codigo) =>{  //articulo.id
     const preventaActual = await obtenerPreventaDeStorage();
-    console.log("preventa tiene ",preventaActual);
     for (let i = 0; i < preventaActual.length; i++) {
       const e = preventaActual[i];
-      if (e.id == articulo.id) { //actualiza un articulo ya existente
-        preventaActual[i].cantidad=cantidad;
-        preventaActual[i].precioFinal=precioFinal;
-        console.log("grabo la preventa con el articulo modificado ",precioFinal);
-        guardarPreventaEnStorage(preventaActual);
-        navigation.goBack();
-        return;
-      } 
-    }// Actualizar la preventa con el nuevo artículo
-    const nuevaPreventa = [...preventaActual, articuloConDetalles];
-    console.log("Add50. nueva prev", nuevaPreventa);
-    guardarPreventaEnStorage(nuevaPreventa);
+      if (e.id == codigo) {
+        console.log("ya estaba cargado el codigo ",codigo);
+        return true;
+      }
+    }
+    console.log("NO estaba cargado el codigo ",codigo);
+    return false;
+  }
+  
+  const vaciarPreventaStorage = async () =>{
+     // eliminar item de la preventa de sorage actual
+      console.log("nunca entra acas");
+      await eliminarItemEnPreventaEnStorage(articulo.id);
+      navigation.goBack();
+      return
+  }
+
+  const modificarItemPreventaStorage = async () => {
+    console.log("modificarItemPreventaStorage");
+    await eliminarItemEnPreventaEnStorage (articuloConDetalles.codigo);
+    await agregarItemPreventaStorage();
+  }
+
+  const agregarItemPreventaStorage = async() => {
+    console.log("agregarItemPreventaStorage");
+    const preventa = await obtenerPreventaDeStorage();
+    preventa.push(articuloConDetalles);
+    guardarPreventaEnStorage(preventa);
     navigation.goBack();
+  }
+
+  // console.log("addArt19. ",articuloConDetalles);
+  const handleSave = async () => {
+    // ... lógica para guardar el artículo en la preventa
+    const yaEsta = await estaCargado(articulo.id);
+    console.log("articulo a modificar ", cantidad ,  articulo.id);
+    if ( yaEsta && ( cantidad == 0)) {
+      await vaciarPreventaStorage();
+      return
+    } 
+    if (yaEsta) {
+      await modificarItemPreventaStorage();
+      return
+    } 
+    if (cantidad == 0) {
+      navigation.goBack();
+      return
+    }
+    await agregarItemPreventaStorage();
     return
-  };
+};
   
   const handleCantidad = (text) => {
     const cuenta = (articulo.precio.toFixed(2)) * text; //talves no deberia redondear
@@ -81,10 +95,6 @@ const AddArticulo = ({route}) => {
     setCantidad(text.replace(/[^0-9]/g, ''))
     setPrecioFinal(cuenta)
   }
-
-  const handleLimpiar = () => {
-    limpiarPreventaDeStorage();
-  };
 
   const handleCancel = () => {
     navigation.goBack();
@@ -120,9 +130,6 @@ const AddArticulo = ({route}) => {
         <Text style={styles.cancelButtonText}>Cancelar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.cancelButton} onPress={handleLimpiar}>
-        <Text >LIMPIAR TODA PREV</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -171,4 +178,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddArticulo;
+export {cantidadCargados, AddArticulo} ;

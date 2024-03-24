@@ -3,9 +3,9 @@ import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Searchbar } from 'react-native-paper';
 import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
-import AddArticulo from '../src/components/AddArticulo';
+import { cantidadCargados} from '../src/components/AddArticulo';
 import { useNavigation } from '@react-navigation/native';
-import { obtenerPreventa, guardarPreventa } from "../src/utils/storageUtils";
+import { obtenerPreventaDeStorage} from "../src/utils/storageUtils";
 
 
 
@@ -26,7 +26,7 @@ const Articulos = ({ route }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const filteredArticulos = await getArticulosFiltrados(search);
+        const filteredArticulos = await filtrarAgregarCantidadEnPreventa(search);
         setArticulosList(filteredArticulos);
         setLoading(false);
         console.log( filteredArticulos.length, 'artículos filtrados con: ',search);
@@ -43,6 +43,19 @@ const Articulos = ({ route }) => {
     }
   }, [search]);
   
+  const filtrarAgregarCantidadEnPreventa = async (search) => {
+    const preventaActual = await obtenerPreventaDeStorage();
+    const filteredArticulosBDD = await getArticulosFiltrados(search);
+    console.log("un item 5",filteredArticulosBDD[3]);
+    const filteredArticulosConCantidad =  filteredArticulosBDD.map(async(element) => {
+      const cantidad= await cantidadCargados(element.id);
+      console.log(element,"seleccionados ", cantidad);
+      element.seleccionados = cantidad;
+      return element;
+    });
+    return filteredArticulosBDD;
+  };
+
   const handleCheck = (codigo) => {
     console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
   };
@@ -58,6 +71,7 @@ const Articulos = ({ route }) => {
         <Text style={styles.articuloInfo}>{item.id}</Text>
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>
         <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
+        <Text style={styles.articuloInfo}>Selec: {item.seleccionados}</Text>
         <Text style={styles.articuloInfo}>
           Precio: ${item.precio.toFixed(2)}
         </Text>
@@ -75,7 +89,8 @@ const Articulos = ({ route }) => {
   const RenderList = () => (
       <FlatList 
         data={articulosList} 
-        keyExtractor={(item) => item.id} 
+        // keyExtractor={(item) => item.id} 
+        keyExtractor={(item, index) => item.id ? item.id : index.toString()} 
         renderItem={renderItem}  
         maxToRenderPerBatch={20} 
       />

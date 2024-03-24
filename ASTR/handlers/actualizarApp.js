@@ -119,8 +119,8 @@ const enviarPreventas = async (setLogs) => {
   
   };
 
-  const actualizarAPP = async (esCompleta, setLogs) => {
-    let logs= [];
+  const actualizarAPP = async (esCompleta, logs, setLogs) => {
+    // let logs= [];
     await enviarPreventas(setLogs);   
     esCompleta 
       ? (
@@ -129,10 +129,11 @@ const enviarPreventas = async (setLogs) => {
           await initDatabase(setLogs),
           await actualizarVendedores(setLogs),
           await actualizarClientes(setLogs),
+          await actualizarArticulos(setLogs),
           await enviarPreventas(setLogs),
           logs = handleLogs(logs, "Sincronizacion completa.", setLogs)
         )
       : logs = handleLogs(logs, "Preventas enviadas.", setLogs);
   }
 
-export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase, enviarPreventas};
+export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas};

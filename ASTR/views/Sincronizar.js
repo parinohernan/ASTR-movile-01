@@ -32,7 +32,7 @@ const Sincronizar = () => {
   // };
 
   const handleEnviarPreventas = async () => {
-    await actualizarAPP(actualizarDatos, setLogs);
+    await actualizarAPP(actualizarDatos, logs, setLogs);
 
   };
 

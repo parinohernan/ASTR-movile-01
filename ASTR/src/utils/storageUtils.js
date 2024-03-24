@@ -20,24 +20,21 @@ const guardarPreventaEnStorage = async (preventa) => {
     }
   };
   
-  //trae una preventa de la BDD al localstorege
-  const guardarPreventaEditando = async (preventa) => {
-    console.log("transformar ",preventa);
-    const preventaMapeada = preventa;
-    guardarPreventa(preventaMapeada);
-  };
+//trae una preventa de la BDD al localstorege
+const guardarPreventaEditando = async (preventa) => {
+  console.log("transformar ",preventa);
+  const preventaMapeada = preventa;
+  guardarPreventa(preventaMapeada);
+};
 
 // Obtener la preventa almacenada en AsyncStorage
 const obtenerPreventaDeStorage = async () => {
     try {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
-        console.log("STR34 obteniendo preventa de Storage nn");
-
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
             return JSON.parse(preventaString);
         } else {
-            console.log("str40");
             // crea una preventa limpia
             guardarPreventaEnStorage([])
             return null;
@@ -111,4 +108,19 @@ const limpiarPreventaDeStorage = async () => {
   }
 };
 
-export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal };
+// solo para eliminar un item
+const eliminarItemEnPreventaEnStorage = async (codigo) => {
+  const preventa = await obtenerPreventaDeStorage();
+  console.log("PREVENTA ",preventa.length);
+  if (preventa.length > 1){
+    console.log("ELIMINAR de la preventa actual", codigo, preventa);
+    guardarPreventaEnStorage(preventa.filter(item => item.id !== codigo));
+  } else {
+    // Eliminar todo el valor del storage
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    guardarPreventaEnStorage([]);
+    console.log("resultado tiene que eras vacio ",await AsyncStorage.getItem(STORAGE_KEY));
+  }
+}
+
+export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal, eliminarItemEnPreventaEnStorage };
