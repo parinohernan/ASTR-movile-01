@@ -42,8 +42,9 @@ const UserMenuPPal = ({route}) => {
   return (
     <View style={styles.container}>
       <View style={styles.titulo}>
-        <Text style={styles.tituloText}>ASTR La aplicacion movil para astrial</Text>
-        <Text style={styles.tituloText}>Vendedor {user.vendedor}</Text>
+        <View ></View>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subTituloText}>Vendedor: {user.vendedor}</Text>
       </View>
       <View>
       <Image
@@ -59,8 +60,10 @@ const UserMenuPPal = ({route}) => {
         style={styles.menuItem}
         onPress={() => handleOptionPress(option)}
         >
-          <MaterialCommunityIcons name={option.icon} size={40} color="blue" />
+          <View style={styles.menuItem}>
+          <MaterialCommunityIcons name={option.icon} size={50} color="cyan" />
           <Text style={styles.menuItemText}>{option.name}</Text>
+          </View>
         </TouchableOpacity>
       ))}
       </View>
@@ -75,30 +78,47 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
     justifyContent: 'space-between',
     alignItems: 'center',
-    
+    // width: "100%",
     // padding: 20,
-    // marginTop:40,
-    backgroundColor: '#FAF7E6',
+    marginTop: 40,
+    backgroundColor: '#96ddf5',
   },
   titulo: {
-    marginTop: 40,
-    backgroundColor: '#3A37E625',
+    width: '100%',
+    margin: 0,
+    padding: 10,
+    border: 10,
+    borderTopWidth: 2,
+    borderTopRightRadius: 30,
+    borderBottomRightRadius: 60,
+    backgroundColor: '#0c2f3c',
+    borderColor: "#30bced",
+    borderWidth: 10,
+  },
+  subTituloText: {
+    margin: 0,
+    padding: 0,
+    color: '#96ddf5',
+    border: 1,
+    borderColor: '#96ddf5',
+    // backgroundColor: '#0c2f3c',
   },
   logo: {
     marginBottom: 20,
   },
   tituloText: {
     alignContent: "center",
-    fontSize: 20,
-    marginBottom: 5,
-    color: '#3A37E6',
+    fontSize: 30,
+    color: '#c9eefa',
   },
   menuItem :{
-    flex:1,
-    alignContent: 'space-around',
-    justifyContent:'flex-start',
-    alignItems:'center,',
-     
+    // flex:1,
+    // alignContent: 'space-around',
+    // justifyContent:'flex-start',
+    // alignItems:'center,',
+  },
+  menuItemText: {
+    color: "#c9eefa",
   },
 
   bottonContainer: {
@@ -110,7 +130,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     marginBottom: 0,
-    backgroundColor: '#3A37E625',
+    backgroundColor: '#0c2f3c',
+    borderColor: "#30bced",
+    borderWidth: 10,
+    borderTopLeftRadius:80,
+    borderBottomWidth:3,
+    borderRightWidth:2,
   }
 });
 

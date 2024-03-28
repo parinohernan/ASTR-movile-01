@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // padding: 20,
     marginTop:40,
-    backgroundColor: '#FAF7E6',
+    backgroundColor: '#0c2f3c',
   },
   menuItem: {
     alignItems: 'center',
