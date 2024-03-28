@@ -1,6 +1,6 @@
 import { db } from '../database';
-import { limpiarPreventa, limpiarPreventaDeStorage } from '../../src/utils/storageUtils';
-import { mas1NexPreventa, configuracionVendedor } from '../../src/utils/storageConfigData';
+import { limpiarPreventaDeStorage } from '../../src/utils/storageUtils';
+import { mas1NexPreventa } from '../../src/utils/storageConfigData';
 // import { log } from 'react-native-sqlite-storage/lib/sqlite.core';
 
 const syncPreventas = () => {

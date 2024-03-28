@@ -23,5 +23,5 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 1- al eliminar todos los datos o reinstalar expo, y sincronizar por primer ves da error al enviar preventas. luego sigue todo ok.
 
-
+4 - editar las preventas o eliminar cuando ya fueron grabadas en BDD Sqlite
 

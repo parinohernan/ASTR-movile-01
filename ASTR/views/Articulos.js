@@ -19,7 +19,7 @@ const Articulos = ({ route }) => {
   const [filteredArticulos, setFilteredArticulos] = useState([]);
   // const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedArticulo, setSelectedArticulo] = useState(null);
+  const [fuiAAdd, setFuiAAdd] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -42,27 +42,30 @@ const Articulos = ({ route }) => {
       setArticulosList([]);
     }
   }, [search]);
+
+  useEffect(() => {
+    if (fuiAAdd) {
+      console.log("FUI FUI");
+      filtrarAgregarCantidadEnPreventa(search)
+    }
+  }, [fuiAAdd]);
   
   const filtrarAgregarCantidadEnPreventa = async (search) => {
     const preventaActual = await obtenerPreventaDeStorage();
     const filteredArticulosBDD = await getArticulosFiltrados(search);
-    console.log("un item 5",filteredArticulosBDD[3]);
+    // console.log("un item 5",filteredArticulosBDD[3]);
     const filteredArticulosConCantidad =  filteredArticulosBDD.map(async(element) => {
       const cantidad= await cantidadCargados(element.id);
-      console.log(element,"seleccionados ", cantidad);
+      // console.log(element,"seleccionados ", cantidad);
       element.seleccionados = cantidad;
       return element;
     });
     return filteredArticulosBDD;
   };
 
-  const handleCheck = (codigo) => {
-    console.log(`Artículo ${codigo} marcado/desmarcado para la preventa ${preventaNumero}`);
-  };
-
   const openModal = (articulo) => {
-    console.log("articulo ",articulo); 
-    navigation.navigate('AddArticulo', { articulo });
+    console.log("articulo ",articulo);
+    navigation.navigate('AddArticulo', { articulo , setFuiAAdd});
   };
  
   const renderItem = ({ item }) => (
@@ -71,17 +74,10 @@ const Articulos = ({ route }) => {
         <Text style={styles.articuloInfo}>{item.id}</Text>
         <Text style={styles.articuloInfo}>{item.descripcion}</Text>
         <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
-        <Text style={styles.articuloInfo}>Selec: {item.seleccionados}</Text>
         <Text style={styles.articuloInfo}>
           Precio: ${item.precio.toFixed(2)}
         </Text>
-        <TouchableOpacity onPress={() => handleCheck(item.id)}>
-          {/* <Icon
-            name="check"
-            size={20}
-            color={estaElegido(item.id) ? 'blue' : '#fff'}
-          /> */}
-        </TouchableOpacity>
+        <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -119,6 +115,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#FAF7E6',
+  },
+  check: {
+    fontSize: 24, // Tamaño del check
+    color: 'green', // Color del check
   },
   articuloItem: {
     flexDirection: 'row',

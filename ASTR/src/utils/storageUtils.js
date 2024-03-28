@@ -6,7 +6,7 @@ const STORAGE_KEY = '@MyApp:PreventaData';
 
 // Guardar una preventa en AsyncStorage
 const guardarPreventaEnStorage = async (preventa) => {
-    console.log("grabando ",preventa);
+    console.log("grabando guardarPreventaEnStorage ",preventa);
     try {
       if (preventa !== null && preventa !== undefined ) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));
@@ -24,7 +24,8 @@ const guardarPreventaEnStorage = async (preventa) => {
 const guardarPreventaEditando = async (preventa) => {
   console.log("transformar ",preventa);
   const preventaMapeada = preventa;
-  guardarPreventa(preventaMapeada);
+  guardarPreventaEnStorage(preventaMapeada);
+ 
 };
 
 // Obtener la preventa almacenada en AsyncStorage
@@ -36,8 +37,9 @@ const obtenerPreventaDeStorage = async () => {
             return JSON.parse(preventaString);
         } else {
             // crea una preventa limpia
+            console.log("era una limpia");
             guardarPreventaEnStorage([])
-            return null;
+            return [];
         }
     } catch (error) {
         console.error('Error al obtener la preventa desde AsyncStorage:', error);

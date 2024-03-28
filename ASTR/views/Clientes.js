@@ -39,6 +39,9 @@ const Clientes = () => {
 
   return (
     <View style={styles.container}>
+      <View >
+        <Text style={styles.viewTitle}> Elegir cliente </Text>
+      </View>
       <View style={styles.searchbar}      >
       <Searchbar
         placeholder="Buscar cliente..."
@@ -71,6 +74,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#FAF7E6',
+  },
+  viewTitle: {
+    color : "#1223a2",
+    fontSize: 22,
+    padding:20,
   },
   clienteItem: {
     // display :'flex',

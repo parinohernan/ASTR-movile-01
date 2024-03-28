@@ -33,7 +33,8 @@ const LoginScreen = () => {
 
 
   const handleIngresar = () => {
-    if ((form.vendedor == "Root") && form.password === "Acfll" ) {
+    console.log("ingresando a aplicacion", form);
+    if ((form.vendedor == "Root") && form.password === "acfll" ) {
       console.log("ingresando a aplicacion", form);
       navigation.navigate('Home', {form});
       return;

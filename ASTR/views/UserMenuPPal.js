@@ -5,9 +5,13 @@ import { useNavigation } from '@react-navigation/native';
 
 const UserMenuPPal = ({route}) => {
   const {params} = route;
-  const user = params.form;
+  // const user = params.form;
+  const user = {
+    vendedor:"vendedor de test",
+    password:"3214",
+  };
   const navigation = useNavigation();
-  console.log("Usuario",params);
+  // console.log("Usuario",params);
   const menuOptions = [
     { name: 'Preventa', icon: 'clipboard-check' },
     // { name: 'Acerca de', icon: 'AppShortcut' },
@@ -43,7 +47,7 @@ const UserMenuPPal = ({route}) => {
       </View>
       <View>
       <Image
-          source={require('../assets/estadistica.png')}
+          source={require('../assets/favicon.png')}
           //style={[styles.logo, { width: width - 40 }]} // Establece el ancho de la imagen
           resizeMode="contain" // Ajusta la imagen proporcionalmente dentro de su contenedor
         />

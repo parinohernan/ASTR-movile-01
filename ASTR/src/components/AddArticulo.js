@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage} from "../utils/storageUtils";
+import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
 
 const cantidadCargados= async (codigo) =>{  //articulo.id
   // console.log("la cantidad en la preventa ::", codigo);
   const preventaActual = await obtenerPreventaDeStorage();
   // console.log("preventa actual",preventaActual);
-  for (let i = 0; i < preventaActual.length; i++) {
+  for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id == codigo) {
       // console.log("EEEEEEEEste ya esta ",codigo, " cantidad: ",preventaActual[i].cantidad);
       return preventaActual[i].cantidad;
@@ -20,11 +20,15 @@ const cantidadCargados= async (codigo) =>{  //articulo.id
 
 const AddArticulo = ({route}) => {
   const {params} = route;
-  const articulo = params.articulo;
-  console.log("que tene el articulo.. ",articulo);
-  const [cantidad, setCantidad] = useState(articulo.cantidad? articulo.cantidad : 0 );
+  const {articulo, preventaNumero, cliente, cantItems} = params;
+  
+  const setFuiAAdd = params.setFuiAAdd;
+
+  console.log("que tene el articulo.. ",articulo, preventaNumero, cliente, cantItems);
+  const [cantidad, setCantidad] = useState(articulo.seleccionados? articulo.seleccionados : 0 );
   // const [descuento, setDescuento] = useState(0);
-  const [precioFinal, setPrecioFinal] = useState(0); //useState(articulo.precioCostoMasImp.toFixed(2))
+  const [precioFinal, setPrecioFinal] = useState(articulo.precio ); //useState(articulo.precioCostoMasImp.toFixed(2))
+  const [precioUnitario, setPrecioUnitario] = useState (cantidad === 0 ? articulo.precio : articulo.precio / cantidad);
   const navigation = useNavigation();
   const articuloConDetalles = {
     ...articulo,
@@ -48,15 +52,23 @@ const AddArticulo = ({route}) => {
   
   const vaciarPreventaStorage = async () =>{
      // eliminar item de la preventa de sorage actual
-      console.log("nunca entra acas");
-      await eliminarItemEnPreventaEnStorage(articulo.id);
-      navigation.goBack();
+      console.log("elimina todo chauu",articuloConDetalles.id);
+      await limpiarPreventaDeStorage();
+      navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
       return
   }
 
+  const eliminar1PreventaStorage = async () =>{
+    // eliminar item de la preventa de sorage actual
+     console.log("elimina solo uno",articuloConDetalles.id);
+     await eliminarItemEnPreventaEnStorage(articuloConDetalles.id);
+     navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
+     return
+ }
+
   const modificarItemPreventaStorage = async () => {
     console.log("modificarItemPreventaStorage");
-    await eliminarItemEnPreventaEnStorage (articuloConDetalles.codigo);
+    await eliminarItemEnPreventaEnStorage (articulo.id);
     await agregarItemPreventaStorage();
   }
 
@@ -72,26 +84,37 @@ const AddArticulo = ({route}) => {
   const handleSave = async () => {
     // ... lógica para guardar el artículo en la preventa
     const yaEsta = await estaCargado(articulo.id);
-    console.log("articulo a modificar ", cantidad ,  articulo.id);
-    if ( yaEsta && ( cantidad == 0)) {
+    console.log(yaEsta, "articulo a modificar o agregar ", cantidad ,  articulo.id, "items", cantItems);
+    if ( ( cantidad == 0) && (cantItems == 1)) {
+      console.log("vaciarpreventa");
       await vaciarPreventaStorage();
+   
       return
     } 
-    if (yaEsta) {
+    
+    if ( yaEsta && ( cantidad == 0)) {
+      await eliminar1PreventaStorage();
+   
+      return
+    } 
+    if (yaEsta && cantidad > 0) {
+      console.log("aca modifico existe y cantidad no es 0");
       await modificarItemPreventaStorage();
+    
       return
     } 
-    if (cantidad == 0) {
+    if (cantidad == 0) { //en este caso no hago nada
       navigation.goBack();
       return
     }
     await agregarItemPreventaStorage();
+   
     return
 };
   
   const handleCantidad = (text) => {
-    const cuenta = (articulo.precio.toFixed(2)) * text; //talves no deberia redondear
-    console.log("Add37. preciofinal ..antes ",(articulo.precio.toFixed(2)), "x ",text," = ",cuenta);
+    const cuenta = (precioUnitario.toFixed(2)) * text; //talves no deberia redondear
+    // console.log("Add37. preciofinal ..antes ",(articulo.precio.toFixed(2)), "x ",text," = ",cuenta);
     setCantidad(text.replace(/[^0-9]/g, ''))
     setPrecioFinal(cuenta)
   }
@@ -104,7 +127,7 @@ const AddArticulo = ({route}) => {
     <View style={styles.container}>
       <Text style={styles.articuloInfo}>Codigo {articulo ? articulo.id : ''}</Text>
       <Text style={styles.articuloInfo}>{articulo ? articulo.descripcion : ''}</Text>
-      <Text style={styles.articuloInfo}> $ {articulo ? articulo.precio.toFixed(2) : ''}</Text>
+      <Text style={styles.articuloInfo}> $ {articulo ? precioUnitario : ''}</Text>
       <Text style={styles.label}>Cantidad:</Text>
       
       <TextInput
@@ -118,7 +141,7 @@ const AddArticulo = ({route}) => {
       <TextInput
         style={styles.input}
         onChangeText={(text) => setPrecioFinal(text.replace(/[^0-9.]/g, ''))}
-        value={String(precioFinal)}
+        value={"$ " +String(precioFinal)}
         keyboardType="numeric"
       />
 
