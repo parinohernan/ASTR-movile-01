@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation, Bottom} from '@react-navigation/native';
+import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa } from '../src/utils/storageConfigData';
 import { Fontisto } from '@expo/vector-icons';
+// import { useIsFocused } from '@react-navigation/native';
 
 const Preventa = (props) => {
+  const isFocused = useIsFocused();
   const {route} = props;
   const {params} = route;
-  let {preventaNumero, cliente} = params;
+  let {preventaNumero, cliente, edit} = params;
   console.log("PRV13 prevnumero y cliente",preventaNumero,cliente);
   
   const navigation = useNavigation();
@@ -39,19 +41,22 @@ const Preventa = (props) => {
   
   useEffect(() => {
     const loadData = async () => {
-      if (cliente) {
-        // creo que lo hago simpre, pero estaba pensado para hacerlo solo cuando edito una preventa 
-        await siEstoyEditando(); //con esto cargo los datos del cliente
-      }else{
-        console.log("25carritodata",carritoData[0]);
-      }
-      cargarDatos();
-      console.log("50 carrito reducido ", carrito);
+     
+        if (edit === true) {
+          console.log("editando PREVENTA");
+          await siEstoyEditando();
+        } else 
+          if (isFocused) {
+        // Cargar datos aquí
+          cargarDatos();
+        }
+      
     };
-    console.log("PRV useefect ");
+  
+    console.log("entro a preventa editando= T nueva =fale ", edit);
     loadData();
-  }, []); 
-
+  }, [isFocused]);
+  
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
     if (carritoData.length != 0) {
@@ -65,13 +70,19 @@ const Preventa = (props) => {
   const grabarPreventa = async () => {
     /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
     /* todos los errores deben estar controlado */
-    let numero = preventaNumero
-    if (nueva) {
+    console.log("grabare carrito ooo ",carrito);
+    if (carrito.length > 0) {
+      
+      let numero = preventaNumero
+      if (nueva) {
       numero = await nextPreventa();
     }
-    console.log("carrito ooo ",carrito);
     await grabarPreventaEnBDD (numero, nota , dataCliente .id, carrito);
+    console.log("preventa guardada con exito  ");
     setCarrito ([]);    
+    }
+    console.log("preventa estaba vacia  ");
+    navigation.goBack();
   };
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -100,9 +111,9 @@ const Preventa = (props) => {
     navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems });
   };
 
-  const openAddArticulo = (articulo) => {
+  const openAddArticulo = (articulo) => { //cuando edito un articulo
     articulo.seleccionados=articulo.cantidad;
-    console.log("articulo ",articulo); 
+    console.log("articulo editando",articulo); 
     navigation.navigate('AddArticulo', { articulo: articulo, preventaNumero: preventaNumero, cliente:dataCliente.id, cantItems: carrito.length.toString() });
   };
 
@@ -241,18 +252,6 @@ const styles = StyleSheet.create({
     color: 'cyan', // Color de texto
     letterSpacing: 2, // Espaciado entre letras
   },
-  // viewTitle: {
-  //   height:"8%",
-  //   backgroundColor: '#06181e',
-  //   padding: 0,
-  //   flex: 0,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // title:{
-  //   color: 'red',
-  
-  // },
   itemsContainer: {
     flex: 1,
     padding: 10,

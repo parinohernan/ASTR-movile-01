@@ -34,7 +34,8 @@ const Clientes = () => {
     let preventaNumero = await nextPreventa();
     // console.log('Código del cliente:', cliente.descripcion);
     console.log('Preventa Número:', preventaNumero);
-    navigation.navigate('Preventa', { preventaNumero, cliente });
+    let edit= false;
+    navigation.navigate('Preventa', { preventaNumero, cliente, edit });
   };
 
   return (

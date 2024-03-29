@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Modal, TouchableOpacity, Button } from 'react-native';
+import { View, Text, FlatList, Modal, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native';
 import { db } from '../../database/database';
 import { useNavigation } from '@react-navigation/native';
-
+import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Controller';
 
 const ListaPreventas = () => {
   const navigation = useNavigation();
@@ -66,14 +66,35 @@ const renderItem = ({ item }) => (
     // Agrega la lógica para manejar las acciones (Borrar, Editar, Cancelar)
     switch (action) {
       case 'Borrar':
-        // Lógica para borrar el elemento seleccionado
+        Alert.alert(
+          'Confirmar eliminación',
+          '¿Está seguro que desea borrar la preventa?',
+          [
+            {
+              text: 'Cancelar',
+              style: 'cancel',
+            },
+            {
+              text: 'Borrar',
+              style: 'destructive',
+              onPress: () => {
+                console.log('Borrar preventa número ', selectedItem.numero);
+                borrarPreventaYSusItems(selectedItem.numero);
+                navigation.goBack();
+              },
+            },
+          ],
+          { cancelable: false }
+        );
         break;
       case 'Editar':
         // Lógica para editar el elemento seleccionado
         console.log("Lista73, c",selectedItem);
         const preventaNumero = selectedItem.numero;
         const cliente = selectedItem.clienteCodigo;
-        navigation.navigate('Preventa', { preventaNumero, cliente });
+        let edit=true;
+        navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+        
         break;
       case 'Cancelar':
         closeModal();
@@ -82,6 +103,17 @@ const renderItem = ({ item }) => (
         break;
     }
   };
+
+  const renderAction = (action) => (
+    <TouchableOpacity style={styles.actionButton} onPress={() => handleAction(action)}>
+      <Icon
+        name={action === 'Borrar' ? 'delete' : action === 'Editar' ? 'edit' : 'cancel'}
+        size={24}
+        color={action === 'Borrar' ? 'red' : 'black'}
+      />
+      <Text style={[styles.actionButtonText, action === 'Borrar' && styles.dangerButton]}>{action}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View>
@@ -109,5 +141,20 @@ const renderItem = ({ item }) => (
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  dangerButton: {
+    color: 'red',
+  },
+});
 
 export default ListaPreventas;

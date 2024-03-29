@@ -213,5 +213,37 @@ const borrarContenidoPreventasEnBDD = async () => {
     });
 };
 
+const borrarPreventaYSusItems = async (numeroPreventa) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            // Borrar los items de la preventa
+            tx.executeSql(
+                'DELETE FROM preventaItem WHERE idPreventa = ?',
+                [numeroPreventa],
+                (_, result) => {
+                    console.log(`Eliminados ${result.rowsAffected} items de la preventa ${numeroPreventa}`);
 
-export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD}
+                    // Borrar la cabeza de la preventa
+                    tx.executeSql(
+                        'DELETE FROM preventaCabeza WHERE id = ?',
+                        [numeroPreventa],
+                        (_, result) => {
+                            console.log(`Eliminada la preventa ${numeroPreventa}`);
+                            resolve();
+                        },
+                        (_, error) => {
+                            console.error('Error al eliminar la preventa cabeza:', error);
+                            reject(error);
+                        }
+                    );
+                },
+                (_, error) => {
+                    console.error('Error al eliminar los items de la preventa:', error);
+                    reject(error);
+                }
+            );
+        });
+    });
+};
+
+export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD, borrarPreventaYSusItems}
