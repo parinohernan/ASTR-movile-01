@@ -1,17 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 
 const Home = ({user}) => {
-
   const navigation = useNavigation();
-
   const menuOptions = [
     // { name: 'Preventa', icon: 'clipboard-check' },
     // { name: 'Acerca de', icon: 'AppShortcut' },
     { name: 'Usuarios', icon: 'account-group' },
-    { name: 'Informes', icon: 'file-chart' },
+    // { name: 'Informes', icon: 'file-chart' },
     { name: 'Sincronizar', icon: 'sync' },
     { name: 'Configuracion', icon: 'cog' },
   ];
@@ -20,12 +18,6 @@ const Home = ({user}) => {
     // Implementar lógica según la opción seleccionada
     console.log(`Seleccionaste: ${option.name}`);
     switch (option.name) {
-      // case 'Preventa':
-      //   navigation.navigate('Clientes', {});
-      //   break;
-      // case 'Informes':
-      //   navigation.navigate('Informes', {});
-      //   break;
       case 'Sincronizar':
         navigation.navigate('Sincronizar', {});
         break;
@@ -45,7 +37,7 @@ const Home = ({user}) => {
     <View style={styles.container}>
       <View style={styles.titulo}>
         <Text style={styles.tituloText}>ASTR</Text>
-        <Text style={styles.subtituloText}>La aplicacion movil para astrial</Text>
+        <Text style={styles.subtituloText}>panel de administracion</Text>
       </View>
       {menuOptions.map((option, index) => (
         <TouchableOpacity
@@ -58,71 +50,84 @@ const Home = ({user}) => {
         </TouchableOpacity>
       ))}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Version 0.0.4 - hernanpa Dev </Text>
+        <View style={{ flexDirection: 'column' }}>
+          <View style={{ flexDirection: 'row' }}>
+            <MaterialCommunityIcons name="cellphone" size={24} color="#000" />
+            <Text style={styles.footerText}>Version 0.0.4 - hpDev </Text>
+          </View>
+          <View style={{ flexDirection: 'row' }}>
+            <MaterialCommunityIcons name="email" size={24} color="#D44638" />
+            <Text style={styles.footerText}> parinohernan@gmail.com </Text>
+          </View>
+          <View style={{ flexDirection: 'row' }}>
+            <MaterialCommunityIcons name="whatsapp" size={24} color="#075E54" />
+            <Text style={styles.footerText}>+54 2923570231 </Text>
+          </View>
+          <View style={{ flexDirection: 'row' }}>
+            <MaterialCommunityIcons name="trademark" size={24} color="#000" />
+            <Text style={styles.footerText}> Hernan Parino - 2024   </Text>
+          </View>
+        </View>
+        <Image
+          source={require('../assets/hpdev.png')}
+          style={[styles.logo, { width: 100, height: 100 }]} // Establece el ancho de la image
+          />
       </View>
     </View>
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    backgroundColor: '#fff',
     alignItems: 'center',
-    // padding: 20,
-    marginTop:40,
-    backgroundColor: '#0c2f3c',
+    justifyContent: 'center',
+    padding: 20,
   },
-  menuItem: {
+  titulo: {
+    marginBottom: 30,
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  menuItemText: {
-    fontSize: 20,
-    marginTop: 10,
   },
   tituloText: {
-    alignContent: "center",
-    fontSize: 40,
-    marginBottom: 5,
-    color: '#FAF7E6'
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
   },
   subtituloText: {
-    alignContent: "center",
-    fontSize: 18,
-    marginBottom: 5,
-    color: '#FAF7E6'
+    fontSize: 16,
+    color: '#7f8c8d',
   },
-  
-  titulo: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 10,
     width: '100%',
-    // borderTopRightRadius: 35,
-    borderTopLeftRadius: 35,
-    backgroundColor: "#1212ef",
-    marginBottom: 20,
+  },
+  menuItemText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginLeft: 10,
   },
   footer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: '100%',
-    borderBottomEndRadius: 35,
-    borderBottonLeftRadius: 35,
-    backgroundColor: "#1212ef",
-    marginBottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  logo: {
+    resizeMode: 'contain',
+    height: 20,
+    marginRight: 10,
   },
   footerText: {
-
-    
-    alignContent: "center",
-    fontSize: 18,
-    marginBottom: 0,
-    color: '#FAF7E6'
+    fontSize: 14,
+    color: '#7f8c8d',
   },
 });
 

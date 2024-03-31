@@ -5,10 +5,11 @@ import { useNavigation } from '@react-navigation/native';
 
 const UserMenuPPal = ({route}) => {
   const {params} = route;
-  // const user = params.form;
+  const vendedor = params.vendedor;
   const user = {
-    vendedor:"vendedor de test",
-    password:"3214",
+    vendedor: vendedor.descripcion,
+    password: vendedor.clave,
+    id: vendedor.id,
   };
   const navigation = useNavigation();
   // console.log("Usuario",params);

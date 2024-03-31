@@ -1,0 +1,29 @@
+nueva preventa. 
+
+articulo
+add articulo
+"DESDE ARTICULOS"
+o . cuando agrego un articulo se agrega a la preventa sumando sin borrat nada
+o .si la cantidad de items es = maximo permitido no permite agregar.
+o .si selecciono un item que ya este ese se modifica, sin agregar uno nuevo.
+    en caso de colocar cant 0 ... se borrara el item.    
+
+"DESDE PREVENTA "
+o --se muestra un alert, no se permite editar
+
+informes
+
+o- borrar "nuestra un alert y si se elige si, se borra la preventa".
+xo- editar "fix no permito editar" deberia dirigirnos a la pantalla de edicion".
+
+clientes
+
+x. tiene 2 botones uno para preventa y otro para informes.
+
+articulos View
+
+x. buscar, renderiza primero los check y luego actualiza.
+
+
+
+

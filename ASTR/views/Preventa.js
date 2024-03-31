@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
-import { nextPreventa } from '../src/utils/storageConfigData';
+import { nextPreventa, configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
 import { Fontisto } from '@expo/vector-icons';
 // import { useIsFocused } from '@react-navigation/native';
 
@@ -104,39 +104,68 @@ const Preventa = (props) => {
     console.log('Nota guardada:', nota);
   };
 
-  const abrirArticulos = () => {
-    // setMostrarArticulos(true);
-    console.log("PRF101 voy a abrir articu con la prop preventaNume sin clienteID", preventaNumero, dataCliente );
-    setOcultarPreventa(true);
-    navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems });
+  const abrirArticulos = async () => {
+    let cantidad = await configuracionCantidadMaximaArticulos();
+    console.log("CANTIDAD ", cantidad, carrito.length);
+  
+    if (carrito.length >= cantidad) {
+      Alert.alert(
+        "Límite de artículos alcanzado",
+        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
+        [
+          {
+            text: "Aceptar",
+            onPress: () => console.log("Aceptar presionado"),
+            style: "cancel"
+          }
+        ]
+      );
+    } else {
+      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems });
+    }
   };
 
-  const openAddArticulo = (articulo) => { //cuando edito un articulo
-    articulo.seleccionados=articulo.cantidad;
-    console.log("articulo editando",articulo); 
-    navigation.navigate('AddArticulo', { articulo: articulo, preventaNumero: preventaNumero, cliente:dataCliente.id, cantItems: carrito.length.toString() });
-  };
+  // const openAddArticulo = (articulo) => { //cuando edito un articulo
+  //   articulo.seleccionados=articulo.cantidad;
+  //   console.log("articulo editando",articulo); 
+  //   navigation.navigate('AddArticulo', { articulo: articulo, preventaNumero: preventaNumero, cliente:dataCliente.id, cantItems: carrito.length.toString() });
+  // };
+
+  const handleItem = (item) =>{
+    console.log("articulo editando",item); 
+    Alert.alert(
+      "En esta vercion, no se pueden editar articulos desde esta ventana.",
+      `Para corregir un articulo agreguelo nuevamente y se actualizaran los datos.`,
+      [
+        {
+          text: "Aceptar",
+          onPress: () => console.log("Aceptar presionado"),
+          style: "cancel"
+        }
+      ]
+    );
+  }
 
   // Renderiza cada elemento del array reducido
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => openAddArticulo(item)}>
+    <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
       <Text>{`${item.descripcion} `}</Text>
-      <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}>
+      <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',}}>
         {/* <Text>Cantidad: {item.cantidad} Total {`$: ${String(item.precio)}`}</Text> */}
         <View style= {{ width: "32%",
-                        borderWidth: 2 ,
+                        borderWidth: 1 ,
                         flexDirection: 'row', // Hijos en columna vertical
                         alignItems: 'center', // Alinear hijos a la izquierda
                       }}>
           <Text>Cantidad: {item.cantidad}</Text>                
         </View>
-        <View style= {{ borderWidth: 2 , width: "32%",
+        <View style= {{ borderWidth: 1 , width: "32%",
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
           <Text>Total {`$: ${String(Math.round(item.precio))}`}</Text>               
         </View>
-        <View style= {{ borderWidth: 2 , width: "20%", marginBottom: 30, marginTop: 30, // aca sacaremos todos los margin despues de probar el scrol
+        <View style= {{ borderWidth: 1 , width: "20%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
@@ -237,6 +266,7 @@ const styles = StyleSheet.create({
     flex: 1,
     // backgroundColor: '#0c2f3c '
     backgroundColor: '#06181e',
+    
   },
   viewTitle: {
     alignItems: 'center', // Centrar horizontalmente
@@ -255,7 +285,10 @@ const styles = StyleSheet.create({
   itemsContainer: {
     flex: 1,
     padding: 10,
+    paddingTop: 20,
     margin: 6,
+    marginTop: -22,
+    zIndex: -1,
     backgroundColor: '#c9eefa',//background liviano
     borderWidth: 2, // Agregar borde
     borderColor: '#000', // Color del borde
@@ -271,6 +304,7 @@ const styles = StyleSheet.create({
   cabezaContainer: {
     paddingLeft: 10,
     paddingRight: 10,
+    paddingBottom: 30,
     backgroundColor: '#96ddf5',// 96ddf5 non Photo blue--- background intermedio
     borderWidth: 1, // Agregar borde
     borderColor: '#000', // Color del borde

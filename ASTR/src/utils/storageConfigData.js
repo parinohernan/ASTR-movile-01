@@ -76,4 +76,5 @@ const limpiarConfiguracionDelStorage = async () => {
   }
 };
 
-export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa, mas1NexPreventa, configuracionVendedor, configuracionEndPoint };
+export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa,
+  configuracionCantidadMaximaArticulos, mas1NexPreventa, configuracionVendedor, configuracionEndPoint };

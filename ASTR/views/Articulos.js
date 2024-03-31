@@ -4,12 +4,13 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { Searchbar } from 'react-native-paper';
 import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
 import { cantidadCargados} from '../src/components/AddArticulo';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { obtenerPreventaDeStorage} from "../src/utils/storageUtils";
 
 
 
 const Articulos = ({ route }) => {
+  const isFocused = useIsFocused();
   const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
@@ -19,17 +20,15 @@ const Articulos = ({ route }) => {
   const [filteredArticulos, setFilteredArticulos] = useState([]);
   // const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [fuiAAdd, setFuiAAdd] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const filteredArticulos = await filtrarAgregarCantidadEnPreventa(search);
-        setArticulosList(filteredArticulos);
+        setArticulosList(await filtrarAgregarCantidadEnPreventa(search));
         setLoading(false);
-        console.log( filteredArticulos.length, 'artículos filtrados con: ',search);
+        // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
       } catch (error) {
         console.error('Error al obtener artículos filtrados: ', error);
         setLoading(false);
@@ -41,46 +40,50 @@ const Articulos = ({ route }) => {
     }else{
       setArticulosList([]);
     }
-  }, [search]);
-
-  useEffect(() => {
-    if (fuiAAdd) {
-      console.log("FUI FUI");
-      filtrarAgregarCantidadEnPreventa(search)
-    }
-  }, [fuiAAdd]);
-  
+  }, [search, isFocused]);
+ 
   const filtrarAgregarCantidadEnPreventa = async (search) => {
-    const preventaActual = await obtenerPreventaDeStorage();
+    // const preventaActual = await obtenerPreventaDeStorage();
     const filteredArticulosBDD = await getArticulosFiltrados(search);
-    // console.log("un item 5",filteredArticulosBDD[3]);
-    const filteredArticulosConCantidad =  filteredArticulosBDD.map(async(element) => {
-      const cantidad= await cantidadCargados(element.id);
-      // console.log(element,"seleccionados ", cantidad);
-      element.seleccionados = cantidad;
-      return element;
-    });
-    return filteredArticulosBDD;
+  
+    const filteredArticulosConCantidad = await Promise.all(
+      filteredArticulosBDD.map(async (element) => {
+        const cantidad = await cantidadCargados(element.id);
+        element.seleccionados = cantidad;
+        return element;
+      })
+    );
+    return filteredArticulosConCantidad;
   };
 
   const openModal = (articulo) => {
     console.log("articulo ",articulo);
-    navigation.navigate('AddArticulo', { articulo , setFuiAAdd});
+    navigation.navigate('AddArticulo', { articulo });
   };
  
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }) => {
+    return(
     <TouchableOpacity onPress={() => openModal(item)}>
       <View style={styles.articuloItem}>
-        <Text style={styles.articuloInfo}>{item.id}</Text>
-        <Text style={styles.articuloInfo}>{item.descripcion}</Text>
-        <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
-        <Text style={styles.articuloInfo}>
-          Precio: ${item.precio.toFixed(2)}
-        </Text>
-        <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text>
+        <View  style={styles.articuloItemLinea}>
+          <Text style={styles.articuloInfo}>{item.id} - {item.descripcion}</Text>
+        </View>
+        <View style={styles.articuloItemLinea}>
+          <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
+          <Text style={styles.articuloInfo}>
+            Precio: ${item.precio.toFixed(2)}
+          </Text>
+          <View style= {{ width: "10%",
+                        borderWidth: 0 ,
+                        flexDirection: 'row', // Hijos en columna vertical
+                        alignItems: 'flex-end', // Alinear hijos a la izquierda
+                      }}>
+            <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text>
+           </View>
+        </View>
       </View>
     </TouchableOpacity>
-  );
+  )};
 
   const RenderList = () => (
       <FlatList 
@@ -94,15 +97,16 @@ const Articulos = ({ route }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.viewTitle}> 
+        <Text style={styles.title}> Elegir articulos </Text>
+      </View>
       <Searchbar
         placeholder="Buscar artículo..."
         onChangeText={(value) => setSearch(value)}
         value={search}
       />
       <Text> Resultados: {loading ? '...' : articulosList.length}</Text>
-      {/* {loading? (<Text>Cargando...<Text/>):( */}
-
-      <View>
+      <View style={styles.itemsContainer} >
       {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : <RenderList/>}
       </View>
   
@@ -113,29 +117,64 @@ const Articulos = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#FAF7E6',
+    padding: 2,
+    backgroundColor: '#06181e',
+  },
+  viewTitle: {
+    alignItems: 'center', // Centrar horizontalmente
+    justifyContent: 'center', // Centrar verticalmente
+    marginVertical: 20, // Margen vertical
+    padding: 0,
+  },
+  title: {
+    marginTop: 20,
+    marginBottom: -10,
+    fontSize: 20, // Tamaño de fuente
+    fontWeight: 'bold', // Fuente en negrita
+    color: 'cyan', // Color de texto
+    letterSpacing: 2, // Espaciado entre letras
   },
   check: {
     fontSize: 24, // Tamaño del check
     color: 'green', // Color del check
   },
   articuloItem: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderWidth: 1,
     borderBottomColor: 'gray',
-    paddingVertical: 10,
+    paddingVertical: 0,
+  },
+  articuloItemLinea: {
+    flex: 1,
+    flexDirection: 'row',
+    marginRight: 10,
   },
   articuloInfo: {
     flex: 1,
-    marginRight: 10,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  itemsContainer: {
+    flex: 1,
+    padding: 2,
+    paddingTop: 20,
+    margin: 2,
+    marginTop: -22,
+    zIndex: -1,
+    backgroundColor: '#c9eefa',//background liviano
+    borderWidth: 2, // Agregar borde
+    borderColor: '#000', // Color del borde
+    borderRadius: 10, // Radio de las esquinas (para hacerlas redondeadas)
+    shadowColor: '#000', // Color de la sombra
+    shadowOffset: { width: 0, height: 2 }, // Offset de la sombra
+    shadowOpacity: 0.5, // Opacidad de la sombra
+    shadowRadius: 2, // Radio de la sombra
+    elevation: 50, // Elevación de la sombra (solo para Android)
   },
 });
 

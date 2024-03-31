@@ -3,6 +3,7 @@ import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Modal } fro
 import { Akira, Kaede } from 'react-native-textinput-effects';
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { getUsuarios } from '../database/controllers/Usuarios.controler';
 // import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const LoginScreen = () => {
@@ -15,12 +16,49 @@ const LoginScreen = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [mostrar, setMostrar] = useState(false);
-  
+  const [usuarios, setUsuarios] = useState([]);
+  const [vendedor, setVendedor] = useState({});
+
+  useEffect(() => {
+    const fetchData = async () => {
+      
+      try {
+        const usuariosFromDB = await getUsuarios();
+        setUsuarios(usuariosFromDB);
+        isAuhoriced();
+      } catch (error) {
+        console.error('Error al obtener o insertar usuarios: ', error);
+      }
+    };
+    fetchData();
+  }, [form]);
+
   useEffect (() => {
     setMostrar(form.vendedor && form.password.length > 3);
   },[form]);
 
-  const isAuhoriced = () => true;
+  const isAuhoriced = () => {
+    
+    
+    //busco si coinside
+    for (let i = 0; i < usuarios.length; i++) {
+      const element = usuarios[i];
+      if ((form.password == element.clave) && (form.vendedor == element.id)) {
+        console.log("Usuario ", element, " log", form);
+        //seteo el vendedor
+        setVendedor(
+          {
+            clave: form.password,
+            id: form.vendedor,
+            descripcion: element.descripcion,
+          })
+        console.log("vendedor", vendedor);
+        return true;
+      }
+      
+    }
+    return false;
+  }
 
   const handleVendedor = (text) => {
     console.log(text);
@@ -33,16 +71,15 @@ const LoginScreen = () => {
 
 
   const handleIngresar = () => {
-    console.log("ingresando a aplicacion", form);
-    if ((form.vendedor == "Root") && form.password === "acfll" ) {
+    if ((form.vendedor.toLocaleLowerCase() == "root") && form.password.toLocaleLowerCase() === "root" ) {
       console.log("ingresando a aplicacion", form);
       navigation.navigate('Home', {form});
       return;
     }else{
       if (isAuhoriced()) {
-        console.log("Form ",form);
+        console.log("Vendedor ",vendedor);
         // navigation.navigate('Preventa', { preventaNumero, cliente });
-        navigation.navigate('UserMenuPPal', {form});
+        navigation.navigate('UserMenuPPal', {vendedor});
       return;
       }
       setModalVisible(true);
@@ -52,14 +89,14 @@ const LoginScreen = () => {
 const Ingresar = () => {
 
   return (
-
-    <Button theme={{ colors: { primary: 'blue' } }} 
-    mode={mostrar ? 'contained' : 'disabled'} 
-    // onPress={() => handleIngresar()}
-    onPress={mostrar ? (() => handleIngresar()) : (console.log(""))}>
-      Ingresar
-
-    </Button>
+    <View style={styles.boton}>
+      <Button theme={{ colors: { primary: 'blue' } }} 
+      mode={mostrar ? 'contained' : 'disabled'} 
+      // onPress={() => handleIngresar()}
+      onPress={mostrar ? (() => handleIngresar()) : (console.log(""))}>
+        Ingresar
+      </Button>
+    </View>
   );
 };
 
@@ -117,11 +154,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FAF7E6'
+    backgroundColor: '#30bced'
   },
   logo: {
     width: 200,
     height: 200,
+    borderRadius: 100,
   },
   logoText: {
     fontSize: 24,
@@ -134,12 +172,11 @@ const styles = StyleSheet.create({
     width: '100%',
     // height: 45,
   },
-  // button: {
-  //   backgroundColor: '#345678',
-  //   padding: 10,
-  //   borderRadius: 5,
-  //   marginTop: 10,
-  // },
+  boton: {
+    padding: 10,
+    // borderRadius: 5,
+    marginTop: 10,
+  },
   // buttonText: {
   //   color: 'white',
   //   textAlign: 'center',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Button } from 'react-native-elements';
 import { eliminarTodasLasTablas, getTables } from '../database/database';
 import { actualizarAPP, initDatabase } from '../handlers/actualizarApp';
@@ -41,7 +41,11 @@ const Configurar = () => {
   }
 
   return (
-    <View style={{ padding: 20, backgroundColor: '#FAF7E6' }}>
+    <View style={styles.container}>
+      <View style={styles.titulo}>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subtituloText}>panel de configuracion</Text>
+      </View>
       <Text>EndPoint:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
@@ -78,6 +82,29 @@ const Configurar = () => {
     </View>
   );
 };
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop:60,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    padding: 20,
+  },
+  titulo: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  tituloText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  }, 
+})
 
 export default Configurar;
 

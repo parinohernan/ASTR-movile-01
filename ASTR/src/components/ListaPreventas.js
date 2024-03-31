@@ -49,7 +49,7 @@ const renderItem = ({ item }) => (
 
       }}
     >
-      <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
+      <View style={{ padding: 2, borderWidth:4, borderBottomColor: '#ccc' }}>
         <Text>Nº: {item.numero}</Text>
         <Text>Cliente: {item.cliente}</Text>
         <Text>Total: $ {item.importe}</Text>
@@ -92,9 +92,19 @@ const renderItem = ({ item }) => (
         console.log("Lista73, c",selectedItem);
         const preventaNumero = selectedItem.numero;
         const cliente = selectedItem.clienteCodigo;
-        let edit=true;
-        navigation.navigate('Preventa', { preventaNumero, cliente, edit });
-        
+        // let edit=true;
+        // navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+        Alert.alert(
+          "En esta version, no se pueden editar preventas.",
+          `Por el momento la unica forma es borrarla y crear una nueva.`,
+          [
+            {
+              text: "Aceptar",
+              onPress: () => console.log("Aceptar presionado"),
+              style: "cancel"
+            }
+          ]
+        );
         break;
       case 'Cancelar':
         closeModal();
@@ -116,7 +126,12 @@ const renderItem = ({ item }) => (
   );
 
   return (
-    <View>
+    <View style={styles.container}>
+      <View style={styles.titulo}>
+        <View ></View>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subTituloText}>Informe de prefacturas:</Text>
+      </View>
       <FlatList
         data={preventas}
         renderItem={renderItem}
@@ -147,6 +162,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 8,
+    borderWidth: 2,
   },
   actionButtonText: {
     fontSize: 16,
@@ -155,6 +171,33 @@ const styles = StyleSheet.create({
   dangerButton: {
     color: 'red',
   },
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+    justifyContent: 'space-between',
+    // alignItems: 'center',
+    // width: "100%",
+    // padding: 20,
+    marginTop: 40,
+    backgroundColor: '#c9eefa',
+  },
+  titulo: {
+    marginBottom: 30,
+    alignItems: 'center',
+    backgroundColor: '#96ddf5',
+    padding:24,
+  },
+  tituloText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  }, 
+  
 });
 
 export default ListaPreventas;
