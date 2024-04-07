@@ -1,27 +1,17 @@
 Prioridad de 1 al 5. 5 es mucha importancia.
 
-
-3- la vista de preventa tiene que traer automaticamente la preventa en el localsotorage. ahora lo hace cuando doy click en el reload.
-
-4- agregar check a los articulos
-
 3- ver articulos frecuentes
-
-2- mejorar la UX/UI "preventas"
 
 1- si hay preventas en el webserver y instalamos un nuevo cel con los mismos datos, hay problemas al enviar preventas. igualmente no se deberian borral las preventas.
 
-4- tomar los datos del endPoint y cantidad de items desde la config y usarlos.
-
---->4- permitir eliminar items de la preventa actual.
-    -4---- si addarticulo cant es 0 entonces que no la agrege o que la borre de la preventa.
+--->2- permitir eliminar items de la preventa actual.
     -5---- al cambiar la cantidad tiene que cambiar el precio.
 --> 4 -permitir modificar una preventa en BDD local.
-
 
 5 - ver que pasa cuando hay actualizacion de precios
 
 1- al eliminar todos los datos o reinstalar expo, y sincronizar por primer ves da error al enviar preventas. luego sigue todo ok.
 
-4 - editar las preventas o eliminar cuando ya fueron grabadas en BDD Sqlite
+3 - permite superar el numero de articulos cuando agrego desde el componente articulos
 
+5 - las preventas no se envian con el vendedor correcto. siempre llegan como test.

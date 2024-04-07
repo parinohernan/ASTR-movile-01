@@ -42,6 +42,11 @@ async function configuracionVendedor() {
   return conf.vendedor
 }
 
+async function configuracionSucursal() {
+  let conf= await getConfiguracionDelStorage();
+  return conf.vendedor
+}
+
 async function configuracionEndPoint() {
   let conf= await getConfiguracionDelStorage();
   return conf.endPoint
@@ -77,4 +82,4 @@ const limpiarConfiguracionDelStorage = async () => {
 };
 
 export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa,
-  configuracionCantidadMaximaArticulos, mas1NexPreventa, configuracionVendedor, configuracionEndPoint };
+  configuracionCantidadMaximaArticulos, mas1NexPreventa, configuracionVendedor, configuracionSucursal, configuracionEndPoint };

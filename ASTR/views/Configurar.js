@@ -12,9 +12,10 @@ import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from '../sr
 const Configurar = () => {
  
   const [configuracion, setConfiguracion]= useState({
-    endPoint:"http://localhost:3000/preventas",
+    endPoint:"",
     siguientePreventa: 100,//este dato solo se visualiza, se actualiza automaticamente
-    vendedor: "0001",
+    vendedor: "",
+    sucursal: "",
     usaGeolocalizacion: true,
     cantidadMaximaArticulos: "18",
   })
@@ -55,11 +56,17 @@ const Configurar = () => {
       <Text>Sucursal:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        value={configuracion.sucursal}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, sucursal: text.replace(/[^0-9]/g, '') })}
+        keyboardType="numeric"
+      />
+      <Text>Vendedor:</Text>
+      <TextInput
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
         value={configuracion.vendedor}
         onChangeText={(text) => setConfiguracion({ ...configuracion, vendedor: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
       />
-
       <Text>Cantidad máxima de artículos:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}

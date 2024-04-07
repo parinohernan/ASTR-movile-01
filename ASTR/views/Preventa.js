@@ -187,9 +187,9 @@ const Preventa = (props) => {
       <TouchableOpacity onPress={abrirModal}>
         <Icon name="wpforms" size={30} color="cyan" />
       </TouchableOpacity>
-      <TouchableOpacity onPress={cargarDatos}>
+      {/* <TouchableOpacity onPress={cargarDatos}>
         <Fontisto size={30} color="cyan" name='preview' />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
     )
   }

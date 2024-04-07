@@ -15,7 +15,7 @@ const Articulos = ({ route }) => {
   const { params } = route;
   const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
   console.log('ART14 linea en la preventa numroº ', preventaNumero, params);
-  const [search, setSearch] = useState('naran');
+  const [search, setSearch] = useState('');
   const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
   const [filteredArticulos, setFilteredArticulos] = useState([]);
   // const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
@@ -35,11 +35,11 @@ const Articulos = ({ route }) => {
       }
     };
     
-    if (search.length > 2) { /* no hago busquedas hasta tenes 2 letras */
+    // if (search.length > 1) { /* no hago busquedas hasta tener 2 letras */
       fetchData();
-    }else{
-      setArticulosList([]);
-    }
+    // }else{
+    //   setArticulosList([]);
+    // }
   }, [search, isFocused]);
  
   const filtrarAgregarCantidadEnPreventa = async (search) => {
@@ -102,8 +102,9 @@ const Articulos = ({ route }) => {
       </View>
       <Searchbar
         placeholder="Buscar artículo..."
-        onChangeText={(value) => setSearch(value)}
         value={search}
+        onChangeText={(value) => setSearch(value)}
+        onIconPress={(value) => setSearch(value)}
       />
       <Text> Resultados: {loading ? '...' : articulosList.length}</Text>
       <View style={styles.itemsContainer} >

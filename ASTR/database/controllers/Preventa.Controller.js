@@ -2,17 +2,17 @@ import { db } from '../database';
 import { limpiarPreventaDeStorage } from '../../src/utils/storageUtils';
 import { mas1NexPreventa } from '../../src/utils/storageConfigData';
 // import { log } from 'react-native-sqlite-storage/lib/sqlite.core';
-
+import { configuracionVendedor, configuracionSucursal } from '../../src/utils/storageConfigData';
 const syncPreventas = () => {
     //sube las preventas a la BDD del servidor
     console.log("Subiento preventas al servidor");
   };
 
-const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, importeTotal) => {
+const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, importeTotal, vendedor, sucursal) => {
     const fecha = new Date().toISOString();  // Formato ISO 8601
-    const vendedor = "0001";
+    // const vendedor = "0001";
     
-    console.log('PrvControler51. grabando cabeza en la bdd numero, cliente:', numero, cliente, vendedor, nota, fecha, cantItems, importeTotal);
+    console.log('PrvControler51. grabando cabeza en la bdd numero, cliente:', numero, cliente, vendedor, nota, fecha, cantItems, importeTotal, "suc", sucursal);
     
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -59,6 +59,9 @@ const grabarItemsPreventaEnBDD = async (numero, items) => {
 
 const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
     // console.log('PrvControler109. grabado en la ITEMS', items);
+    let vendedor = await configuracionVendedor();
+    let sucursal = await configuracionSucursal();
+
     let importeTotal = 0;
     items.map((e) => {
         importeTotal = importeTotal + e.precio;
@@ -70,7 +73,7 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
     }
     console.log('PrvControler108. grabado en la bdd CABEZA numero, nota', numero, nota, "cliente ", cliente, "items: ",items.length);
     try {
-        await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal );
+        await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal, vendedor, sucursal );
         await grabarItemsPreventaEnBDD(numero, items);
         limpiarPreventaDeStorage();
         mas1NexPreventa();
@@ -112,7 +115,8 @@ const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
     });
 };
 
-const asyncPreventasBDDToArray = () => {
+const asyncPreventasBDDToArray = async() => {
+    let sucursal = await configuracionSucursal();
     console.log("Prev Ctrl 120 ");
     return new Promise((resolve, reject) => {
         let preventasArray = [];
@@ -127,12 +131,12 @@ const asyncPreventasBDDToArray = () => {
                             //adapto la respuesta al JSON de la API
                             let preventa = {
                               DocumentoTipo: "PRV",
-                              DocumentoSucursal: result.rows.item(i).vendedor.substring(0, 4),
+                              DocumentoSucursal: sucursal.substring(0, 4),
                               DocumentoNumero: result.rows.item(i).DocumentoNumero,
                               Fecha: result.rows.item(i).fecha,
                               FechaHoraEnvio : result.rows.item(i).fecha,
                               ClienteCodigo:result.rows.item(i).ClienteCodigo,
-                              VendedorCodigo: "3",
+                              VendedorCodigo: result.rows.item(i).vendedor.substring(0, 4),
                               ImporteTotal: result.rows.item(i).ImporteTotal,
                               Cant_items: result.rows.item(i).cantidadItems,
                               Observacion: result.rows.item(i).nota,

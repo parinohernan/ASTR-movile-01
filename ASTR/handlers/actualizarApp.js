@@ -96,6 +96,7 @@ const enviarPreventas = async (setLogs) => {
       for (let i = 0; i < preventas.length; i++) {
         try {
           await actualizarPreventas(preventas[i], mensajes);
+          console.log(`enviando preventa ${i + 1}.`,preventas[i]);
           logs = handleLogs(logs,(`enviando preventa ${i + 1}.`) , setLogs);
         } catch (error) {
           logs = handleLogs(logs, (`Error al enviar la preventa ${i + 1}: ${error}`),setLogs);
@@ -121,19 +122,20 @@ const enviarPreventas = async (setLogs) => {
 
   const actualizarAPP = async (esCompleta, logs, setLogs) => {
     // let logs= [];
-    await enviarPreventas(setLogs);   
     esCompleta 
-      ? (
-          console.log("Sincronizando todos los datos."),
-          logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs),
-          await initDatabase(setLogs),
-          await actualizarVendedores(setLogs),
-          await actualizarClientes(setLogs),
-          await actualizarArticulos(setLogs),
-          await enviarPreventas(setLogs),
-          logs = handleLogs(logs, "Sincronizacion completa.", setLogs)
-        )
-      : logs = handleLogs(logs, "Preventas enviadas.", setLogs);
+    ? (
+      console.log("Sincronizando todos los datos."),
+      logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs),
+      await initDatabase(setLogs),
+      await actualizarVendedores(setLogs),
+      await actualizarClientes(setLogs),
+      await actualizarArticulos(setLogs),
+      await enviarPreventas(setLogs),
+      logs = handleLogs(logs, "Sincronizacion completa.", setLogs)
+      )
+      : ( await enviarPreventas(setLogs)
+      
+      );
   }
 
 export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas};
