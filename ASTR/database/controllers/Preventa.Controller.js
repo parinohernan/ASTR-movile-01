@@ -117,6 +117,7 @@ const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
 
 const asyncPreventasBDDToArray = async() => {
     let sucursal = await configuracionSucursal();
+    let vendedorCodigo = await configuracionVendedor();
     console.log("Prev Ctrl 120 ");
     return new Promise((resolve, reject) => {
         let preventasArray = [];
@@ -136,7 +137,7 @@ const asyncPreventasBDDToArray = async() => {
                               Fecha: result.rows.item(i).fecha,
                               FechaHoraEnvio : result.rows.item(i).fecha,
                               ClienteCodigo:result.rows.item(i).ClienteCodigo,
-                              VendedorCodigo: result.rows.item(i).vendedor.substring(0, 4),
+                              VendedorCodigo: vendedorCodigo,
                               ImporteTotal: result.rows.item(i).ImporteTotal,
                               Cant_items: result.rows.item(i).cantidadItems,
                               Observacion: result.rows.item(i).nota,

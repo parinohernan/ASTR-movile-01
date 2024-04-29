@@ -15,3 +15,8 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 3 - permite superar el numero de articulos cuando agrego desde el componente articulos
 
 5 - las preventas no se envian con el vendedor correcto. siempre llegan como test.
+
+3- mostrar los errores de sincronizacion y un "porfavor espere"
+
+1- el modal de notas cuando le das en cancelar no cancela, graba igual. se puede quitar ese boton-
+

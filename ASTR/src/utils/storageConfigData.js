@@ -44,7 +44,7 @@ async function configuracionVendedor() {
 
 async function configuracionSucursal() {
   let conf= await getConfiguracionDelStorage();
-  return conf.vendedor
+  return conf.sucursal
 }
 
 async function configuracionEndPoint() {

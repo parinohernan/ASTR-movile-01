@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { initDatabase} from '../database/database';
-import { insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
+import { borrarArticulosDeSqlite, insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
@@ -129,6 +129,7 @@ const enviarPreventas = async (setLogs) => {
       await initDatabase(setLogs),
       await actualizarVendedores(setLogs),
       await actualizarClientes(setLogs),
+      await borrarArticulosDeSqlite(),
       await actualizarArticulos(setLogs),
       await enviarPreventas(setLogs),
       logs = handleLogs(logs, "Sincronizacion completa.", setLogs)

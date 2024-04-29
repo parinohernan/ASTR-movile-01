@@ -1,5 +1,22 @@
 import { db } from '../database';
 
+const borrarArticulosDeSqlite = async () => {
+  db.transaction(tx => {
+    // Paso 1: Borrar los artículos existentes en la base de datos local
+    tx.executeSql(
+      'DELETE FROM articulos WHERE 1=1',
+      [], // No necesitas pasar ningún parámetro para esta consulta
+      (_, result) => {
+        console.log("Todos los artículos existentes han sido eliminados.");
+      },
+      (_, error) => {
+        console.log('Error al eliminar artículos existentes:', error);
+      }
+    );
+  }); // Asegúrate de cerrar correctamente la función de transacción
+}; // Asegúrate de cerrar correctamente la función borrarArticulosDeSqlite
+
+
 const insertArticulosFromAPI = (data) => {
   return new Promise((resolve, reject) => {
     db.transaction(tx => {
@@ -34,7 +51,6 @@ const insertArticulosFromAPI = (data) => {
   });
 };
 
-  
 
   const getArticulos = () => {
     return new Promise((resolve, reject) => {
@@ -64,4 +80,4 @@ const insertArticulosFromAPI = (data) => {
     });
   };
 
-  export {insertArticulosFromAPI, getArticulosFiltrados}
+  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite}

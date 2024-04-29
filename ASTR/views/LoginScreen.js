@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, Image, StyleSheet, Modal } from 'react-native';
 import { Akira, Kaede } from 'react-native-textinput-effects';
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -71,6 +71,7 @@ const LoginScreen = () => {
 
 
   const handleIngresar = () => {
+   
     if ((form.vendedor.toLocaleLowerCase() == "root") && form.password.toLocaleLowerCase() === "root" ) {
       console.log("ingresando a aplicacion", form);
       navigation.navigate('Home', {form});
@@ -100,6 +101,37 @@ const Ingresar = () => {
   );
 };
 
+const IngresarRoot = () => {
+ 
+  return (
+    <View >
+      <Button theme={{ colors: { primary: 'pink' } }}  
+      // onPress={() => handleIngresar()}
+      onPress={()=>navigation.navigate('Home', {form})}>
+        Ingresar Root
+      </Button>
+    </View>
+  );
+};
+const IngresarUser = () => {
+  // setForm({vendedor: "1", password: "1234"})
+  let vendedor={
+    clave: "1234",
+    id: "1",
+    descripcion: "Hernan Parino",
+  }
+  return (
+    <View>
+      <Button theme={{ colors: { primary: 'white' } }} 
+      // onPress={() => handleIngresar()}
+      onPress={()=>navigation.navigate('UserMenuPPal', {vendedor})}>
+        Ingresar User
+      </Button>
+    </View>
+  );
+};
+
+
 const closeModal = () => {
   setModalVisible(false);
   // setSelectedItem(null);
@@ -125,19 +157,22 @@ const closeModal = () => {
         inputStyle={{ backgroundColor: '#FFFFFF75', color: '#112233' }}
         labelStyle={{ color: '#112233'}}
         onChangeText = { ( texto )  =>  {  handlePassword(texto)  } }
-      />
+        />
       <Ingresar/>
+      <Text style={styles.vecsionText}>hernyDev version 1.1</Text>
+      {/* <IngresarRoot/>
+      <IngresarUser/> */}
       <Modal
         visible={modalVisible}
         animationType="slide"
         transparent={true}
         onRequestClose={closeModal}
-      >
+        >
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
             {/* <Text>Opciones para Nº {selectedItem?.numero}</Text>
             <Button title="Borrar" onPress={() => handleAction('Borrar')} />
-            <Button title="Editar" onPress={() => handleAction('Editar')} /> */}
+          <Button title="Editar" onPress={() => handleAction('Editar')} /> */}
            <Text>Error. usuario o password es incorrecta</Text>
             <Button theme={{ colors: { primary: 'red' }}}  mode= 'contained'  onPress={() => closeModal()}>
               cerrar
@@ -164,6 +199,11 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  logoText: {
+    fontSize: 10,
+    
     marginVertical: 10,
   },
   input: {

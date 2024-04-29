@@ -14,7 +14,7 @@ const Articulos = ({ route }) => {
   const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
-  console.log('ART14 linea en la preventa numroº ', preventaNumero, params);
+  console.log('ART14 linea en la preventa numroº ', preventaNumero);
   const [search, setSearch] = useState('');
   const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
   const [filteredArticulos, setFilteredArticulos] = useState([]);
@@ -35,32 +35,33 @@ const Articulos = ({ route }) => {
       }
     };
     
-    // if (search.length > 1) { /* no hago busquedas hasta tener 2 letras */
+    if (search.length > 2) { /* no hago busquedas hasta tener 2 letras */
       fetchData();
-    // }else{
-    //   setArticulosList([]);
-    // }
+    }else{
+      setArticulosList([]);
+    }
   }, [search, isFocused]);
  
   const filtrarAgregarCantidadEnPreventa = async (search) => {
     // const preventaActual = await obtenerPreventaDeStorage();
-    const filteredArticulosBDD = await getArticulosFiltrados(search);
-  
-    const filteredArticulosConCantidad = await Promise.all(
-      filteredArticulosBDD.map(async (element) => {
-        const cantidad = await cantidadCargados(element.id);
-        element.seleccionados = cantidad;
-        return element;
-      })
-    );
+      const filteredArticulosBDD = await getArticulosFiltrados(search);
+      
+      const filteredArticulosConCantidad = await Promise.all(
+        filteredArticulosBDD.map(async (element) => {
+          const cantidad = await cantidadCargados(element.id);
+          element.seleccionados = cantidad;
+          return element;
+        })
+      );
     return filteredArticulosConCantidad;
+  
   };
-
+  
   const openModal = (articulo) => {
     console.log("articulo ",articulo);
     navigation.navigate('AddArticulo', { articulo });
   };
- 
+  
   const renderItem = ({ item }) => {
     return(
     <TouchableOpacity onPress={() => openModal(item)}>
@@ -106,7 +107,7 @@ const Articulos = ({ route }) => {
         onChangeText={(value) => setSearch(value)}
         onIconPress={(value) => setSearch(value)}
       />
-      <Text> Resultados: {loading ? '...' : articulosList.length}</Text>
+      <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length} ingrese al menos 3 letras</Text>
       <View style={styles.itemsContainer} >
       {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : <RenderList/>}
       </View>
@@ -119,6 +120,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 2,
+    backgroundColor: '#06181e',
+  },
+  subInfoText: {
+    color:'cyan',
+    padding: 4,
     backgroundColor: '#06181e',
   },
   viewTitle: {
@@ -143,7 +149,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
+    borderBottomWidth:1,
     borderBottomColor: 'gray',
     paddingVertical: 0,
   },

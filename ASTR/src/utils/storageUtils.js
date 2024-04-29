@@ -34,6 +34,7 @@ const obtenerPreventaDeStorage = async () => {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
+            
             return JSON.parse(preventaString);
         } else {
             // crea una preventa limpia
@@ -88,8 +89,8 @@ const calcularTotal = async () => {
       // Verifica si la preventa es un array antes de contar los elementos
      for (let i = 0; i < preventa.length; i++) {
          const e = preventa[i]; 
-         console.log("item ", e.precioFinal);
-        total= total + e.precioFinal;
+         console.log("item ", e.precioTotal);
+        total= total + e.precioTotal;
      }
     return total;
       

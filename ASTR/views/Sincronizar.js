@@ -3,7 +3,6 @@ import { View, Text, Switch, ScrollView, StyleSheet } from 'react-native';
 import { Button } from 'react-native-elements';
 import { /*actualizarClientes, actualizarVendedores, actualizarArticulos,*/ actualizarAPP } from '../handlers/actualizarApp';
 import ConsoleComponent from '../src/components/ConsoleComponent';
-// import { initDatabase } from '../handlers/actualizarApp';
 
 const Sincronizar = () => {
   const [actualizarDatos, setActualizarDatos] = useState(false);
@@ -14,7 +13,10 @@ const Sincronizar = () => {
     await actualizarAPP(actualizarDatos, logs, setLogs);
 
   };
+  const handleBorrarDatos = async () => {
+    await actualizarAPP(actualizarDatos, logs, setLogs);
 
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -25,6 +27,7 @@ const Sincronizar = () => {
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
         <Button title="Sincronizar" onPress={handleEnviarPreventas} buttonStyle={{ margin: 10, width: "70%", backgroundColor:'blue', borderWidth: 3 , borderRadius: 20 }}/>
+        {/* <Button title="Borrar Datos" onPress={handleBorrarDatos} buttonStyle={{ margin: 10, width: "70%", backgroundColor:'blue', borderWidth: 3 , borderRadius: 20 }}/> */}
         <Text style={{ flex: 1 }}>Activar Actualizar Datos</Text>
         <Switch value={actualizarDatos} onValueChange={() => setActualizarDatos(!actualizarDatos)} />
         {/* <Text style={styles.explanationText}>Si quiere solo enviar las preventas no es necesario que active Actualizar Datos.</Text> */}

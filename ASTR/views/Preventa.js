@@ -1,20 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal, Alert, BackHandler } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa, configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
-import { Fontisto } from '@expo/vector-icons';
+// import { Fontisto } from '@expo/vector-icons';
 // import { useIsFocused } from '@react-navigation/native';
 
 const Preventa = (props) => {
+
+  // useEffect(() => {
+  //   const backAction = () => {
+  //     Alert.alert(
+  //       'Atención',
+  //       'La preventa no fue grabada. ¿Desea salir de todas formas?',
+  //       [
+  //         {
+  //           text: 'Cancelar',
+  //           onPress: () => null,
+  //           style: 'cancel',
+  //         },
+  //         {
+  //           text: 'Salir',
+  //           onPress: () => navigation.goBack(), // O cualquier otra acción que desees
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+
+  //     return true; // Permite que el backHandler continúe
+  //   };
+  //   const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+  //   return () => backHandler.remove();
+  // }, []);
+
   const isFocused = useIsFocused();
   const {route} = props;
   const {params} = route;
   let {preventaNumero, cliente, edit} = params;
-  console.log("PRV13 prevnumero y cliente",preventaNumero,cliente);
+  console.log("PRV13 prevnumero y cliente",preventaNumero,cliente.descripcion);
   
   const navigation = useNavigation();
 
@@ -59,8 +85,9 @@ const Preventa = (props) => {
   
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
+    console.log("prv 62 cargo",carritoData);
     if (carritoData.length != 0) {
-      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioFinal })));
+      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioTotal, descuento: item.descuento })));
     }
     setCantidadItems (carritoData.length);
     setTotal(await calcularTotal());
@@ -147,7 +174,9 @@ const Preventa = (props) => {
   }
 
   // Renderiza cada elemento del array reducido
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }) => {
+    console.log("prv152 intem ", item);
+    return (
     <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
       <Text>{`${item.descripcion} `}</Text>
       <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',}}>
@@ -163,7 +192,7 @@ const Preventa = (props) => {
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
-          <Text>Total {`$: ${String(Math.round(item.precio))}`}</Text>               
+          <Text>Total {`$: ${String(item.precio.toFixed(2))}`}</Text>               
         </View>
         <View style= {{ borderWidth: 1 , width: "20%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
                         flexDirection: 'column', // Hijos en columna vertical
@@ -174,7 +203,7 @@ const Preventa = (props) => {
       </View>
       <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, margin:2, marginBottom: 4 }} />
     </TouchableOpacity>
-  );
+  )};
   const BarraIcons = () =>{
     return (
     <View style={styles.iconBar}>
@@ -211,7 +240,7 @@ const Preventa = (props) => {
           <Text>Saldo: $ -{dataCliente.importeDeuda}</Text>
         </View>
         <View style= {styles.cabezaSubdata}>
-          <Text>Total $: {total} </Text>
+          <Text>Total $: {total.toFixed(2)} </Text>
           <Text>Items: {carrito.length.toString()} </Text>
         </View >
         </View>
