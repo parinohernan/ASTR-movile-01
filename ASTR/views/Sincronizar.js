@@ -13,10 +13,7 @@ const Sincronizar = () => {
     await actualizarAPP(actualizarDatos, logs, setLogs);
 
   };
-  const handleBorrarDatos = async () => {
-    await actualizarAPP(actualizarDatos, logs, setLogs);
-
-  };
+  
 
   return (
     <ScrollView style={styles.container}>

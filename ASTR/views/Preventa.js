@@ -6,6 +6,8 @@ import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreve
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa, configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
+import Articulos from './Articulos';
+import { getArticulosFrecuentesDesdeAPI } from '../handlers/actualizarApp';
 // import { Fontisto } from '@expo/vector-icons';
 // import { useIsFocused } from '@react-navigation/native';
 
@@ -41,15 +43,15 @@ const Preventa = (props) => {
   const {params} = route;
   let {preventaNumero, cliente, edit} = params;
   console.log("PRV13 prevnumero y cliente",preventaNumero,cliente.descripcion);
-  
   const navigation = useNavigation();
-
+  
   /*busco los items que ya esten cargados en la preventa y los cargo en el estado*/ 
   const [carrito, setCarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
   const [nueva, setNueva] = useState(true);
   const [dataCliente, setDataCliente] = useState( params.cliente );
+  const [articulosFrecuentes, setArticulosFrecuentes] = useState([]);
 
   const siEstoyEditando = async () => {
     setNueva(false);
@@ -67,7 +69,9 @@ const Preventa = (props) => {
   
   useEffect(() => {
     const loadData = async () => {
-     
+        setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(dataCliente.id))
+         
+        console.log(" traigo frecuentes de", cliente, dataCliente.id);
         if (edit === true) {
           console.log("editando PREVENTA");
           await siEstoyEditando();
@@ -148,7 +152,7 @@ const Preventa = (props) => {
         ]
       );
     } else {
-      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems });
+      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes });
     }
   };
 
@@ -192,7 +196,7 @@ const Preventa = (props) => {
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
-          <Text>Total {`$: ${String(item.precio.toFixed(2))}`}</Text>               
+          <Text>Total {`$: ${String(item.precio?.toFixed(2))}`}</Text>               
         </View>
         <View style= {{ borderWidth: 1 , width: "20%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
                         flexDirection: 'column', // Hijos en columna vertical

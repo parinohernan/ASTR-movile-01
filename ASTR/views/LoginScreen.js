@@ -131,7 +131,6 @@ const IngresarUser = () => {
   );
 };
 
-
 const closeModal = () => {
   setModalVisible(false);
   // setSelectedItem(null);
@@ -160,8 +159,8 @@ const closeModal = () => {
         />
       <Ingresar/>
       <Text style={styles.vecsionText}>hernyDev version 1.1</Text>
-      {/* <IngresarRoot/>
-      <IngresarUser/> */}
+      <IngresarRoot/>
+      <IngresarUser/>
       <Modal
         visible={modalVisible}
         animationType="slide"

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { initDatabase} from '../database/database';
-import { borrarArticulosDeSqlite, insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
+import { borrarArticulosDeSqlite, insertArticulosFromAPI, insertArticulosFrecuentesToSqlite } from '../database/controllers/Articulos.Controller';
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
@@ -138,5 +138,18 @@ const enviarPreventas = async (setLogs) => {
       
       );
   }
+  
+const getArticulosFrecuentesDesdeAPI = async (cliente) => {
+  console.log("Trayendo Articulos frecuentes...");
+  let logs = [];
+  try {
+      const response = await axios.get("http://192.168.1.123:3003/articulosfrecuentes?clienteCodigo=2012&fechaDesde=2024-02-01&fechaHasta=2024-04-06");
+      const data = response.data;
+      console.log(data);
+      return (data);
+  } catch (error) {
+      console.log('Error al obtener articulos frecuentes ', error);
+  }
+};
 
-export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas};
+export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI};

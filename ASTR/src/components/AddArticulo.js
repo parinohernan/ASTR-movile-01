@@ -122,6 +122,20 @@ const AddArticulo = ({route}) => {
   const handleCancel = () => {
     navigation.goBack();
   };
+//   const eliminar1PreventaStorage = async () =>{
+//     // eliminar item de la preventa de sorage actual
+//      console.log("elimina solo uno",articuloConDetalles.id);
+//      await eliminarItemEnPreventaEnStorage(articuloConDetalles.id);
+//      navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
+//      return
+//  }
+
+  const modificarItemPreventaStorage = async () => {
+    console.log("modificarItemPreventaStorage");
+    await eliminarItemEnPreventaEnStorage (articulo.id);
+    await agregarItemPreventaStorage();
+  }
+
 
   return (
     <View style={styles.container}>

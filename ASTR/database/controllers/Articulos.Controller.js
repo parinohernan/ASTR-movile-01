@@ -16,6 +16,36 @@ const borrarArticulosDeSqlite = async () => {
   }); // Asegúrate de cerrar correctamente la función de transacción
 }; // Asegúrate de cerrar correctamente la función borrarArticulosDeSqlite
 
+const insertArticulosFrecuentesToSqlite = async (data) =>{
+  console.log("ART ctr 20",data);
+// tengo que borrar los que tenga y agregar los del nuevo cliente
+
+  // db.transaction(tx => {
+  //   //PASO 0  Crea la tabla articulosFrecuentes si no existe
+  //   tx.executeSql(
+  //     'CREATE TABLE IF NOT EXISTS articulosFrecuentes (id TEXT PRIMARY KEY, descripcion TEXT, existencia INTEGER, precio REAL, unidadVenta TEXT)',
+  //     [],
+  //     () => console.log(logs,('Tabla articulosFrecuentes creada exitosamente'), setLogs),
+  //     (_, error) =>console.log(logs,('Error al crear la tabla articulosFrecuentes'), setLogs)
+  //   );
+  //   // Paso 1: Borrar los artículosFrecuentes existentes en la base de datos local
+  //   tx.executeSql(
+  //     'DELETE FROM articulosFrecuentes WHERE 1=1',
+  //     [], // No necesitas pasar ningún parámetro para esta consulta
+  //     (_, result) => {
+  //       console.log("Todos los artículosFrecuentes existentes han sido eliminados.");
+  //     },
+  //     (_, error) => {
+  //       console.log('Error al eliminar artículosFrecuentes existentes:', error);
+  //     }
+  //   );
+
+  // }); 
+  
+  // let articulos = await getArticulos();
+  // const filteredArticulosBDD = await getArticulosFiltrados("fan");
+  // console.log("art.crtl 34: arti", filteredArticulosBDD.length);
+}
 
 const insertArticulosFromAPI = (data) => {
   return new Promise((resolve, reject) => {
@@ -51,6 +81,19 @@ const insertArticulosFromAPI = (data) => {
   });
 };
 
+/** La idea es filtrar y paginar todo en esta funcion */
+const getArticulosFiltrados = (searchWord) => {
+  return new Promise((resolve, reject) => {
+    console.log("Obteniendo artículos filtrados de la base de datos local...");
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM articulos WHERE descripcion LIKE ?', [`%${searchWord}%`], (_, { rows }) => {
+        resolve(rows._array);
+      }, (_, error) => {
+        reject(error);
+      });
+    });
+  });
+};
 
   const getArticulos = () => {
     return new Promise((resolve, reject) => {
@@ -65,19 +108,4 @@ const insertArticulosFromAPI = (data) => {
     });
   };
 
-  
-  /** La idea es filtrar y paginar todo en esta funcion */
-  const getArticulosFiltrados = (searchWord) => {
-    return new Promise((resolve, reject) => {
-      console.log("Obteniendo artículos filtrados de la base de datos local...");
-      db.transaction(tx => {
-        tx.executeSql('SELECT * FROM articulos WHERE descripcion LIKE ?', [`%${searchWord}%`], (_, { rows }) => {
-          resolve(rows._array);
-        }, (_, error) => {
-          reject(error);
-        });
-      });
-    });
-  };
-
-  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite}
+  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite, insertArticulosFrecuentesToSqlite}

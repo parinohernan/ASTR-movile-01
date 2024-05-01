@@ -1,31 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Modal, Switch } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Searchbar } from 'react-native-paper';
 import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
 import { cantidadCargados} from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { obtenerPreventaDeStorage} from "../src/utils/storageUtils";
+// import { getArticulosFrecuentesDesdeAPI } from '../handlers/actualizarApp';
 
 
 
 const Articulos = ({ route }) => {
+  const [mostrarFrecuentes, setMostrasFrecuentes] = useState(false);
   const isFocused = useIsFocused();
   const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
-  console.log('ART14 linea en la preventa numroº ', preventaNumero);
-  const [search, setSearch] = useState('');
+  const cliente =params.cliente;
+  const articulosFrecuentes = params.articulosFrecuentes;
+  console.log('ART18 linea en la preventa numroº ', preventaNumero, "cliente: ", cliente, "frecuentes ",mostrarFrecuentes);
+  const [search, setSearch] = useState('marol');
+  const [searchOld, setSearchOld] = useState('');
   const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
-  const [filteredArticulos, setFilteredArticulos] = useState([]);
-  // const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
+  const [filtredArticulos, setFilteredArticulos] = useState([]);
+  //const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  var buscoDesde = 2;
+  
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
         setArticulosList(await filtrarAgregarCantidadEnPreventa(search));
         setLoading(false);
         // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
@@ -34,28 +42,48 @@ const Articulos = ({ route }) => {
         setLoading(false);
       }
     };
-    
-    if (search.length > 2) { /* no hago busquedas hasta tener 2 letras */
-      fetchData();
+    if (mostrarFrecuentes) {
+        fetchData();
     }else{
-      setArticulosList([]);
+      if (search.length > buscoDesde) { /* no hago busquedas hasta tener 2 letras */
+        fetchData();
+      }else{
+        setArticulosList([]);
+      }
     }
-  }, [search, isFocused]);
+    
+  }, [search, isFocused, mostrarFrecuentes]);
  
   const filtrarAgregarCantidadEnPreventa = async (search) => {
+    // esto es para cuando edito un item, pero lo estoy reutilizando para mostrar los frecuentes
     // const preventaActual = await obtenerPreventaDeStorage();
+    let filteredArticulosConCantidad = articulosList;
+    
+    // if (search.includes(searchOld) && searchOld !== "" ) {
+    //   console.log("ahorro cargar con getArticulosFiltrados y uso lista anterior", searchOld, search);
+    //   filteredArticulosConCantidad = filteredArticulosConCantidad.filter(element => element.descripcion.includes(search));
+    // } else {
+      console.log("a buscar a bucar", searchOld, search)
+      setSearchOld(search);
       const filteredArticulosBDD = await getArticulosFiltrados(search);
-      
-      const filteredArticulosConCantidad = await Promise.all(
+      // let articulosFrecuentes = await getArticulosFrecuentesDesdeAPI(cliente);
+      // console.log("frecuentesd desde ART59 ",articulosFrecuentes);
+      filteredArticulosConCantidad = await Promise.all(
         filteredArticulosBDD.map(async (element) => {
           const cantidad = await cantidadCargados(element.id);
+          const frecuente = articulosFrecuentes.includes(element.id)
           element.seleccionados = cantidad;
+          element.frecuente = frecuente;
           return element;
         })
       );
+    // }
+    if (mostrarFrecuentes) {
+      return filteredArticulosConCantidad.filter(element => element.frecuente === true);
+    }
     return filteredArticulosConCantidad;
-  
   };
+  
   
   const openModal = (articulo) => {
     console.log("articulo ",articulo);
@@ -72,13 +100,20 @@ const Articulos = ({ route }) => {
         <View style={styles.articuloItemLinea}>
           <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
           <Text style={styles.articuloInfo}>
-            Precio: ${item.precio.toFixed(2)}
+            Precio: ${item?.precio?.toFixed(2)}
           </Text>
+          {/* <View style= {{ width: "10%",
+                        borderWidth: 0 ,
+                        flexDirection: 'row', // Hijos en columna vertical
+                        alignItems: 'flex-end', // Alinear hijos a la izquierda
+                      }}>
+           </View> */}
           <View style= {{ width: "10%",
                         borderWidth: 0 ,
                         flexDirection: 'row', // Hijos en columna vertical
                         alignItems: 'flex-end', // Alinear hijos a la izquierda
                       }}>
+            <Text style={styles.check}>{item.frecuente? "F": ""}</Text>
             <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text>
            </View>
         </View>
@@ -98,6 +133,10 @@ const Articulos = ({ route }) => {
 
   return (
     <View style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: -50 }} >
+        <Text style={styles.subInfoText}>Mostrar articulos frecuentes</Text>
+        <Switch value={mostrarFrecuentes} onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)} />
+      </View>
       <View style={styles.viewTitle}> 
         <Text style={styles.title}> Elegir articulos </Text>
       </View>
@@ -109,7 +148,7 @@ const Articulos = ({ route }) => {
       />
       <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length} ingrese al menos 3 letras</Text>
       <View style={styles.itemsContainer} >
-      {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : <RenderList/>}
+      {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : ((articulosList.length > 0)? <RenderList/> : "")}
       </View>
   
     </View>
