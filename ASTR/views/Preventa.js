@@ -5,9 +5,10 @@ import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
-import { nextPreventa, configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
+import { nextPreventa, configuracionCantidadMaximaArticulos, configuracionEndPoint  } from '../src/utils/storageConfigData';
 import Articulos from './Articulos';
 import { getArticulosFrecuentesDesdeAPI } from '../handlers/actualizarApp';
+import axios from 'axios';
 // import { Fontisto } from '@expo/vector-icons';
 // import { useIsFocused } from '@react-navigation/native';
 
@@ -52,6 +53,7 @@ const Preventa = (props) => {
   const [nueva, setNueva] = useState(true);
   const [dataCliente, setDataCliente] = useState( params.cliente );
   const [articulosFrecuentes, setArticulosFrecuentes] = useState([]);
+  const [hasInternetAccess, setHasInternetAccess] = useState(false);
 
   const siEstoyEditando = async () => {
     setNueva(false);
@@ -80,11 +82,22 @@ const Preventa = (props) => {
         // Cargar datos aquí
           cargarDatos();
         }
-      
     };
-  
-    console.log("entro a preventa editando= T nueva =fale ", edit);
+    const checkInternetAccess = async () => {
+      try {
+        let endpoint = await configuracionEndPoint()
+        const response = await axios.get(endpoint);
+        // Si la solicitud se completa con éxito, significa que hay acceso al servidor
+        setHasInternetAccess(true);
+      } catch (error) {
+        // Si ocurre un error, no hay acceso al servidor
+        setHasInternetAccess(false);
+      }
+    };
+    // console.log("entro a preventa editando= T nueva =fale ", edit);
     loadData();
+    checkInternetAccess();
+    console.log("hay internet?", hasInternetAccess);
   }, [isFocused]);
   
   const cargarDatos = async () => {
@@ -152,7 +165,7 @@ const Preventa = (props) => {
         ]
       );
     } else {
-      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes });
+      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
     }
   };
 

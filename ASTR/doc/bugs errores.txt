@@ -20,3 +20,8 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 1- el modal de notas cuando le das en cancelar no cancela, graba igual. se puede quitar ese boton-
 
+ENCONTRO HERNAN.
+
+8- cuando no cerras una preventa y vas a sincronizar. da error y no borra lo enviado.
+8- cuando editas un articulo queda mal el precio.
+

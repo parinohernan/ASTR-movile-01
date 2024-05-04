@@ -138,18 +138,48 @@ const enviarPreventas = async (setLogs) => {
       
       );
   }
+
+  const getArticulosFrecuentesDesdeAPI = async (cliente) => {
+    // Obtener la fecha actual
+    const today = new Date();
+    const year = today.getFullYear();
+    // JavaScript cuenta los meses desde 0 (enero es 0, diciembre es 11)
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    
+    // Formatear la fecha actual en el formato AAAA-MM-DD
+    const formattedToday = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   
-const getArticulosFrecuentesDesdeAPI = async (cliente) => {
-  console.log("Trayendo Articulos frecuentes...");
-  let logs = [];
-  try {
-      const response = await axios.get("http://192.168.1.123:3003/articulosfrecuentes?clienteCodigo=2012&fechaDesde=2024-02-01&fechaHasta=2024-04-06");
+    // Obtener la fecha de un año atrás
+    const oneYearAgo = new Date(year -1, month , day); // Restar 1 al año actual
+  
+    // Formatear la fecha de un año atrás en el formato AAAA-MM-DD
+    const formattedOneYearAgo = `${oneYearAgo.getFullYear()}-${(oneYearAgo.getMonth() + 1).toString().padStart(2, '0')}-${oneYearAgo.getDate().toString().padStart(2, '0')}`;
+    
+    console.log("Trayendo Articulos frecuentes...");
+   
+    try {
+      const response = await axios.get(await configuracionEndPoint() + "articulosfrecuentes?clienteCodigo=" + cliente + "&fechaDesde=" + formattedOneYearAgo + "&fechaHasta=" + formattedToday);
       const data = response.data;
       console.log(data);
-      return (data);
-  } catch (error) {
-      console.log('Error al obtener articulos frecuentes ', error);
-  }
-};
+      return data;
+    } catch (error) {
+      console.log('Error al obtener artículos frecuentes ', error);
+    }
+  };  
+// const getArticulosFrecuentesDesdeAPI = async (cliente) => {
+//   const fechaActual = //fecha de hoy
+//   const fechaAnoAtras = //fecha un año atras
+//   console.log("Trayendo Articulos frecuentes...");
+ 
+//   try {
+//       const response = await axios.get(await configuracionEndPoint()+"articulosfrecuentes?clienteCodigo="+cliente+"&fechaDesde=2024-02-01&fechaHasta=2024-04-06");
+//       const data = response.data;
+//       console.log(data);
+//       return (data);
+//   } catch (error) {
+//       console.log('Error al obtener articulos frecuentes ', error);
+//   }
+// };
 
 export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI};

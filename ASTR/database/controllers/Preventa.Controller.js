@@ -93,13 +93,14 @@ const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
                     const items = [];
                     for (let i = 0; i < result.rows.length; i++) {
                         const row = result.rows.item(i);
+                        console.log("mirando el contenido de ROW:",row);
                         //adapto la respuesta al JSON de la API
                         let itemObjet={
                             CodigoArticulo : row.articulo,
                             Cantidad: row.cantidad,
                             PrecioUnitario: row.importe,
-                            PrecioLista: 0,
-                            PorcentajeBonificacion: 0,
+                            PrecioLista: row.importe,
+                            PorcentajeBonificacion: row.PorcentajeBonificacion,
                         }
                         items.push(itemObjet);
                     }

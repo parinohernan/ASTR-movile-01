@@ -34,7 +34,7 @@ const obtenerPreventaDeStorage = async () => {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
-            
+            // console.log("JSON.parse(preventaString)",JSON.parse(preventaString));
             return JSON.parse(preventaString);
         } else {
             // crea una preventa limpia
@@ -116,7 +116,7 @@ const eliminarItemEnPreventaEnStorage = async (codigo) => {
   const preventa = await obtenerPreventaDeStorage();
   console.log("PREVENTA ",preventa.length);
   if (preventa.length > 1){
-    console.log("ELIMINAR de la preventa actual", codigo, preventa);
+    // console.log("ELIMINAR de la preventa actual", codigo, preventa);
     guardarPreventaEnStorage(preventa.filter(item => item.id !== codigo));
   } else {
     // Eliminar todo el valor del storage

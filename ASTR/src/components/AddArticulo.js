@@ -4,12 +4,43 @@ import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreve
 import { useNavigation } from '@react-navigation/native';
 import { Keyboard } from 'react-native-keyboard-aware-scroll-view';
 
-const cantidadCargados= async (codigo) => {  
+const cantidadYDescuentoCargados= async (codigo) => {  
   const preventaActual = await obtenerPreventaDeStorage();
   for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id === codigo) {
+      console.log("encontre ",preventaActual[i]);
+      return {cantidad: preventaActual[i].seleccionados,
+              descuento: preventaActual[i].descuento
+      }
+    }
+  }
+  return 0;
+}
+const cantidadCargado= async (codigo) =>{  //articulo.id
+  // console.log("la cantidad en la preventa ::", codigo);
+  const preventaActual = await obtenerPreventaDeStorage();
+  // console.log("preventa actual",preventaActual);
+  for (let i = 0; i < preventaActual?.length; i++) {
+    if (preventaActual[i].id == codigo) {
+      // console.log("EEEEEEEEste ya esta ",codigo, " cantidad: ",preventaActual[i].cantidad);
       return preventaActual[i].cantidad;
     }
+    
+  }
+  // console.log("NO estaba cargado el codigo ",codigo, " cantidad: ",0);
+  return 0;
+}
+
+const descuentoCargado= async (codigo) => {  
+  // console.log("la cantidad en la preventa ::", codigo);
+  const preventaActual = await obtenerPreventaDeStorage();
+  // console.log("preventa actual",preventaActual);
+  for (let i = 0; i < preventaActual?.length; i++) {
+    if (preventaActual[i].id == codigo) {
+      
+      return preventaActual[i].descuento;
+    }
+    
   }
   return 0;
 }
@@ -17,34 +48,20 @@ const cantidadCargados= async (codigo) => {
 const AddArticulo = ({route}) => {
   const {params} = route;
   const {articulo, preventaNumero, cliente, cantItems} = params;
-
+  console.log("paarametros",params);
   const [cantidad, setCantidad] = useState(articulo.seleccionados? articulo.seleccionados : 0 );
-  const [descuento, setDescuento] = useState(0);
-  const [precioTotal, setPrecioTotal] = useState( articulo.precio );
+  const [descuento, setDescuento] = useState(articulo.descuento? articulo.descuento : 0);
+  const calcularTotal = ()=>{
+    let porcentage = descuento==0? 1 : (1+(100/descuento));
+    console.log("calculando Todtal: ", articulo.precio, porcentage, cantidad);
+    return (articulo.precio * porcentage * cantidad)
+  };
+  const [precioTotal, setPrecioTotal] = useState( 0 );
   const [precioUnitario, setPrecioUnitario] = useState (articulo.precio);
   const [verAgregar, setVerAgregar] = useState (false);
   const navigation = useNavigation();
   const cantidadInputRef = useRef(null);
 
-  // useEffect(() => {
-  //   // Enfoque y muestra el teclado en la entrada de cantidad cuando el componente se monta
-  //   cantidadInputRef.current?.focus();
-  //   const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', _keyboardDidShow);
-  //   const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', _keyboardDidHide);
-  
-  //   return () => {
-  //     keyboardDidShowListener.remove();
-  //     keyboardDidHideListener.remove();
-  //   };
-  // }, []);
-
-  // const _keyboardDidShow = () => {
-  //   console.log("Teclado mostrado");
-  // };
-
-  // const _keyboardDidHide = () => {
-  //   console.log("Teclado ocultado");
-  // };
   const articuloConDetalles = {
     ...articulo,
     cantidad: parseInt(cantidad),
@@ -72,6 +89,14 @@ const AddArticulo = ({route}) => {
     guardarPreventaEnStorage(preventa);
     navigation.goBack();
   }
+  
+  const eliminar1PreventaStorage = async () =>{
+    // eliminar item de la preventa de sorage actual
+     console.log("elimina solo uno",articuloConDetalles);
+     await eliminarItemEnPreventaEnStorage(articuloConDetalles.id);
+     navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
+     return
+  }
 
   const handleSave = async () => {
     await handleEnd();
@@ -85,6 +110,7 @@ const AddArticulo = ({route}) => {
       return;
     } 
     if (yaEsta && cantidad > 0) {
+      console.log("toi aca");
       await modificarItemPreventaStorage();
       return;
     } 
@@ -106,6 +132,7 @@ const AddArticulo = ({route}) => {
 
   const handleDescuento = (text) => {
     setDescuento(text.replace(/[^0-9]/g, ''));
+    
   };
   
   const handleEnd = async() => {
@@ -156,7 +183,7 @@ const AddArticulo = ({route}) => {
       <Text style={styles.label}>Descuento:</Text>
       <TextInput
         style={styles.input}
-        editable={false}
+        editable={true}
         onChangeText={handleDescuento}
         onEndEditing={handleEnd}
         value={String(descuento)}
@@ -234,4 +261,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export {cantidadCargados, AddArticulo};
+export {cantidadYDescuentoCargados, descuentoCargado, cantidadCargado, AddArticulo};

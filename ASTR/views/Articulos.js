@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Modal, Switch } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
 import { Searchbar } from 'react-native-paper';
 import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
-import { cantidadCargados} from '../src/components/AddArticulo';
+import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { obtenerPreventaDeStorage} from "../src/utils/storageUtils";
-// import { getArticulosFrecuentesDesdeAPI } from '../handlers/actualizarApp';
-
 
 
 const Articulos = ({ route }) => {
@@ -18,10 +14,12 @@ const Articulos = ({ route }) => {
   const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
   const cliente =params.cliente;
   const articulosFrecuentes = params.articulosFrecuentes;
+  const hasInternetAccess = params.hasInternetAccess;
   console.log('ART18 linea en la preventa numroº ', preventaNumero, "cliente: ", cliente, "frecuentes ",mostrarFrecuentes);
-  const [search, setSearch] = useState('marol');
+  const [search, setSearch] = useState('');
   const [searchOld, setSearchOld] = useState('');
   const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
+  const [filteredArticulosConCantidad, setFilteredArticulosConCantidad] =useState([]);
   const [filtredArticulos, setFilteredArticulos] = useState([]);
   //const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -34,7 +32,7 @@ const Articulos = ({ route }) => {
       try {
         setLoading(true);
         console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
-        setArticulosList(await filtrarAgregarCantidadEnPreventa(search));
+        setArticulosList(await buscarAdaptarFiltrar(search));
         setLoading(false);
         // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
       } catch (error) {
@@ -42,6 +40,7 @@ const Articulos = ({ route }) => {
         setLoading(false);
       }
     };
+    console.log("entre a articulos y quiero cargar");
     if (mostrarFrecuentes) {
         fetchData();
     }else{
@@ -53,40 +52,53 @@ const Articulos = ({ route }) => {
     }
     
   }, [search, isFocused, mostrarFrecuentes]);
- 
-  const filtrarAgregarCantidadEnPreventa = async (search) => {
-    // esto es para cuando edito un item, pero lo estoy reutilizando para mostrar los frecuentes
-    // const preventaActual = await obtenerPreventaDeStorage();
-    let filteredArticulosConCantidad = articulosList;
+  
+  const buscarAdaptarFiltrar = async (search) =>{
     
-    // if (search.includes(searchOld) && searchOld !== "" ) {
-    //   console.log("ahorro cargar con getArticulosFiltrados y uso lista anterior", searchOld, search);
-    //   filteredArticulosConCantidad = filteredArticulosConCantidad.filter(element => element.descripcion.includes(search));
-    // } else {
-      console.log("a buscar a bucar", searchOld, search)
-      setSearchOld(search);
+    const filtrarBusqueda = async (articulos) =>{
+      if (mostrarFrecuentes) {
+        return articulos.filter(element => element.frecuente === true);
+      }
+      return articulos;
+    }
+    
+    console.log("a buscar a bucar", searchOld, search)
+    //paso 1 traer articulos de la BDD
+    //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
+    //paso 3 filtrar segun configuracion
+
+      //paso 1
       const filteredArticulosBDD = await getArticulosFiltrados(search);
-      // let articulosFrecuentes = await getArticulosFrecuentesDesdeAPI(cliente);
-      // console.log("frecuentesd desde ART59 ",articulosFrecuentes);
-      filteredArticulosConCantidad = await Promise.all(
+      // console.log("encontrados filtrando ", filteredArticulosBDD.length);
+      //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
+      let filteredArticulos = await Promise.all(
         filteredArticulosBDD.map(async (element) => {
-          const cantidad = await cantidadCargados(element.id);
-          const frecuente = articulosFrecuentes.includes(element.id)
+          // const cantidadYDescuento = await cantidadYDescuentoCargados(element.id);
+          const cantidad = await cantidadCargado(element.id);
+          const descuento = await descuentoCargado(element.id);
+          const frecuente = articulosFrecuentes?.includes(element.id)
+          if (frecuente) {
+            // console.log("es frecuente ",element.descripcion);
+          }
           element.seleccionados = cantidad;
+          element.descuento = descuento;
           element.frecuente = frecuente;
+          // console.log("articulos filtrados ",element.descripcion, "cant", cantidad);
           return element;
         })
-      );
+      )
+      
+      // console.log("encontrados 2 ", filteredArticulos.length);
+      // setFilteredArticulosConCantidad ( filteredArticulos );
     // }
-    if (mostrarFrecuentes) {
-      return filteredArticulosConCantidad.filter(element => element.frecuente === true);
-    }
-    return filteredArticulosConCantidad;
-  };
+    //paso 3
+    return await filtrarBusqueda(filteredArticulos);
+  }
+
   
-  
-  const openModal = (articulo) => {
-    console.log("articulo ",articulo);
+  const openModal = async (articulo) => {
+    let datos = await cantidadYDescuentoCargados(articulo.id)
+    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAarticulo ",datos);
     navigation.navigate('AddArticulo', { articulo });
   };
   
@@ -102,19 +114,14 @@ const Articulos = ({ route }) => {
           <Text style={styles.articuloInfo}>
             Precio: ${item?.precio?.toFixed(2)}
           </Text>
-          {/* <View style= {{ width: "10%",
-                        borderWidth: 0 ,
-                        flexDirection: 'row', // Hijos en columna vertical
-                        alignItems: 'flex-end', // Alinear hijos a la izquierda
-                      }}>
-           </View> */}
           <View style= {{ width: "10%",
                         borderWidth: 0 ,
                         flexDirection: 'row', // Hijos en columna vertical
                         alignItems: 'flex-end', // Alinear hijos a la izquierda
                       }}>
             <Text style={styles.check}>{item.frecuente? "F": ""}</Text>
-            <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text>
+            {/* <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text> */}
+            <Text style={styles.check}>{item.seleccionados}</Text>
            </View>
         </View>
       </View>
@@ -133,10 +140,6 @@ const Articulos = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: -50 }} >
-        <Text style={styles.subInfoText}>Mostrar articulos frecuentes</Text>
-        <Switch value={mostrarFrecuentes} onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)} />
-      </View>
       <View style={styles.viewTitle}> 
         <Text style={styles.title}> Elegir articulos </Text>
       </View>
@@ -146,11 +149,18 @@ const Articulos = ({ route }) => {
         onChangeText={(value) => setSearch(value)}
         onIconPress={(value) => setSearch(value)}
       />
-      <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length} ingrese al menos 3 letras</Text>
-      <View style={styles.itemsContainer} >
-      {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : ((articulosList.length > 0)? <RenderList/> : "")}
+      <View style={{ backgroundColor:"#c9eefa", flexDirection: 'row', alignItems:"center", justifyContent: "space-between", margin: 4, borderBottomColor: "grey", borderBottomWidth:2 }} >
+        <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length}</Text> 
+        {hasInternetAccess && (
+        <View style={[styles.barraFrecuentes, {alignItems: 'center'}]}>
+          <Text style={{ color:"red"}}>Ver frecuentes</Text>
+          <Switch value={mostrarFrecuentes} onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)} />
+        </View>
+        )}
       </View>
-  
+      <View style={styles.itemsContainer} >
+          {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : ((articulosList.length > 0)? <RenderList/> : "")}
+      </View>
     </View>
   );
 };
@@ -162,9 +172,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#06181e',
   },
   subInfoText: {
-    color:'cyan',
-    padding: 4,
-    backgroundColor: '#06181e',
+    color:'black',
+    // border: 14,
+    // margin:14,
+    // backgroundColor: '#06181e',
   },
   viewTitle: {
     alignItems: 'center', // Centrar horizontalmente
@@ -222,6 +233,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5, // Opacidad de la sombra
     shadowRadius: 2, // Radio de la sombra
     elevation: 50, // Elevación de la sombra (solo para Android)
+  },
+  barraFrecuentes: {
+    flex: 1,
+    justifyContent:"flex-end",
+    alignContent:"center",
+    flexDirection: 'row',
+    // marginRight: 10,
   },
 });
 

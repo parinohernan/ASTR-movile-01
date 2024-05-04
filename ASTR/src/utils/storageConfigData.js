@@ -26,7 +26,7 @@ const getConfiguracionDelStorage = async () => {
         console.log("STRCONF 26 obteniendo configuracion de Storage", configuracionStr);
         // if (configuracionStr.length > 1) {  
             if (configuracionStr == null) {
-                return JSON.parse('{"endPoint":"http://192.168.1.123:3000/","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
+                return JSON.parse('{"endPoint":"https://192.168.1.123:3003/","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
             }
             else {
               return JSON.parse(configuracionStr)
