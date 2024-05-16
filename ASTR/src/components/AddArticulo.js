@@ -1,174 +1,264 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { guardarPreventaEnStorage, obtenerPreventaDeStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native';
+import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
+import { Keyboard } from 'react-native-keyboard-aware-scroll-view';
+
+const cantidadYDescuentoCargados= async (codigo) => {  
+  const preventaActual = await obtenerPreventaDeStorage();
+  for (let i = 0; i < preventaActual?.length; i++) {
+    if (preventaActual[i].id === codigo) {
+      console.log("encontre ",preventaActual[i]);
+      return {cantidad: preventaActual[i].seleccionados,
+              descuento: preventaActual[i].descuento
+      }
+    }
+  }
+  return 0;
+}
+const cantidadCargado= async (codigo) =>{  //articulo.id
+  // console.log("la cantidad en la preventa ::", codigo);
+  const preventaActual = await obtenerPreventaDeStorage();
+  // console.log("preventa actual",preventaActual);
+  for (let i = 0; i < preventaActual?.length; i++) {
+    if (preventaActual[i].id == codigo) {
+      // console.log("EEEEEEEEste ya esta ",codigo, " cantidad: ",preventaActual[i].cantidad);
+      return preventaActual[i].cantidad;
+    }
+    
+  }
+  // console.log("NO estaba cargado el codigo ",codigo, " cantidad: ",0);
+  return 0;
+}
+
+const descuentoCargado= async (codigo) => {  
+  // console.log("la cantidad en la preventa ::", codigo);
+  const preventaActual = await obtenerPreventaDeStorage();
+  // console.log("preventa actual",preventaActual);
+  for (let i = 0; i < preventaActual?.length; i++) {
+    if (preventaActual[i].id == codigo) {
+      
+      return preventaActual[i].descuento;
+    }
+    
+  }
+  return 0;
+}
 
 const AddArticulo = ({route}) => {
   const {params} = route;
-  const articulo = params.articulo;
-  const [cantidad, setCantidad] = useState(2);
-  // const [descuento, setDescuento] = useState(0);
-  const [precioFinal, setPrecioFinal] = useState(0); //useState(articulo.precioCostoMasImp.toFixed(2))
+  const {articulo, preventaNumero, cliente, cantItems} = params;
+  console.log("paarametros",params);
+  const [cantidad, setCantidad] = useState(articulo.seleccionados? articulo.seleccionados : 0 );
+  const [descuento, setDescuento] = useState(articulo.descuento? articulo.descuento : 0);
+  const calcularTotal = ()=>{
+    let porcentage = descuento==0? 1 : (1+(100/descuento));
+    console.log("calculando Todtal: ", articulo.precio, porcentage, cantidad);
+    return (articulo.precio * porcentage * cantidad)
+  };
+  const [precioTotal, setPrecioTotal] = useState( 0 );
+  const [precioUnitario, setPrecioUnitario] = useState (articulo.precio);
+  const [verAgregar, setVerAgregar] = useState (false);
   const navigation = useNavigation();
+  const cantidadInputRef = useRef(null);
+
   const articuloConDetalles = {
     ...articulo,
     cantidad: parseInt(cantidad),
-    // descuento: parseFloat(descuento),
-    precioFinal: parseFloat(precioFinal),
+    descuento: parseInt(descuento),
+    precioTotal: parseFloat(precioTotal),
   };
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      // necesito el numero de preventa?
-      console.log("fetch en AddArticulo");
-      // try {
-      //   setLoading(true);
-      //   const filteredArticulos = await getArticulosFiltrados(search);
-      //   setArticulosList(filteredArticulos);
-      //   setLoading(false);
-      //   console.log( filteredArticulos.length, 'artículos filtrados con: ',search);
-      // } catch (error) {
-      //   console.error('Error al obtener artículos filtrados: ', error);
-      //   setLoading(false);
-      // }
-    };
-    
-    fetchData();
-   
-  }, []);
-  // const estaCargado= (codigo) =>{
-  //   const preventaActual = obtenerPreventa();
-  //   for (let i = 0; i < preventaActual.length; i++) {
-  //     const e = preventaActual[i];
-  //     if (e.id == articulo.id) {
-  //       setCantidad(e.cantidad);
-  //       setPrecioFinal(e.precioFinal);
-  //       console.log("ya estaba cargado");
-  //       return true;
-  //     }
-  //   }
-  //   return false
-  // }
 
-  console.log("addArt19. ",articuloConDetalles);
-  
-  const handleSave = async () => {
-    // ... lógica para guardar el artículo en la preventa
-    // Obtener la preventa actualizada después de guardar el artículo
+  const estaCargado= async (codigo) =>{  //articulo.id
     const preventaActual = await obtenerPreventaDeStorage();
-    console.log("preventa tiene ",preventaActual);
     for (let i = 0; i < preventaActual.length; i++) {
       const e = preventaActual[i];
-      if (e.id == articulo.id) { //actualiza un articulo ya existente
-        preventaActual[i].cantidad=cantidad;
-        preventaActual[i].precioFinal=precioFinal;
-        console.log("grabo la preventa con el articulo modificado ",precioFinal);
-        guardarPreventaEnStorage(preventaActual);
-        navigation.goBack();
-        return;
-      } 
-    }// Actualizar la preventa con el nuevo artículo
-    const nuevaPreventa = [...preventaActual, articuloConDetalles];
-    console.log("Add50. nueva prev", nuevaPreventa);
-    guardarPreventaEnStorage(nuevaPreventa);
-    navigation.goBack();
-    return
-  };
-  
-  const handleCantidad = (text) => {
-    const cuenta = (articulo.precio.toFixed(2)) * text; //talves no deberia redondear
-    console.log("Add37. preciofinal ..antes ",(articulo.precio.toFixed(2)), "x ",text," = ",cuenta);
-    setCantidad(text.replace(/[^0-9]/g, ''))
-    setPrecioFinal(cuenta)
+      if (e.id == codigo) {
+        console.log("ya estaba cargado el codigo ",codigo);
+        return true;
+      }
+    }
+    console.log("NO estaba cargado el codigo ",codigo);
+    return false;
   }
 
-  const handleLimpiar = () => {
-    limpiarPreventaDeStorage();
+  const agregarItemPreventaStorage = async() => {
+    console.log("agregarItemPreventaStorage", articuloConDetalles);
+    const preventa = await obtenerPreventaDeStorage();
+    preventa.push(articuloConDetalles);
+    guardarPreventaEnStorage(preventa);
+    navigation.goBack();
+  }
+  
+  const eliminar1PreventaStorage = async () =>{
+    // eliminar item de la preventa de sorage actual
+     console.log("elimina solo uno",articuloConDetalles);
+     await eliminarItemEnPreventaEnStorage(articuloConDetalles.id);
+     navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
+     return
+  }
+
+  const handleSave = async () => {
+    await handleEnd();
+    const yaEsta = await estaCargado(articulo.id);
+    if ((cantidad == 0) && (cantItems == 1)) {
+      await vaciarPreventaStorage();
+      return;
+    } 
+    if (yaEsta && (cantidad == 0)) {
+      await eliminar1PreventaStorage();
+      return;
+    } 
+    if (yaEsta && cantidad > 0) {
+      console.log("toi aca");
+      await modificarItemPreventaStorage();
+      return;
+    } 
+    if (cantidad == 0) {
+      navigation.goBack();
+      return;
+    }
+    await agregarItemPreventaStorage();
+    return;
+  };
+
+  const handleCantidad = (text) => {
+    setCantidad(text.replace(/[^0-9]/g, ''))
+  }
+
+  const handleFocusCant = (text) => {
+    setCantidad("");
+  }
+
+  const handleDescuento = (text) => {
+    setDescuento(text.replace(/[^0-9]/g, ''));
+    
+  };
+  
+  const handleEnd = async() => {
+    let cuenta = 0;
+    if (cantidad == 0) {
+      setCantidad(0)
+    }
+    cuenta = (precioUnitario.toFixed(2)) * (cantidad); 
+    cuenta = cuenta - (cuenta * (descuento / 100)) 
+    setPrecioTotal(cuenta);
+    setVerAgregar(true);
   };
 
   const handleCancel = () => {
     navigation.goBack();
   };
+//   const eliminar1PreventaStorage = async () =>{
+//     // eliminar item de la preventa de sorage actual
+//      console.log("elimina solo uno",articuloConDetalles.id);
+//      await eliminarItemEnPreventaEnStorage(articuloConDetalles.id);
+//      navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
+//      return
+//  }
+
+  const modificarItemPreventaStorage = async () => {
+    console.log("modificarItemPreventaStorage");
+    await eliminarItemEnPreventaEnStorage (articulo.id);
+    await agregarItemPreventaStorage();
+  }
+
 
   return (
     <View style={styles.container}>
       <Text style={styles.articuloInfo}>Codigo {articulo ? articulo.id : ''}</Text>
       <Text style={styles.articuloInfo}>{articulo ? articulo.descripcion : ''}</Text>
-      <Text style={styles.articuloInfo}> $ {articulo ? articulo.precio.toFixed(2) : ''}</Text>
+      <Text style={styles.articuloInfo}> $ {articulo ? precioUnitario.toFixed(2) : ''}</Text>
       <Text style={styles.label}>Cantidad:</Text>
       
       <TextInput
+        ref={cantidadInputRef}
         style={styles.input}
+        onFocus={handleFocusCant}
         onChangeText={handleCantidad}
+        onEndEditing={handleEnd}
         value={String(cantidad)}
+        keyboardType="numeric"
+      />
+      <Text style={styles.label}>Descuento:</Text>
+      <TextInput
+        style={styles.input}
+        editable={true}
+        onChangeText={handleDescuento}
+        onEndEditing={handleEnd}
+        value={String(descuento)}
         keyboardType="numeric"
       />
 
       <Text style={styles.label}>Precio total:</Text>
       <TextInput
         style={styles.input}
-        onChangeText={(text) => setPrecioFinal(text.replace(/[^0-9.]/g, ''))}
-        value={String(precioFinal)}
-        keyboardType="numeric"
+        editable={false}
+        value={"$ " +String(precioTotal.toFixed(2))}
       />
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Agregar</Text>
+      <TouchableOpacity
+        style={[styles.saveButton, !verAgregar && styles.disabledButton]}
+        onPress={handleSave}
+        disabled={!verAgregar}>
+          <Text style={styles.saveButtonText}>Agregar</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
         <Text style={styles.cancelButtonText}>Cancelar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.cancelButton} onPress={handleLimpiar}>
-        <Text >LIMPIAR TODA PREV</Text>
-      </TouchableOpacity>
     </View>
   );
 };
 
+
 const styles = StyleSheet.create({
-    container: {
-        padding: 20,
-        backgroundColor: '#FAF7E6',
-    },
-    articuloInfo: {
-        marginBottom: 10,
-    },
-  label: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#06181e',
   },
   saveButton: {
-    backgroundColor: 'blue',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#AA21E6',
+    padding: 15,
     borderRadius: 5,
-    alignSelf: 'flex-end',
-    marginBottom: 10,
+    alignItems: 'center',
   },
   saveButtonText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  articuloInfo: {
+    color: 'white',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  label: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 20,
   },
   cancelButton: {
-    backgroundColor: 'gray',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#FF4500',
+    padding: 15,
     borderRadius: 5,
-    alignSelf: 'flex-end',
+    alignItems: 'center',
+    marginTop: 10,
   },
   cancelButtonText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontSize: 18,
   },
 });
 
-export default AddArticulo;
+export {cantidadYDescuentoCargados, descuentoCargado, cantidadCargado, AddArticulo};

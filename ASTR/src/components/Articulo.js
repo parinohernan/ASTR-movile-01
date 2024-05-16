@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+// import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 
 

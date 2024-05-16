@@ -6,7 +6,7 @@ const STORAGE_KEY = '@MyApp:PreventaData';
 
 // Guardar una preventa en AsyncStorage
 const guardarPreventaEnStorage = async (preventa) => {
-    console.log("grabando ",preventa);
+    console.log("grabando guardarPreventaEnStorage ",preventa);
     try {
       if (preventa !== null && preventa !== undefined ) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));
@@ -20,27 +20,27 @@ const guardarPreventaEnStorage = async (preventa) => {
     }
   };
   
-  //trae una preventa de la BDD al localstorege
-  const guardarPreventaEditando = async (preventa) => {
-    console.log("transformar ",preventa);
-    const preventaMapeada = preventa;
-    guardarPreventa(preventaMapeada);
-  };
+//trae una preventa de la BDD al localstorege
+const guardarPreventaEditando = async (preventa) => {
+  console.log("transformar ",preventa);
+  const preventaMapeada = preventa;
+  guardarPreventaEnStorage(preventaMapeada);
+ 
+};
 
 // Obtener la preventa almacenada en AsyncStorage
 const obtenerPreventaDeStorage = async () => {
     try {
         const preventaString = await AsyncStorage.getItem(STORAGE_KEY);
-        console.log("STR34 obteniendo preventa de Storage");
-
         // Verificar si preventaString es null o undefined antes de intentar el parseo JSON
         if (preventaString !== null && preventaString !== undefined) {
+            // console.log("JSON.parse(preventaString)",JSON.parse(preventaString));
             return JSON.parse(preventaString);
         } else {
-            console.log("str40");
             // crea una preventa limpia
+            console.log("era una limpia");
             guardarPreventaEnStorage([])
-            return null;
+            return [];
         }
     } catch (error) {
         console.error('Error al obtener la preventa desde AsyncStorage:', error);
@@ -89,8 +89,8 @@ const calcularTotal = async () => {
       // Verifica si la preventa es un array antes de contar los elementos
      for (let i = 0; i < preventa.length; i++) {
          const e = preventa[i]; 
-         console.log("item ", e.precioFinal);
-        total= total + e.precioFinal;
+         console.log("item ", e.precioTotal);
+        total= total + e.precioTotal;
      }
     return total;
       
@@ -111,4 +111,19 @@ const limpiarPreventaDeStorage = async () => {
   }
 };
 
-export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal };
+// solo para eliminar un item
+const eliminarItemEnPreventaEnStorage = async (codigo) => {
+  const preventa = await obtenerPreventaDeStorage();
+  console.log("PREVENTA ",preventa.length);
+  if (preventa.length > 1){
+    // console.log("ELIMINAR de la preventa actual", codigo, preventa);
+    guardarPreventaEnStorage(preventa.filter(item => item.id !== codigo));
+  } else {
+    // Eliminar todo el valor del storage
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    guardarPreventaEnStorage([]);
+    console.log("resultado tiene que eras vacio ",await AsyncStorage.getItem(STORAGE_KEY));
+  }
+}
+
+export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal, eliminarItemEnPreventaEnStorage };

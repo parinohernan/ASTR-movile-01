@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Button } from 'react-native-elements';
 import { eliminarTodasLasTablas, getTables } from '../database/database';
 import { actualizarAPP, initDatabase } from '../handlers/actualizarApp';
@@ -12,21 +12,23 @@ import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from '../sr
 const Configurar = () => {
  
   const [configuracion, setConfiguracion]= useState({
-    endPoint:"http://localhost:3000/preventas",
+    endPoint:"",
     siguientePreventa: 100,//este dato solo se visualiza, se actualiza automaticamente
-    vendedor: "0001",
+    vendedor: "",
+    sucursal: "",
     usaGeolocalizacion: true,
     cantidadMaximaArticulos: "18",
   })
+
+  const [changes, setChanges]= useState(false);
 
   useEffect(() => {
     handleGetConfiguracion()
   }, []);
 
-  
-  const handleTablas =   () => {
-    initDatabase()
-  };
+  useEffect(() => {
+    setChanges(true)
+  }, [configuracion]);
 
   const handleGetConfiguracion = async ()=>{
     let config = await getConfiguracionDelStorage();
@@ -36,10 +38,15 @@ const Configurar = () => {
 
   const handleGuardarConfiguracion = ()=>{
     guardarConfiguracionEnStorage(configuracion);
+    setChanges( !changes)
   }
 
   return (
-    <View style={{ padding: 20, backgroundColor: '#FAF7E6' }}>
+    <View style={styles.container}>
+      <View style={styles.titulo}>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subtituloText}>panel de configuracion</Text>
+      </View>
       <Text>EndPoint:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
@@ -49,11 +56,17 @@ const Configurar = () => {
       <Text>Sucursal:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        value={configuracion.sucursal}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, sucursal: text.replace(/[^0-9]/g, '') })}
+        keyboardType="numeric"
+      />
+      <Text>Vendedor:</Text>
+      <TextInput
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
         value={configuracion.vendedor}
         onChangeText={(text) => setConfiguracion({ ...configuracion, vendedor: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
       />
-
       <Text>Cantidad máxima de artículos:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
@@ -64,17 +77,44 @@ const Configurar = () => {
       <Text>Siguente preventa:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
-        value={configuracion.siguientePreventa}
+        value={String(configuracion.siguientePreventa)}
         onChangeText={(text) => setConfiguracion({ ...configuracion, siguientePreventa: text.replace(/[^0-9]/g, '') })}
         // editable:false
       />
 
       {/* Botones */}
-      <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
-      <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} />
+      {/* <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} /> */}
+      { changes? 
+      // <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> 
+      <Text>boton</Text>
+      : ""}
+      {/* <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> */}
     </View>
   );
 };
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop:60,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    padding: 20,
+  },
+  titulo: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  tituloText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  }, 
+})
 
 export default Configurar;
 

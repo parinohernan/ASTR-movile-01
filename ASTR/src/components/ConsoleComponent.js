@@ -16,10 +16,12 @@ const ConsoleComponent = ({ logs }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#0c2f3c80',
     padding: 10,
+    minHeight:200,
   },
   log: {
+    color: "#c9eefa",
     fontFamily: 'monospace',
     fontSize: 12,
     marginBottom: 5,

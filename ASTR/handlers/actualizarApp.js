@@ -1,49 +1,61 @@
 import axios from 'axios';
 import { initDatabase} from '../database/database';
-import { insertArticulosFromAPI } from '../database/controllers/Articulos.Controller';
+import { borrarArticulosDeSqlite, insertArticulosFromAPI, insertArticulosFrecuentesToSqlite } from '../database/controllers/Articulos.Controller';
 import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
 import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
+import { configuracionEndPoint } from '../src/utils/storageConfigData';
 
-const actualizarVendedores = async () => {
+const handleLogs = (logs, mensaje, setLogs) => {
+  console.log("L M ",mensaje);
+  setLogs( [...logs, mensaje]);
+  return [...logs, mensaje];
+};
+
+const actualizarVendedores = async (setLogs) => {
     console.log("Trayendo Vendedores...");
+    let logs=[];
+    let endPoint = await configuracionEndPoint() + 'vendedores'
+    
     try {
-      const response = await axios.get('http://192.168.1.123:3000/vendedores');
-      console.log("actu vende response",response.data);
+      const response = await axios.get(endPoint);
+      logs = handleLogs(logs,("actualizando vendedores..."),setLogs);
       const data = response.data;
-      //await initDatabase();
+      //console.log("data",data);
       // Inserta los usuarios desde la API a la base de datos
-      await insertUsuariosFromAPI(data);
+      await insertUsuariosFromAPI(data, setLogs);
     } catch (error) {
-      console.error('Error al obtener o insertar usuarios: ', error);
+      console.log(error);
+      logs = handleLogs(logs,('Error al obtener o insertar vendedores: '),setLogs);
     }
   };
 
-const actualizarClientes = async () => {
+const actualizarClientes = async (setLogs) => {
     console.log("Trayendo Clientes...");
+    let logs=[];
     try {
-    const response = await axios.get('http://192.168.1.123:3000/clientes');
-    console.log("response");
+    const response = await axios.get(await configuracionEndPoint() + 'clientes');
+    logs = handleLogs(logs,("actualizando clientes..."),setLogs);
     const data = response.data;
     // await initDatabase();
     // Inserta los clientes desde la API a la base de datos
     await insertClientesFromAPI(data);
 } catch (error) {
-    console.error('Error al obtener o insertar clientes: ', error);
+  logs = handleLogs(logs,('Error al obtener o insertar clientes: '),setLogs);
 }
 };
 
-const actualizarArticulos = async () => {
+const actualizarArticulos = async (setLogs) => {
     console.log("Trayendo Articulos...");
-    
+    let logs=[];
     try {
-        const response = await axios.get('http://192.168.1.123:3000/articulos');
-        console.log("response", response.data);
+        const response = await axios.get(await configuracionEndPoint() + 'articulos');
+        logs = handleLogs(logs,("actualizando articulos..."),setLogs);
         const data = response.data;
 
         // Define el tamaño del lote
-        const batchSize = 500; // Por ejemplo, 100 artículos por lote
+        const batchSize = 500; // Por ejemplo, 500 artículos por lote
 
         // Divide los datos en lotes de tamaño fijo
         const batches = [];
@@ -53,32 +65,26 @@ const actualizarArticulos = async () => {
 
         // Inserta cada lote en la base de datos
         for (const batch of batches) {
+            console.log();
             await insertArticulosFromAPI(batch);
-            console.log(`Lote de ${batch.length} artículos insertado correctamente.`);
+            handleLogs(logs,(`Lote de ${batch.length} artículos actualizado correctamente.`),setLogs);
         }
 
     } catch (error) {
-        console.error('Error al obtener o insertar artículos: ', error);
+      logs = handleLogs(logs,('Error al obtener o insertar articulos: '),setLogs);
     }
 };
 
 const actualizarPreventas = async (preventasJSON, mensajes) => {
-    console.log("ACTUALIZAR BDD REMOTA");
-    try {
-        const response = await axios.post('http://192.168.1.123:3000/preventas', preventasJSON);
-        console.log("response", response.data);
-        // setLogs([...setLogs, response.data]);
+  console.log("!!actiaApp 78 :",await configuracionEndPoint() + 'preventas', preventasJSON);  
+  try {
+        const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
     } catch (error) {
         mensajes.hayErrores = true;
         mensajes.mensaje = ('Error al enviar preventas:' + error);
         console.error('Error al enviar preventas:', error);
-        // setLogs([...setLogs, 'Tuvimos un error al enviar preventas']);
     }
 }
-
-const handleLogs = (logs, mensaje) => {
-    return [...logs, mensaje];
-  };
 
 const enviarPreventas = async (setLogs) => {
     let preventas = [];
@@ -92,39 +98,90 @@ const enviarPreventas = async (setLogs) => {
       for (let i = 0; i < preventas.length; i++) {
         try {
           await actualizarPreventas(preventas[i], mensajes);
-          logs = handleLogs(logs, `enviando preventa ${i + 1}.`);
+          console.log(`enviando preventa ${i + 1}.`,preventas[i]);
+          logs = handleLogs(logs,(`enviando preventa ${i + 1}.`) , setLogs);
         } catch (error) {
-          logs = handleLogs(logs, `Error al enviar la preventa ${i + 1}: ${error}`);
+          logs = handleLogs(logs, (`Error al enviar la preventa ${i + 1}: ${error}`),setLogs);
           console.error('Error al enviar la preventa', i + 1);
         }
       }
-      logs = handleLogs(logs, mensajes.mensaje);
-  
+       
       // Borrarlas de la aplicación solo si no tuvimos errores
       if (!mensajes.hayErrores) {
           await borrarContenidoPreventasEnBDD();
-          logs = handleLogs(logs, "Preventas borradas correctamente");
+          logs = handleLogs(logs, ("Preventas borradas correctamente"),setLogs);
         
       }else{
-          logs = handleLogs(logs, "no se borraron las preventas, pueden Haber errores");
+          logs = handleLogs(logs, ("no se borraron las preventas, pueden Haber errores"),setLogs);
           console.error('no se borraron las preventas porque hay errores ')
       }
     } catch (error) {
-      logs = handleLogs(logs, `Error al enviar o borrar preventas: ${error}`);
+      logs = handleLogs(logs, (`Error al enviar o borrar preventas: ${error}`),setLogs);
       console.error('Error al enviar o borrar preventas: ', error);
     }
   
-    setLogs(logs);
   };
 
-const actualizarAPP = async () =>{
-    console.log("VENDEDORES ->");
-    initDatabase();
-    actualizarVendedores();
-    console.log("CLIENTES ->");
-    actualizarClientes();
-    console.log("ARTICULOS ->");
-    actualizarArticulos();
-}
+  const actualizarAPP = async (esCompleta, logs, setLogs) => {
+    // let logs= [];
+    esCompleta 
+    ? (
+      console.log("Sincronizando todos los datos."),
+      logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs),
+      await initDatabase(setLogs),
+      await actualizarVendedores(setLogs),
+      await actualizarClientes(setLogs),
+      await borrarArticulosDeSqlite(),
+      await actualizarArticulos(setLogs),
+      await enviarPreventas(setLogs),
+      logs = handleLogs(logs, "Sincronizacion completa.", setLogs)
+      )
+      : ( await enviarPreventas(setLogs)
+      
+      );
+  }
 
-export { actualizarAPP, actualizarVendedores, actualizarClientes, actualizarArticulos, initDatabase, enviarPreventas};
+  const getArticulosFrecuentesDesdeAPI = async (cliente) => {
+    // Obtener la fecha actual
+    const today = new Date();
+    const year = today.getFullYear();
+    // JavaScript cuenta los meses desde 0 (enero es 0, diciembre es 11)
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    
+    // Formatear la fecha actual en el formato AAAA-MM-DD
+    const formattedToday = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  
+    // Obtener la fecha de un año atrás
+    const oneYearAgo = new Date(year -1, month , day); // Restar 1 al año actual
+  
+    // Formatear la fecha de un año atrás en el formato AAAA-MM-DD
+    const formattedOneYearAgo = `${oneYearAgo.getFullYear()}-${(oneYearAgo.getMonth() + 1).toString().padStart(2, '0')}-${oneYearAgo.getDate().toString().padStart(2, '0')}`;
+    
+    console.log("Trayendo Articulos frecuentes...");
+   
+    try {
+      const response = await axios.get(await configuracionEndPoint() + "articulosfrecuentes?clienteCodigo=" + cliente + "&fechaDesde=" + formattedOneYearAgo + "&fechaHasta=" + formattedToday);
+      const data = response.data;
+      console.log(data);
+      return data;
+    } catch (error) {
+      console.log('Error al obtener artículos frecuentes ', error);
+    }
+  };  
+// const getArticulosFrecuentesDesdeAPI = async (cliente) => {
+//   const fechaActual = //fecha de hoy
+//   const fechaAnoAtras = //fecha un año atras
+//   console.log("Trayendo Articulos frecuentes...");
+ 
+//   try {
+//       const response = await axios.get(await configuracionEndPoint()+"articulosfrecuentes?clienteCodigo="+cliente+"&fechaDesde=2024-02-01&fechaHasta=2024-04-06");
+//       const data = response.data;
+//       console.log(data);
+//       return (data);
+//   } catch (error) {
+//       console.log('Error al obtener articulos frecuentes ', error);
+//   }
+// };
+
+export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI};

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Modal, TouchableOpacity, Button } from 'react-native';
+import { View, Text, FlatList, Modal, TouchableOpacity, Button, Alert, StyleSheet} from 'react-native';
 import { db } from '../../database/database';
 import { useNavigation } from '@react-navigation/native';
-
+import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Controller';
 
 const ListaPreventas = () => {
   const navigation = useNavigation();
@@ -49,7 +49,7 @@ const renderItem = ({ item }) => (
 
       }}
     >
-      <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
+      <View style={{ padding: 2, borderWidth:4, borderBottomColor: '#ccc' }}>
         <Text>Nº: {item.numero}</Text>
         <Text>Cliente: {item.cliente}</Text>
         <Text>Total: $ {item.importe}</Text>
@@ -66,14 +66,46 @@ const renderItem = ({ item }) => (
     // Agrega la lógica para manejar las acciones (Borrar, Editar, Cancelar)
     switch (action) {
       case 'Borrar':
-        // Lógica para borrar el elemento seleccionado
+        Alert.alert(
+          'Confirmar eliminación',
+          '¿Está seguro que desea borrar la preventa?',
+          [
+            {
+              text: 'Cancelar',
+              style: 'cancel',
+            },
+            {
+              text: 'Borrar',
+              style: 'destructive',
+              onPress: () => {
+                console.log('Borrar preventa número ', selectedItem.numero);
+                borrarPreventaYSusItems(selectedItem.numero);
+                navigation.goBack();
+                
+              },
+            },
+          ],
+          { cancelable: false }
+        );
         break;
       case 'Editar':
         // Lógica para editar el elemento seleccionado
         console.log("Lista73, c",selectedItem);
         const preventaNumero = selectedItem.numero;
         const cliente = selectedItem.clienteCodigo;
-        navigation.navigate('Preventa', { preventaNumero, cliente });
+        // let edit=true;
+        // navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+        Alert.alert(
+          "En esta version, no se pueden editar preventas.",
+          `Por el momento la unica forma es borrarla y crear una nueva.`,
+          [
+            {
+              text: "Aceptar",
+              onPress: () => console.log("Aceptar presionado"),
+              style: "cancel"
+            }
+          ]
+        );
         break;
       case 'Cancelar':
         closeModal();
@@ -83,8 +115,24 @@ const renderItem = ({ item }) => (
     }
   };
 
+  const renderAction = (action) => (
+    <TouchableOpacity style={styles.actionButton} onPress={() => handleAction(action)}>
+      <Icon
+        name={action === 'Borrar' ? 'delete' : action === 'Editar' ? 'edit' : 'cancel'}
+        size={24}
+        color={action === 'Borrar' ? 'red' : 'black'}
+      />
+      <Text style={[styles.actionButtonText, action === 'Borrar' && styles.dangerButton]}>{action}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <View>
+    <View style={styles.container}>
+      <View style={styles.titulo}>
+        <View ></View>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subTituloText}>Informe de prefacturas:</Text>
+      </View>
       <FlatList
         data={preventas}
         renderItem={renderItem}
@@ -109,5 +157,48 @@ const renderItem = ({ item }) => (
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+    borderWidth: 2,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  dangerButton: {
+    color: 'red',
+  },
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+    justifyContent: 'space-between',
+    // alignItems: 'center',
+    // width: "100%",
+    // padding: 20,
+    marginTop: 40,
+    backgroundColor: '#c9eefa',
+  },
+  titulo: {
+    marginBottom: 30,
+    alignItems: 'center',
+    backgroundColor: '#96ddf5',
+    padding:24,
+  },
+  tituloText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  }, 
+  
+});
 
 export default ListaPreventas;

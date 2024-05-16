@@ -1,73 +1,73 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, ScrollView } from 'react-native';
+import { View, Text, Switch, ScrollView, StyleSheet } from 'react-native';
 import { Button } from 'react-native-elements';
-import { actualizarClientes, actualizarVendedores, actualizarArticulos, enviarPreventas } from '../handlers/actualizarApp';
+import { /*actualizarClientes, actualizarVendedores, actualizarArticulos,*/ actualizarAPP } from '../handlers/actualizarApp';
 import ConsoleComponent from '../src/components/ConsoleComponent';
 
 const Sincronizar = () => {
   const [actualizarDatos, setActualizarDatos] = useState(false);
   const [logs, setLogs] = useState([]);
 
-  const handleSincronizar = () => {
-    // Implementa la lógica de sincronización aquí
-    console.log('Sincronizando...');
-  };
-
-  const handleAtras = () => {
-    // Implementa la lógica de retroceder aquí
-    console.log('Atrás');
-  };
-
-  const handleTraerVendedores = async () => {
-    await actualizarVendedores();
-  };
-
-  const handleTraerClientes = async () => {
-    await actualizarClientes();
-  };
-
-  const handleTraerArticulos = async () => {
-    await actualizarArticulos();
-  };
 
   const handleEnviarPreventas = async () => {
-    await enviarPreventas(setLogs);
+    await actualizarAPP(actualizarDatos, logs, setLogs);
 
   };
-
-  const handleLog =  (mensaje) => {
-    setLogs( logs + " " + mensaje )
-  };
-
-    // Simulando agregar un mensaje de log
-  const addLog = (message) => {
-    setLogs([...logs, message]);
-  };
-
-  // setTimeout(() => {
-  //   addLog('Nuevo mensaje de log');
-  // }, 3000);
+  
 
   return (
-    <ScrollView style={{ padding: 20, backgroundColor: '#FAF7E6'}}>
+    <ScrollView style={styles.container}>
       {/* Switch para actualizar datos */}
-      <Button title="Enviar 
-      preventass" onPress={handleEnviarPreventas} buttonStyle={{ marginTop: 40, backgroundColor:'#455544' }}/>
+      <View style={styles.titulo}>
+        <Text style={styles.tituloText}>ASTR</Text>
+        <Text style={styles.subtituloText}>Sincronizacion</Text>
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-        <Text style={{ flex: 1 }}>Actualizar Datos</Text>
+        <Button title="Sincronizar" onPress={handleEnviarPreventas} buttonStyle={{ margin: 10, width: "70%", backgroundColor:'blue', borderWidth: 3 , borderRadius: 20 }}/>
+        {/* <Button title="Borrar Datos" onPress={handleBorrarDatos} buttonStyle={{ margin: 10, width: "70%", backgroundColor:'blue', borderWidth: 3 , borderRadius: 20 }}/> */}
+        <Text style={{ flex: 1 }}>Activar Actualizar Datos</Text>
         <Switch value={actualizarDatos} onValueChange={() => setActualizarDatos(!actualizarDatos)} />
+        {/* <Text style={styles.explanationText}>Si quiere solo enviar las preventas no es necesario que active Actualizar Datos.</Text> */}
       </View>
       {/* <ConsoleComponent logs="logs mostrar" /> */}
       <ConsoleComponent logs={logs} />
-      {/* Botones */}
-      <Button title="Sincronizar" onPress={handleSincronizar} />
-      <Button title="Atrás" onPress={handleAtras} buttonStyle={{ marginTop: 10 }} />
-      <Button title="Sincronizar vendedores" onPress={handleTraerVendedores} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
-      <Button title="Sincronizar clientes" onPress={handleTraerClientes} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
-      <Button title="Sincronizar Articulos" onPress={handleTraerArticulos} buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
+      <Text style={styles.explanationText}>* Si quiere solo enviar las preventas no es necesario que active Actualizar Datos.</Text>
+      <Text style={styles.explanationText}>* Una vez enviadad las preventas no quedan guardadas en su telefono.</Text>
     </ScrollView>
   );
 };
-
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#96ddf5',
+    paddingTop:60,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    padding: 10,
+  },
+  titulo: {
+      marginBottom: 30,
+      alignItems: 'center',
+      backgroundColor: '#0c2f3c',
+      padding: 20,
+    },
+    // titulo: {
+    //   marginBottom: 30,
+    //   alignItems: 'center',
+    //   backgroundColor: '#0c2f3c',
+    //   // width: '100%',
+    //   paddingLeft: 10,
+    //   paddingLeft: -50,
+    // },
+    tituloText: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: "cyan",
+    // color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: 'cyan',
+  }, 
+})
 export default Sincronizar;

@@ -1,28 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal, Alert, BackHandler } from 'react-native';
+// import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
-import { nextPreventa } from '../src/utils/storageConfigData';
+import { nextPreventa, configuracionCantidadMaximaArticulos, configuracionEndPoint  } from '../src/utils/storageConfigData';
+import Articulos from './Articulos';
+import { getArticulosFrecuentesDesdeAPI } from '../handlers/actualizarApp';
+import axios from 'axios';
+// import { Fontisto } from '@expo/vector-icons';
+// import { useIsFocused } from '@react-navigation/native';
 
 const Preventa = (props) => {
+
+  // useEffect(() => {
+  //   const backAction = () => {
+  //     Alert.alert(
+  //       'Atención',
+  //       'La preventa no fue grabada. ¿Desea salir de todas formas?',
+  //       [
+  //         {
+  //           text: 'Cancelar',
+  //           onPress: () => null,
+  //           style: 'cancel',
+  //         },
+  //         {
+  //           text: 'Salir',
+  //           onPress: () => navigation.goBack(), // O cualquier otra acción que desees
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+
+  //     return true; // Permite que el backHandler continúe
+  //   };
+  //   const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+  //   return () => backHandler.remove();
+  // }, []);
+
+  const isFocused = useIsFocused();
   const {route} = props;
   const {params} = route;
-  let {cliente, preventaNumero} = params;
-  console.log("PRV13 prevnumero y cliente",preventaNumero,cliente);
-  
-  
+  let {preventaNumero, cliente, edit} = params;
+  // console.log("PRV13 prevnumero y cliente",preventaNumero,cliente.descripcion);
   const navigation = useNavigation();
   
-  /*busco los items que ya esten cargados en la preventa*/ 
-  
+  /*busco los items que ya esten cargados en la preventa y los cargo en el estado*/ 
   const [carrito, setCarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState(9999999);
   const [nueva, setNueva] = useState(true);
-  const [dCliente, setDCliente] = useState( cliente );
+  const [dataCliente, setDataCliente] = useState( params.cliente );
+  const [articulosFrecuentes, setArticulosFrecuentes] = useState([]);
+  const [hasInternetAccess, setHasInternetAccess] = useState(false);
 
   const siEstoyEditando = async () => {
     setNueva(false);
@@ -35,72 +66,87 @@ const Preventa = (props) => {
     });
     await preventaDesdeBDD(preventaNumero);//busca la preventa en la BDD y la carga al local storage
     console.log("cliente rescatado =" ,cliente.descripcion);
-    setDCliente(cliente);
+    setDataCliente(cliente);
   }
   
   useEffect(() => {
     const loadData = async () => {
-      if (typeof (cliente) == "string") {
-        // solo cuando edito una preventa
-        await siEstoyEditando();
-        
-      }else{
-
-        // console.log("25carritodata",carritoData[0]);
-      }
-      cargarDatos();
-      // const carritoData = await obtenerPreventaDeStorage();
-      // setDCliente(cliente);
-      // // if (carritoData == []) {
-        
-      //   setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioFinal })));
-      // // }
-      // setCantidadItems (carritoData.length);
-      // const totalData = await calcularTotal();
-      // setTotal(totalData);
-      console.log("30 carrito reducido ", carrito);
+        // setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(dataCliente.id))
+         
+        // console.log(" traigo frecuentes de", cliente, dataCliente.id);
+        if (edit === true) {
+          console.log("editando PREVENTA");
+          await siEstoyEditando();
+        } else 
+          if (isFocused) {
+        // Cargar datos aquí
+          cargarDatos();
+        }
     };
+    const checkInternetAccess = async () => {
+      try {
+        let endpoint = await configuracionEndPoint()
+        const response = await axios.get(endpoint);
+        // Si la solicitud se completa con éxito, significa que hay acceso al servidor
+        setHasInternetAccess(true);
+      } catch (error) {
+        // Si ocurre un error, no hay acceso al servidor
+        setHasInternetAccess(false);
+      }
+    };
+    // console.log("entro a preventa editando= T nueva =fale ", edit);
     loadData();
-  }, []); 
-
+    checkInternetAccess();
+    console.log("hay internet?", hasInternetAccess);
+  }, [isFocused]);
+  
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
-    setDCliente(cliente);
+    // console.log("prv 62 cargo",carritoData);
     if (carritoData.length != 0) {
-      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioFinal })));
+      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, 
+                                            descripcion: item.descripcion,
+                                            id: item.id,
+                                            iva: item.iva, 
+                                            //tienen que ser los precios sin iva?
+                                            //tengo que adaptarlo a la lista que tenga el quiente
+                                            precio: item.precioTotal, 
+                                            descuento: item.descuento,
+                                            precioLista:( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),//calculo el precio de lista
+                                           })));
     }
     setCantidadItems (carritoData.length);
-    const totalData = await calcularTotal();
-    setTotal(totalData);
+    setTotal(await calcularTotal());
+    setOcultarPreventa(false);
   };
 
   const grabarPreventa = async () => {
     /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
     /* todos los errores deben estar controlado */
-    let numero = preventaNumero
-    if (nueva) {
+    console.log("grabare carrito ooo ",carrito);
+    if (carrito.length > 0) {
+      
+      let numero = preventaNumero
+      if (nueva) {
       numero = await nextPreventa();
     }
-    console.log("carrito ooo ",carrito);
-    await grabarPreventaEnBDD (numero, nota , cliente.id, carrito);
+    await grabarPreventaEnBDD (numero, nota , dataCliente .id, carrito);
+    console.log("preventa guardada con exito  ");
     setCarrito ([]);    
+    }
+    console.log("preventa estaba vacia  ");
+    navigation.goBack();
   };
 
-  const limpiarLaPreventa = async () => {
-    // esta funcion se usa solo para test
-    await limpiarPreventaDeStorage();
-    // await cargarDatos();
-  };
-
-  // console.log("PRV80. actual", carrito);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [ocultarPreventa, setOcultarPreventa] = useState(true);
   const [nota, setNota] = useState('');
   
-  const abrirModal = () => {
+  const abrirModal = () => { //modal de la nota
     setIsModalVisible(true);
   };
   
-  const cerrarModal = () => {
+  const cerrarModal = () => { //modal de la nota
     setIsModalVisible(false);
     guardarNota();
     
@@ -111,86 +157,176 @@ const Preventa = (props) => {
     console.log('Nota guardada:', nota);
   };
 
-  const abrirArticulos = () => {
-    // setMostrarArticulos(true);
-    console.log("PRF127 voy a abrir articu con la prop preventaNume sin clienteID", preventaNumero );
-    navigation.navigate('Articulos', { numeroPreventa: preventaNumero});
+  const traerFrecuentes = async() => {
+    // Aquí puedes implementar la lógica para guardar la nota en tu aplicación
+    console.log('buscando frecuentes:');
+    setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(dataCliente.id))    
+    console.log(" traigo frecuentes de", cliente, dataCliente.id);
   };
 
- 
+  const abrirArticulos = async () => {
+    let cantidad = await configuracionCantidadMaximaArticulos();
+    // console.log("CANTIDAD ", cantidad, carrito.length);
+  
+    if (carrito.length >= cantidad) {
+      Alert.alert(
+        "Límite de artículos alcanzado",
+        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
+        [
+          {
+            text: "Aceptar",
+            onPress: () => console.log("Aceptar presionado"),
+            style: "cancel"
+          }
+        ]
+      );
+    } else {
+      console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
+      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, listaDePrecio: dataCliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
+    }
+  };
+
+  // const openAddArticulo = (articulo) => { //cuando edito un articulo
+  //   articulo.seleccionados=articulo.cantidad;
+  //   console.log("articulo editando",articulo); 
+  //   navigation.navigate('AddArticulo', { articulo: articulo, preventaNumero: preventaNumero, cliente:dataCliente.id, cantItems: carrito.length.toString() });
+  // };
+
+  const handleItem = (item) =>{
+    console.log("articulo editando",item); 
+    Alert.alert(
+      "En esta vercion, no se pueden editar articulos desde esta ventana.",
+      `Para corregir un articulo agreguelo nuevamente y se actualizaran los datos.`,
+      [
+        {
+          text: "Aceptar",
+          onPress: () => console.log("Aceptar presionado"),
+          style: "cancel"
+        }
+      ]
+    );
+  }
+
   // Renderiza cada elemento del array reducido
-  const renderItem = ({ item }) => (
-    <View>
-      <Text>{`Descripción: ${item.descripcion}`}</Text>
-      <Text>{`Codigo : ${item.id}, Cantidad: ${item.cantidad}`}</Text>
-      {/* <Text>{`Codigo : ${item.}, precio: ${item.precio}`}</Text> */}
-      <Text>{`$: ${String(item.precio)}`}</Text>
-      <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, marginBottom: 10 }} />
-    </View>
-  );
-
-  return (
-    <View style={styles.container}>
-  <SafeAreaView style={styles.container}>
-    <View style={styles.rowContainer}>
-      <Text>{dCliente.descripcion}</Text>
-    </View>
-    <View />
-      <Text>Código: {dCliente.id}  Saldo: $ -{dCliente.importeDeuda}</Text>
-    <View style={styles.separator} />
-
-    <View style={styles.rowContainer}>
-      <Text>Items: {carrito.length.toString()}</Text>
-      <Text>Total: {total}</Text>
-    </View> 
-    <View style={styles.separator} />
-
+  const renderItem = ({ item }) => {
+    console.log("prv152 intem ", item);
+    return (
+    <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
+      <Text>{`${item.descripcion} `}</Text>
+      <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',}}>
+        
+        <View style= {{ width: "32%",
+                        borderWidth: 1 ,
+                        flexDirection: 'row', // Hijos en columna vertical
+                        alignItems: 'center', // Alinear hijos a la izquierda
+                      }}>
+          <Text>Cantidad: {item.cantidad}</Text>                
+        </View>
+        <View style= {{ borderWidth: 1 , width: "32%",
+                        flexDirection: 'column', // Hijos en columna vertical
+                        alignItems: 'flex-start', // Alinear hijos a la izquierda
+                      }}>
+          <Text>Lista: {String(item.precioLista)} desc: { String(item.descuento)} % </Text>              
+          <Text>Total {`$: ${String(item.precio?.toFixed(2))}`}</Text>               
+        </View>
+        <View style= {{ borderWidth: 1 , width: "20%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
+                        flexDirection: 'column', // Hijos en columna vertical
+                        alignItems: 'flex-start', // Alinear hijos a la izquierda
+                      }}>
+          <Text>Editar</Text>            
+        </View>
+      </View>
+      <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, margin:2, marginBottom: 4 }} />
+    </TouchableOpacity>
+  )};
+  const BarraIcons = () =>{
+    return (
     <View style={styles.iconBar}>
       <TouchableOpacity onPress={grabarPreventa}>
-        <Icon name="save" size={30} color="#000" />
+        {/* <Icon name="save" size={30} color= "cyan" /> */}
+        <Text>Guardar</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={abrirArticulos}>
-        <Icon name="plus" size={30} color="#000" />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={limpiarLaPreventa}>
-        <Icon name="minus" size={30} color="#000" />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={cargarDatos}>
-        <Icon name="repeat" size={30} color="#000" />
+        {/* <Icon name="plus" size={30} color="cyan" /> */}
+        <Text>Agrega Item</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={abrirModal}>
-        <Icon name="sticky-note" size={30} color="#000" />
+        {/* <Icon name="wpforms" size={30} color="cyan" /> */}
+        <Text>Nota</Text>
       </TouchableOpacity>
+      {/* <TouchableOpacity onPress={cargarDatos}>
+        <Fontisto size={30} color="cyan" name='preview' />
+      </TouchableOpacity> */}
     </View>
-    <View style={styles.separator} />
-    {carrito.length > 0 && 
-        <FlatList
+    )
+  }
+  
+  const CabezaPreventa = () =>{
+    return (
+    <View style= {styles.cabezaContainer} >
+      <Text style={{ 
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: 'black',
+                    letterSpacing: 2,
+                  }}>
+        {dataCliente.descripcion}
+      </Text>
+      <TouchableOpacity onPress={traerFrecuentes}>
+        {/* <Icon name="plus" size={20} color="orange" /> */}
+      </TouchableOpacity>
+      <View style= {styles.cabezaData}>
+        <View style= {styles.cabezaSubdata}>
+          <Text>Codigo: {dataCliente.id}</Text>
+          <Text>Saldo: $ -{dataCliente.importeDeuda}</Text>
+        </View>
+        <View style= {styles.cabezaSubdata}>
+          <Text>Total $: {total.toFixed(2)} </Text>
+          <Text>Items: {carrito.length.toString()} </Text>
+        </View >
+        </View>
+    </View>
+    )
+  }
+
+  return (
+  <View style={styles.container}>
+  {/* <SafeAreaView style={styles.container}> */}
+    <View style={styles.viewTitle} >
+      <Text style={styles.title}> PREVENTA </Text>
+    </View>
+    
+    <CabezaPreventa/>
+    <View style={styles.itemsContainer}>
+        <Modal visible={isModalVisible} /*animationType="slide" transparent*/>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Escribir nota</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Escribe una nota..."
+              placeholderTextColor="white"
+              value={nota}
+              onChangeText={setNota}
+              />
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+                <Text style={styles.modalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+                <Text style={styles.modalButtonText}>Guardar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <View style={{ flex: 1, }}>
+          <FlatList
           data={carrito}
           keyExtractor={(item, index) => index.toString()} // Puedes ajustar la clave según tus necesidades
           renderItem={renderItem}
-        />
-    }
-  </SafeAreaView>      
-      <Modal visible={isModalVisible} animationType="slide" transparent>
-      <View style={styles.modalContainer}>
-        <Text style={styles.modalTitle}>Escribir nota</Text>
-        <TextInput
-          style={styles.modalInput}
-          placeholder="Escribe una nota..."
-          value={nota}
-          onChangeText={setNota}
           />
-        <View style={styles.modalButtonsContainer}>
-          <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-            <Text style={styles.modalButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-            <Text style={styles.modalButtonText}>Guardar</Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
-
+    </View> 
+<BarraIcons/>
 </View>
   );
 };
@@ -198,51 +334,104 @@ const Preventa = (props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#FAF7E6',
+    // backgroundColor: '#0c2f3c '
+    backgroundColor: '#06181e',
+    
   },
-  rowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+  viewTitle: {
+    alignItems: 'center', // Centrar horizontalmente
+    justifyContent: 'center', // Centrar verticalmente
+    marginVertical: 20, // Margen vertical
+    padding: 0,
   },
+  title: {
+    marginTop: 20,
+    marginBottom: -10,
+    fontSize: 20, // Tamaño de fuente
+    fontWeight: 'bold', // Fuente en negrita
+    color: 'cyan', // Color de texto
+    letterSpacing: 2, // Espaciado entre letras
+  },
+  itemsContainer: {
+    flex: 1,
+    padding: 10,
+    paddingTop: 20,
+    margin: 6,
+    marginTop: -22,
+    zIndex: -1,
+    backgroundColor: '#c9eefa',//background liviano
+    borderWidth: 2, // Agregar borde
+    borderColor: '#000', // Color del borde
+    borderRadius: 10, // Radio de las esquinas (para hacerlas redondeadas)
+    shadowColor: '#000', // Color de la sombra
+    shadowOffset: { width: 0, height: 2 }, // Offset de la sombra
+    shadowOpacity: 0.5, // Opacidad de la sombra
+    shadowRadius: 2, // Radio de la sombra
+    elevation: 50, // Elevación de la sombra (solo para Android)
+  },
+
+  // estilos para la cabecera
+  cabezaContainer: {
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingBottom: 30,
+    backgroundColor: '#96ddf5',// 96ddf5 non Photo blue--- background intermedio
+    borderWidth: 1, // Agregar borde
+    borderColor: '#000', // Color del borde
+    borderRadius: 10, // Radio de las esquinas (para hacerlas redondeadas)
+    shadowColor: '#000', // Color de la sombra
+    shadowOffset: { width: 0, height: 2 }, // Offset de la sombra
+    shadowOpacity: 0.5, // Opacidad de la sombra
+    shadowRadius: 2, // Radio de la sombra
+    elevation: 5, // Elevación de la sombra (solo para Android)
+  },
+
+  cabezaData: {
+    flexDirection: 'row', // Hijos en línea horizontal
+    justifyContent: 'flex-start', 
+    alignItems: 'center', // Centrar verticalmente
+  },
+  cabezaSubdata: {
+    width: "50%",
+    flexDirection: 'column', // Hijos en columna vertical
+    alignItems: 'flex-start', // Alinear hijos a la izquierda
+  },
+
+  // estilos para la barra de ICONOS
   iconBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    //backgroundColor: "#0c2f3c",
+    backgroundColor: "white",
+    // color: "red",
     marginBottom: 10,
+    padding: 20,
+    width: '100%',
+    // backgroundColor: "#1223a444",
   },
   separator: {
     height: 1,
     backgroundColor: 'gray',
-    marginVertical: 10,
+    marginVertical: 2,
   },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: 'gray',
-    paddingVertical: 10,
-  },
-  cell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerText: {
-    fontWeight: 'bold',
-  },
+
+  // ESTILOS DEL MODAL
   modalContainer: {
-    backgroundColor: '#A2BAB6',
+    backgroundColor: '#06181e',
+    padding: 20,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalTitle: {
+    color: "#30bced",
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   modalInput: {
-    width: '80%',
+    color: "#30bced",
+    width: '100%',
     height: 40,
     borderWidth: 1,
     borderColor: 'gray',
@@ -262,19 +451,8 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: 'white',
     fontWeight: 'bold',
-  }, 
-  itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'gray',
-  },
-  itemText: {
-    flex: 1,
-    marginRight: 10,
-  },
-  
+}, 
+
 });
 
 export default Preventa;
