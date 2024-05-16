@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Modal, Switch } from 'react-native';
-import { Searchbar } from 'react-native-paper';
+import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch } from 'react-native';
+// import { Searchbar } from 'react-native-paper';
 import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
 import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -12,12 +12,13 @@ const Articulos = ({ route }) => {
   const navigation = useNavigation();
   const { params } = route;
   const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
-  const cliente =params.cliente;
+  const cliente =params.cliente; //solo el codigo del cliente
+  const listaDePrecios =params.listaDePrecio; //solo la lista
   const articulosFrecuentes = params.articulosFrecuentes;
   const hasInternetAccess = params.hasInternetAccess;
-  console.log('ART18 linea en la preventa numroº ', preventaNumero, "cliente: ", cliente, "frecuentes ",mostrarFrecuentes);
-  const [search, setSearch] = useState('');
-  const [searchOld, setSearchOld] = useState('');
+  // console.log('ART198 linea en la preventa numroº ', preventaNumero, "cliente: ", cliente, "listas ",params.listaDePrecio);
+  const [search, setSearch] = useState('harina');
+  const [searchOld, setSearchOld] = useState('harina');
   const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
   const [filteredArticulosConCantidad, setFilteredArticulosConCantidad] =useState([]);
   const [filtredArticulos, setFilteredArticulos] = useState([]);
@@ -31,16 +32,16 @@ const Articulos = ({ route }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
+        // console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
         setArticulosList(await buscarAdaptarFiltrar(search));
         setLoading(false);
         // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
       } catch (error) {
-        console.error('Error al obtener artículos filtrados: ', error);
+        // console.error('Error al obtener artículos filtrados: ', error);
         setLoading(false);
       }
     };
-    console.log("entre a articulos y quiero cargar");
+    // console.log("entre a articulos y quiero cargar");
     if (mostrarFrecuentes) {
         fetchData();
     }else{
@@ -53,8 +54,38 @@ const Articulos = ({ route }) => {
     
   }, [search, isFocused, mostrarFrecuentes]);
   
+  /*para quitar campos innecesarios*/
   const buscarAdaptarFiltrar = async (search) =>{
     
+    const obtenerPrecio = async (articulo)=>{
+      console.log("AR61 lista", listaDePrecios ,"articulo", articulo);
+      let costo = articulo.precioCosto;
+      let iva = articulo.iva;
+      let costoIva = costo * (1+ iva/100);
+      let ganancia = 0;
+      switch (listaDePrecios) {
+        case "1":
+          ganancia = articulo.lista1;
+          return (costoIva * (1 + ganancia /100)) 
+        case "2":
+          ganancia = articulo.lista2;
+          return (costoIva * (1 + ganancia /100)) 
+        case "3":
+          ganancia = articulo.lista3;
+          return (costoIva * (1 + ganancia /100)) 
+        case "4":
+          ganancia = articulo.lista4;
+          return (costoIva * (1 + ganancia /100)) 
+        case "5":
+          ganancia = articulo.lista5;
+          return (costoIva * (1 + ganancia /100)) 
+          break;
+        default:
+          return 0;
+          // código a ejecutar si la expresión no coincide con ningún valor
+      }
+    }
+
     const filtrarBusqueda = async (articulos) =>{
       if (mostrarFrecuentes) {
         return articulos.filter(element => element.frecuente === true);
@@ -69,20 +100,23 @@ const Articulos = ({ route }) => {
 
       //paso 1
       const filteredArticulosBDD = await getArticulosFiltrados(search);
-      // console.log("encontrados filtrando ", filteredArticulosBDD.length);
+      // console.log("encontrados filtrando ", filteredArticulosBDD[1]);
       //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
       let filteredArticulos = await Promise.all(
         filteredArticulosBDD.map(async (element) => {
           // const cantidadYDescuento = await cantidadYDescuentoCargados(element.id);
           const cantidad = await cantidadCargado(element.id);
           const descuento = await descuentoCargado(element.id);
-          const frecuente = articulosFrecuentes?.includes(element.id)
+          const frecuente = articulosFrecuentes?.includes(element.id);
+          const precio = await obtenerPrecio(element);
+          // console.log("precio", precio); //depende de la lista del cliente
           if (frecuente) {
             // console.log("es frecuente ",element.descripcion);
           }
           element.seleccionados = cantidad;
           element.descuento = descuento;
           element.frecuente = frecuente;
+          element.precio = precio;
           // console.log("articulos filtrados ",element.descripcion, "cant", cantidad);
           return element;
         })
@@ -98,11 +132,12 @@ const Articulos = ({ route }) => {
   
   const openModal = async (articulo) => {
     let datos = await cantidadYDescuentoCargados(articulo.id)
-    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAarticulo ",datos);
+    // console.log("AAAAAAAAAAAAAAAAAAAAAAAAAarticulo ",datos);
     navigation.navigate('AddArticulo', { articulo });
   };
   
   const renderItem = ({ item }) => {
+    // console.log("item", item);
     return(
     <TouchableOpacity onPress={() => openModal(item)}>
       <View style={styles.articuloItem}>
@@ -112,7 +147,11 @@ const Articulos = ({ route }) => {
         <View style={styles.articuloItemLinea}>
           <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
           <Text style={styles.articuloInfo}>
-            Precio: ${item?.precio?.toFixed(2)}
+            {/* Precio s/iva: ${(item?.precio / (1+(item.iva /100))) .toFixed(2) } */}
+            Precio c/iva: ${item?.precio?.toFixed(2)}
+          </Text>
+          <Text style={styles.articuloInfo}>
+            iva: {item?.iva}
           </Text>
           <View style= {{ width: "10%",
                         borderWidth: 0 ,
@@ -143,14 +182,14 @@ const Articulos = ({ route }) => {
       <View style={styles.viewTitle}> 
         <Text style={styles.title}> Elegir articulos </Text>
       </View>
-      <Searchbar
+      {/* <Searchbar
         placeholder="Buscar artículo..."
         value={search}
         onChangeText={(value) => setSearch(value)}
         onIconPress={(value) => setSearch(value)}
-      />
+      /> */}
       <View style={{ backgroundColor:"#c9eefa", flexDirection: 'row', alignItems:"center", justifyContent: "space-between", margin: 4, borderBottomColor: "grey", borderBottomWidth:2 }} >
-        <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length}</Text> 
+        <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length}    Lista: {listaDePrecios}</Text> 
         {hasInternetAccess && (
         <View style={[styles.barraFrecuentes, {alignItems: 'center'}]}>
           <Text style={{ color:"red"}}>Ver frecuentes</Text>

@@ -62,7 +62,7 @@ const UserMenuPPal = ({route}) => {
         onPress={() => handleOptionPress(option)}
         >
           <View style={styles.menuItem}>
-          <MaterialCommunityIcons name={option.icon} size={50} color="cyan" />
+          {/* <MaterialCommunityIcons name={option.icon} size={50} color="cyan" /> */}
           <Text style={styles.menuItemText}>{option.name}</Text>
           </View>
         </TouchableOpacity>

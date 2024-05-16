@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+// import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa } from '../src/utils/storageConfigData';
-import { Searchbar } from 'react-native-paper';
+// import { Searchbar } from 'react-native-paper';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -44,11 +44,11 @@ const Clientes = () => {
         <Text style={styles.title}> Elegir cliente </Text>
       </View>
       <View style={styles.searchbar}      >
-      <Searchbar
+      {/* <Searchbar
         placeholder="Buscar cliente..."
         onChangeText={(value) => setSearch(value)}
         value={search}
-      />
+      /> */}
       </View>
       <View style={styles.itemsContainer}  >
 
@@ -59,9 +59,10 @@ const Clientes = () => {
           <TouchableOpacity onPress={() => handleClientClick(item)}> 
             <View style={styles.clienteItem}>
               <View >
-                <Icon name="user" size={24} color="#626262" />
+                {/* <Icon name="user" size={24} color="#626262" /> */}
                 <Text style={styles.text}>{item.descripcion}</Text>
-                <Text style={styles.codigo}>{item.id}</Text>
+                <Text style={styles.text}>Lista {item.listaPrecio}</Text>
+                <Text style={styles.codigo}>Codigo {item.id}</Text>
               </View>
             </View>
           </TouchableOpacity>

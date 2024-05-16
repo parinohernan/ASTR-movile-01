@@ -33,18 +33,20 @@ const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, impor
     });
 };
 
-// Grabalos items de la preventa del storage en la BDD
+// Grabalos items de la preventa del storage en la BDD sqlite
 const grabarItemsPreventaEnBDD = async (numero, items) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             // Insertar en la tabla preventaItem
             items.forEach((item) => {
-                // console.log("80grabo BDD item ",numero, item.id, item.cantidad, item.precio);
+                console.log("80grabo BDD item ",numero, item);
                 tx.executeSql(
-                    'INSERT INTO preventaItem (idPreventa, articulo, cantidad, importe) VALUES (?, ?, ?, ?)',
-                    [numero, item.id, item.cantidad, item.precio],
+                    'INSERT INTO preventaItem (idPreventa, articulo, cantidad, importe, porcentajeBonificacion, precioLista ) VALUES (?, ?, ?, ?, ?, ?)',
+                    [numero, item.id, item.cantidad, item.precio, item.descuento, item.precioLista],
                     (_, itemResult) => {
-                        console.log('Item insertado con ID:', itemResult.insertId);
+                        // console.log('Item insertado en la base de datos:', item);
+                        console.log('ID del nuevo item:', itemResult.insertId, item);
+                        // console.log('Valor de descuento:', item.descuento); // Agregar esta línea para mostrar el descuento
                     },
                     (_, error) => {
                         console.error('Error al insertar item:', error);
@@ -57,6 +59,7 @@ const grabarItemsPreventaEnBDD = async (numero, items) => {
     });
 };
 
+// grabo pasando la preventa del localstore a sqlite
 const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
     // console.log('PrvControler109. grabado en la ITEMS', items);
     let vendedor = await configuracionVendedor();
@@ -71,7 +74,7 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
         console.error("no tenes items cargados");
         return
     }
-    console.log('PrvControler108. grabado en la bdd CABEZA numero, nota', numero, nota, "cliente ", cliente, "items: ",items.length);
+    // console.log('PrvControler108. grabado en la bdd CABEZA numero, nota', numero, nota, "cliente ", cliente, "items: ",items.length);
     try {
         await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal, vendedor, sucursal );
         await grabarItemsPreventaEnBDD(numero, items);
@@ -83,6 +86,7 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
     }
 };
 
+// busco ITEMS desde sqlite y preparo el json para mandar a la api
 const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -98,11 +102,13 @@ const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
                         let itemObjet={
                             CodigoArticulo : row.articulo,
                             Cantidad: row.cantidad,
-                            PrecioUnitario: row.importe,
-                            PrecioLista: row.importe,
-                            PorcentajeBonificacion: row.PorcentajeBonificacion,
+                            PrecioUnitario: (row.importe/ row.cantidad),// calcular bien
+                            PrecioLista: row.precioLista,// ver el correcto
+                            PorcentajeBonificacion: row.porcentajeBonificacion,// tengo que ver el correcto
+                            iva: row.iva,    
                         }
                         items.push(itemObjet);
+                        console.log("mirando el item creado:",itemObjet);
                     }
                     console.log("items busc: . ",items);
                     resolve(items);

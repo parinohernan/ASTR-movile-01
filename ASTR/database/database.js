@@ -30,7 +30,7 @@ const initDatabase = async (setLogs) => {
     );
     // Crea la tabla articulos si no existe
     tx.executeSql(
-      'CREATE TABLE IF NOT EXISTS articulos (id TEXT PRIMARY KEY, descripcion TEXT, existencia INTEGER, precio REAL, unidadVenta TEXT)',
+      'CREATE TABLE IF NOT EXISTS articulos (id TEXT PRIMARY KEY, descripcion TEXT, existencia INTEGER, precioCosto REAL, lista1 REAL, lista2 REAL, lista3 REAL, lista4 REAL, lista5 REAL, iva INTEGER, unidadVenta TEXT)',
       [],
       () => logs = handleLogs(logs,('Tabla articulos creada exitosamente'), setLogs),
       (_, error) =>logs =  handleLogs(logs,('Error al crear la tabla articulos'), setLogs)
@@ -44,7 +44,7 @@ const initDatabase = async (setLogs) => {
     );
     // Crea la tabla preventaItem si no existe
     tx.executeSql(
-      'CREATE TABLE IF NOT EXISTS preventaItem (id INTEGER PRIMARY KEY AUTOINCREMENT, idPreventa INTEGER, articulo TEXT, cantidad TEXT, importe INTEGER, FOREIGN KEY (id) REFERENCES preventaCabeza(id))',
+      'CREATE TABLE IF NOT EXISTS preventaItem (id INTEGER PRIMARY KEY AUTOINCREMENT, idPreventa INTEGER, articulo TEXT, cantidad TEXT, importe INTEGER, precioLista INTEGER, porcentajeBonificacion INTEGER, FOREIGN KEY (id) REFERENCES preventaCabeza(id))',
       [],
       () => logs = handleLogs(logs,('Tabla preventaItem creada exitosamente'), setLogs),
       (_, error) => logs = handleLogs(logs,('Error al crear la tabla preventaItem'), setLogs)

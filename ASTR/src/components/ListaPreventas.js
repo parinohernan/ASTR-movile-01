@@ -81,6 +81,7 @@ const renderItem = ({ item }) => (
                 console.log('Borrar preventa número ', selectedItem.numero);
                 borrarPreventaYSusItems(selectedItem.numero);
                 navigation.goBack();
+                
               },
             },
           ],

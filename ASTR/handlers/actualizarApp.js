@@ -55,7 +55,7 @@ const actualizarArticulos = async (setLogs) => {
         const data = response.data;
 
         // Define el tamaño del lote
-        const batchSize = 500; // Por ejemplo, 100 artículos por lote
+        const batchSize = 500; // Por ejemplo, 500 artículos por lote
 
         // Divide los datos en lotes de tamaño fijo
         const batches = [];
@@ -65,6 +65,7 @@ const actualizarArticulos = async (setLogs) => {
 
         // Inserta cada lote en la base de datos
         for (const batch of batches) {
+            console.log();
             await insertArticulosFromAPI(batch);
             handleLogs(logs,(`Lote de ${batch.length} artículos actualizado correctamente.`),setLogs);
         }
@@ -75,7 +76,8 @@ const actualizarArticulos = async (setLogs) => {
 };
 
 const actualizarPreventas = async (preventasJSON, mensajes) => {
-    try {
+  console.log("!!actiaApp 78 :",await configuracionEndPoint() + 'preventas', preventasJSON);  
+  try {
         const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
     } catch (error) {
         mensajes.hayErrores = true;

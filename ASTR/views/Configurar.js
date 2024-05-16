@@ -84,7 +84,10 @@ const Configurar = () => {
 
       {/* Botones */}
       {/* <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} /> */}
-      { changes? <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> : ""}
+      { changes? 
+      // <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> 
+      <Text>boton</Text>
+      : ""}
       {/* <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> */}
     </View>
   );

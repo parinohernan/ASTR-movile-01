@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal, Alert, BackHandler } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+// import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useIsFocused} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
@@ -43,7 +43,7 @@ const Preventa = (props) => {
   const {route} = props;
   const {params} = route;
   let {preventaNumero, cliente, edit} = params;
-  console.log("PRV13 prevnumero y cliente",preventaNumero,cliente.descripcion);
+  // console.log("PRV13 prevnumero y cliente",preventaNumero,cliente.descripcion);
   const navigation = useNavigation();
   
   /*busco los items que ya esten cargados en la preventa y los cargo en el estado*/ 
@@ -71,9 +71,9 @@ const Preventa = (props) => {
   
   useEffect(() => {
     const loadData = async () => {
-        setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(dataCliente.id))
+        // setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(dataCliente.id))
          
-        console.log(" traigo frecuentes de", cliente, dataCliente.id);
+        // console.log(" traigo frecuentes de", cliente, dataCliente.id);
         if (edit === true) {
           console.log("editando PREVENTA");
           await siEstoyEditando();
@@ -102,9 +102,18 @@ const Preventa = (props) => {
   
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
-    console.log("prv 62 cargo",carritoData);
+    // console.log("prv 62 cargo",carritoData);
     if (carritoData.length != 0) {
-      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, descripcion: item.descripcion, id: item.id, precio: item.precioTotal, descuento: item.descuento })));
+      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, 
+                                            descripcion: item.descripcion,
+                                            id: item.id,
+                                            iva: item.iva, 
+                                            //tienen que ser los precios sin iva?
+                                            //tengo que adaptarlo a la lista que tenga el quiente
+                                            precio: item.precioTotal, 
+                                            descuento: item.descuento,
+                                            precioLista:( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),//calculo el precio de lista
+                                           })));
     }
     setCantidadItems (carritoData.length);
     setTotal(await calcularTotal());
@@ -148,9 +157,16 @@ const Preventa = (props) => {
     console.log('Nota guardada:', nota);
   };
 
+  const traerFrecuentes = async() => {
+    // Aquí puedes implementar la lógica para guardar la nota en tu aplicación
+    console.log('buscando frecuentes:');
+    setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(dataCliente.id))    
+    console.log(" traigo frecuentes de", cliente, dataCliente.id);
+  };
+
   const abrirArticulos = async () => {
     let cantidad = await configuracionCantidadMaximaArticulos();
-    console.log("CANTIDAD ", cantidad, carrito.length);
+    // console.log("CANTIDAD ", cantidad, carrito.length);
   
     if (carrito.length >= cantidad) {
       Alert.alert(
@@ -165,7 +181,8 @@ const Preventa = (props) => {
         ]
       );
     } else {
-      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
+      console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
+      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, listaDePrecio: dataCliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
     }
   };
 
@@ -197,7 +214,7 @@ const Preventa = (props) => {
     <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
       <Text>{`${item.descripcion} `}</Text>
       <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',}}>
-        {/* <Text>Cantidad: {item.cantidad} Total {`$: ${String(item.precio)}`}</Text> */}
+        
         <View style= {{ width: "32%",
                         borderWidth: 1 ,
                         flexDirection: 'row', // Hijos en columna vertical
@@ -209,6 +226,7 @@ const Preventa = (props) => {
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
+          <Text>Lista: {String(item.precioLista)} desc: { String(item.descuento)} % </Text>              
           <Text>Total {`$: ${String(item.precio?.toFixed(2))}`}</Text>               
         </View>
         <View style= {{ borderWidth: 1 , width: "20%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
@@ -225,13 +243,16 @@ const Preventa = (props) => {
     return (
     <View style={styles.iconBar}>
       <TouchableOpacity onPress={grabarPreventa}>
-        <Icon name="save" size={30} color= "cyan" />
+        {/* <Icon name="save" size={30} color= "cyan" /> */}
+        <Text>Guardar</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={abrirArticulos}>
-        <Icon name="plus" size={30} color="cyan" />
+        {/* <Icon name="plus" size={30} color="cyan" /> */}
+        <Text>Agrega Item</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={abrirModal}>
-        <Icon name="wpforms" size={30} color="cyan" />
+        {/* <Icon name="wpforms" size={30} color="cyan" /> */}
+        <Text>Nota</Text>
       </TouchableOpacity>
       {/* <TouchableOpacity onPress={cargarDatos}>
         <Fontisto size={30} color="cyan" name='preview' />
@@ -251,6 +272,9 @@ const Preventa = (props) => {
                   }}>
         {dataCliente.descripcion}
       </Text>
+      <TouchableOpacity onPress={traerFrecuentes}>
+        {/* <Icon name="plus" size={20} color="orange" /> */}
+      </TouchableOpacity>
       <View style= {styles.cabezaData}>
         <View style= {styles.cabezaSubdata}>
           <Text>Codigo: {dataCliente.id}</Text>
@@ -377,8 +401,9 @@ const styles = StyleSheet.create({
   iconBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: "#0c2f3c",
-    // color: "#96ddf5",
+    //backgroundColor: "#0c2f3c",
+    backgroundColor: "white",
+    // color: "red",
     marginBottom: 10,
     padding: 20,
     width: '100%',

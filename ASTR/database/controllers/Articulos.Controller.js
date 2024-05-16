@@ -54,14 +54,20 @@ const insertArticulosFromAPI = (data) => {
 
       data.forEach(item => {
         tx.executeSql(
-          'INSERT OR REPLACE INTO articulos (id, descripcion, existencia, precio, unidadVenta) VALUES (?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO articulos (id, descripcion, existencia, precioCosto, unidadVenta, iva, lista1, lista2, lista3, lista4, lista5) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             item.codigo,
             item.descripcion,
             item.existencia,
             //item.precioCostoMasImp * (1 + item.lista1 / 100)
-            precio = item.precioCostoMasImp * (1 + item.lista1 / 100),
+            item.precioCosto,
             item.unidadVenta,
+            iva = item.porcentajeIVA1,
+            item.lista1, 
+            item.lista2, 
+            item.lista3, 
+            item.lista4, 
+            item.lista5
           ],
           (_, result) => {
             totalInsertados++;
@@ -81,12 +87,14 @@ const insertArticulosFromAPI = (data) => {
   });
 };
 
+
 /** La idea es filtrar y paginar todo en esta funcion */
 const getArticulosFiltrados = (searchWord) => {
   return new Promise((resolve, reject) => {
     console.log("Obteniendo artículos filtrados de la base de datos local...");
     db.transaction(tx => {
       tx.executeSql('SELECT * FROM articulos WHERE descripcion LIKE ?', [`%${searchWord}%`], (_, { rows }) => {
+        // console.log("rows._array 91 art controler",rows._array);
         resolve(rows._array);
       }, (_, error) => {
         reject(error);
