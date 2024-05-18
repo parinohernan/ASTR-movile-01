@@ -39,9 +39,14 @@ const App = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={{
-    headerShown: false
-  }}>
+      <Stack.Navigator
+        initialRouteName="Login"
+        screenOptions={{
+          headerShown: false,
+          tabBarVisible: false,
+        }}
+      >
+        
         <Stack.Screen name="Login" component={RenderLoginScreen} />
         <Stack.Screen name="Home" component={RenderHomeScreen} />
         <Stack.Screen name="Informes" component={RenderListaPreventasScreen} />
@@ -60,6 +65,3 @@ const App = () => {
 }
 
 export default App;
-
-
-

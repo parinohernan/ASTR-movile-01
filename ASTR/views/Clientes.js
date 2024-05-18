@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
-// import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa } from '../src/utils/storageConfigData';
-// import { Searchbar } from 'react-native-paper';
+import { Searchbar } from 'react-native-paper';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
@@ -44,11 +44,11 @@ const Clientes = () => {
         <Text style={styles.title}> Elegir cliente </Text>
       </View>
       <View style={styles.searchbar}      >
-      {/* <Searchbar
+      <Searchbar
         placeholder="Buscar cliente..."
         onChangeText={(value) => setSearch(value)}
         value={search}
-      /> */}
+      />
       </View>
       <View style={styles.itemsContainer}  >
 
@@ -105,8 +105,8 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
     paddingTop: 20,
-    margin: 6,
-    marginTop: -22,
+    margin: 0,
+    marginTop: 2,
     zIndex: -1,
     backgroundColor: '#c9eefa',//background liviano
     borderWidth: 2, // Agregar borde

@@ -5,6 +5,7 @@ import { eliminarTodasLasTablas, getTables } from '../database/database';
 import { actualizarAPP, initDatabase } from '../handlers/actualizarApp';
 // import { getConfiguracion, setConfiguracion, crearConfiguracion } from '../database/controllers/ConfiguracionController';
 import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from '../src/utils/storageConfigData';
+import { Axios } from 'axios';
 
 // import limpiarDatos from "../database/database"r
 
@@ -19,15 +20,18 @@ const Configurar = () => {
     usaGeolocalizacion: true,
     cantidadMaximaArticulos: "18",
   })
+  const [hasInternetAccess, setHasInternetAccess] = useState(false);
 
   const [changes, setChanges]= useState(false);
 
   useEffect(() => {
-    handleGetConfiguracion()
+    handleGetConfiguracion();
+    checkInternetAccess();
   }, []);
 
   useEffect(() => {
-    setChanges(true)
+    setChanges(true);
+    checkInternetAccess();
   }, [configuracion]);
 
   const handleGetConfiguracion = async ()=>{
@@ -41,13 +45,27 @@ const Configurar = () => {
     setChanges( !changes)
   }
 
+  const checkInternetAccess = async () => {
+    try {
+      let endpoint = await configuracionEndPoint()
+      console.log("aca checkeando",endpoint.endPoint);
+      const response = await Axios.get(endpoint.endPoint);
+      console.log("resp",response);
+      // Si la solicitud se completa con éxito, significa que hay acceso al servidor
+      setHasInternetAccess(true);
+    } catch (error) {
+      // Si ocurre un error, no hay acceso al servidor
+      setHasInternetAccess(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.titulo}>
         <Text style={styles.tituloText}>ASTR</Text>
         <Text style={styles.subtituloText}>panel de configuracion</Text>
       </View>
-      <Text>EndPoint:</Text>
+      <Text>{hasInternetAccess? "✓":"X"} EndPoint:</Text> 
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
         value={configuracion.endPoint}
@@ -85,10 +103,10 @@ const Configurar = () => {
       {/* Botones */}
       {/* <Button title="crear tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} /> */}
       { changes? 
-      // <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> 
-      <Text>boton</Text>
-      : ""}
-      {/* <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> */}
+      <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> 
+      : 
+      <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ marginTop: 40 }} /> 
+      }
     </View>
   );
 };

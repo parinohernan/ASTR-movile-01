@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, SafeAreaView, Modal, Alert, BackHandler } from 'react-native';
-// import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation, useIsFocused} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation, useIsFocused, useFocusEffect} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
@@ -10,7 +10,7 @@ import Articulos from './Articulos';
 import { getArticulosFrecuentesDesdeAPI } from '../handlers/actualizarApp';
 import axios from 'axios';
 // import { Fontisto } from '@expo/vector-icons';
-// import { useIsFocused } from '@react-navigation/native';
+
 
 const Preventa = (props) => {
 
@@ -38,6 +38,41 @@ const Preventa = (props) => {
   //   const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
   //   return () => backHandler.remove();
   // }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const handleBeforeRemove = async (e) => {
+        e.preventDefault();
+  
+        try {
+          // Aquí la lógica para verificar si hay una preventa sin grabar
+          // y preguntar al usuario si quiere guardar o descartar los cambios
+          const carrito2 = await obtenerPreventaDeStorage();
+          if (carrito2.length > 0) {
+            e.preventDefault();
+            Alert.alert(
+              'No guardaste la preventa',
+              '¿Quieres guardar los cambios antes de salir?',
+              [
+                { text: 'Descartar preventa', style: 'destructive', onPress: () => {limpiarPreventaDeStorage(); navigation.goBack() }},
+                // { text: 'Guardar', style: 'default', onPress: () => grabarPreventa() },
+                { text: 'Volver a preventa', style: 'cancel', onPress: () => {} },
+              ]
+            );
+          } else {
+            // Si no hay cambios sin guardar, puedes dejar que el usuario salga
+            navigation.dispatch(e.data.action);
+          }
+        } catch (error) {
+          console.error('Error al obtener la preventa:', error);
+        }
+      };
+  
+      const unsubscribe = navigation.addListener('beforeRemove', handleBeforeRemove);
+  
+      return unsubscribe;
+    }, [navigation])
+  );
 
   const isFocused = useIsFocused();
   const {route} = props;
@@ -83,6 +118,10 @@ const Preventa = (props) => {
           cargarDatos();
         }
     };
+
+  
+
+
     const checkInternetAccess = async () => {
       try {
         let endpoint = await configuracionEndPoint()
@@ -109,7 +148,7 @@ const Preventa = (props) => {
                                             id: item.id,
                                             iva: item.iva, 
                                             //tienen que ser los precios sin iva?
-                                            //tengo que adaptarlo a la lista que tenga el quiente
+                                            //tengo que adaptarlo a la lista que tenga el cliente
                                             precio: item.precioTotal, 
                                             descuento: item.descuento,
                                             precioLista:( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),//calculo el precio de lista
@@ -181,7 +220,7 @@ const Preventa = (props) => {
         ]
       );
     } else {
-      console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
+      // console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
       navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: dataCliente.id, listaDePrecio: dataCliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
     }
   };
@@ -209,7 +248,7 @@ const Preventa = (props) => {
 
   // Renderiza cada elemento del array reducido
   const renderItem = ({ item }) => {
-    console.log("prv152 intem ", item);
+    // console.log("prv152 intem ", item);
     return (
     <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
       <Text>{`${item.descripcion} `}</Text>
@@ -222,12 +261,12 @@ const Preventa = (props) => {
                       }}>
           <Text>Cantidad: {item.cantidad}</Text>                
         </View>
-        <View style= {{ borderWidth: 1 , width: "32%",
+        <View style= {{ borderWidth: 0 , width: "32%",
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
-          <Text>Lista: {String(item.precioLista)} desc: { String(item.descuento)} % </Text>              
-          <Text>Total {`$: ${String(item.precio?.toFixed(2))}`}</Text>               
+          <Text>Lista: {String(item.precioLista.toFixed(2))} desc: { String(item.descuento)} % </Text>              
+          <Text>{`$ ${String(item.precio?.toFixed(2))}`}</Text>               
         </View>
         <View style= {{ borderWidth: 1 , width: "20%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
                         flexDirection: 'column', // Hijos en columna vertical
@@ -243,16 +282,16 @@ const Preventa = (props) => {
     return (
     <View style={styles.iconBar}>
       <TouchableOpacity onPress={grabarPreventa}>
-        {/* <Icon name="save" size={30} color= "cyan" /> */}
-        <Text>Guardar</Text>
+        <Icon name="save" size={30} color= "cyan" />
+        <Text style={{ color:"cyan"}}>Guardar</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={abrirArticulos}>
-        {/* <Icon name="plus" size={30} color="cyan" /> */}
-        <Text>Agrega Item</Text>
+        <Icon name="plus" size={30} color="cyan" />
+        <Text style={{ color:"cyan"}}>Agrega Item</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={abrirModal}>
-        {/* <Icon name="wpforms" size={30} color="cyan" /> */}
-        <Text>Nota</Text>
+        <Icon name="wpforms" size={30} color="cyan" />
+        <Text  style={{ color:"cyan"}}  >Nota</Text>
       </TouchableOpacity>
       {/* <TouchableOpacity onPress={cargarDatos}>
         <Fontisto size={30} color="cyan" name='preview' />
@@ -309,9 +348,9 @@ const Preventa = (props) => {
               onChangeText={setNota}
               />
             <View style={styles.modalButtonsContainer}>
-              <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+              {/* <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
                 <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
                 <Text style={styles.modalButtonText}>Guardar</Text>
               </TouchableOpacity>
@@ -401,13 +440,10 @@ const styles = StyleSheet.create({
   iconBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    //backgroundColor: "#0c2f3c",
-    backgroundColor: "white",
-    // color: "red",
+    backgroundColor: "#000000",
     marginBottom: 10,
     padding: 20,
     width: '100%',
-    // backgroundColor: "#1223a444",
   },
   separator: {
     height: 1,

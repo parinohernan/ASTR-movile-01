@@ -1,27 +1,27 @@
 Prioridad de 1 al 5. 5 es mucha importancia.
 
-3- ver articulos frecuentes
 
 1- si hay preventas en el webserver y instalamos un nuevo cel con los mismos datos, hay problemas al enviar preventas. igualmente no se deberian borral las preventas.
-
 --->2- permitir eliminar items de la preventa actual.
     -5---- al cambiar la cantidad tiene que cambiar el precio.
 --> 4 -permitir modificar una preventa en BDD local.
+3 - mostrar los errores de sincronizacion y un "porfavor espere"
+.pantalla configuracion que muestre si conecta bien al enpoint
 
-5 - ver que pasa cuando hay actualizacion de precios
+{terminados}
 
-1- al eliminar todos los datos o reinstalar expo, y sincronizar por primer ves da error al enviar preventas. luego sigue todo ok.
+0- al eliminar todos los datos o reinstalar expo, y sincronizar por primer ves da error al enviar preventas. luego sigue todo ok.
+### 5 - las preventas no se envian con el vendedor correcto. siempre llegan como test.
+# 1- el modal de notas cuando le das en cancelar no cancela, graba igual. se puede quitar ese boton-
+### - ver articulos frecuentes
+#### -solo mostraba precios en lista 1.
 
-3 - permite superar el numero de articulos cuando agrego desde el componente articulos
+ENCONTRO HERNAN FUNES.
+##  8- cuando no cerras una preventa y vas a sincronizar. da error y no borra lo enviado.
+#- cuando editas un articulo queda mal el precio.
 
-5 - las preventas no se envian con el vendedor correcto. siempre llegan como test.
 
-3- mostrar los errores de sincronizacion y un "porfavor espere"
-
-1- el modal de notas cuando le das en cancelar no cancela, graba igual. se puede quitar ese boton-
-
-ENCONTRO HERNAN.
-
-8- cuando no cerras una preventa y vas a sincronizar. da error y no borra lo enviado.
-8- cuando editas un articulo queda mal el precio.
+--- funciones --
+###.que no salga de la preventa si no se guarda o borra.
+#.controlar cant maxima de articulos en Elegir Articulos. solo los estoy controlando en prenventa agreg item-
 

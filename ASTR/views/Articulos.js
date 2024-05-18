@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch } from 'react-native';
-// import { Searchbar } from 'react-native-paper';
+import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import { Searchbar } from 'react-native-paper';
 import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
 import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-
+import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
+import { obtenerPreventaDeStorage } from '../src/utils/storageUtils';
 
 const Articulos = ({ route }) => {
   const [mostrarFrecuentes, setMostrasFrecuentes] = useState(false);
@@ -17,8 +18,8 @@ const Articulos = ({ route }) => {
   const articulosFrecuentes = params.articulosFrecuentes;
   const hasInternetAccess = params.hasInternetAccess;
   // console.log('ART198 linea en la preventa numroº ', preventaNumero, "cliente: ", cliente, "listas ",params.listaDePrecio);
-  const [search, setSearch] = useState('harina');
-  const [searchOld, setSearchOld] = useState('harina');
+  const [search, setSearch] = useState('');
+  const [searchOld, setSearchOld] = useState('');
   const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
   const [filteredArticulosConCantidad, setFilteredArticulosConCantidad] =useState([]);
   const [filtredArticulos, setFilteredArticulos] = useState([]);
@@ -93,7 +94,7 @@ const Articulos = ({ route }) => {
       return articulos;
     }
     
-    console.log("a buscar a bucar", searchOld, search)
+    // console.log("a buscar a bucar", searchOld, search)
     //paso 1 traer articulos de la BDD
     //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
     //paso 3 filtrar segun configuracion
@@ -131,9 +132,27 @@ const Articulos = ({ route }) => {
 
   
   const openModal = async (articulo) => {
-    let datos = await cantidadYDescuentoCargados(articulo.id)
+    // let datos = await cantidadYDescuentoCargados(articulo.id)
     // console.log("AAAAAAAAAAAAAAAAAAAAAAAAAarticulo ",datos);
-    navigation.navigate('AddArticulo', { articulo });
+    let cantidad = await configuracionCantidadMaximaArticulos();
+    const carrito = await obtenerPreventaDeStorage();
+    // console.log("CANTIDAD ", cantidad, carrito.length);
+  
+    if (carrito.length >= cantidad) {
+      Alert.alert(
+        "Límite de artículos alcanzado",
+        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
+        [
+          {
+            text: "Aceptar",
+            onPress: () => console.log("Aceptar presionado"),
+            style: "cancel"
+          }
+        ]
+      );}else{
+
+        navigation.navigate('AddArticulo', { articulo });
+      }
   };
   
   const renderItem = ({ item }) => {
@@ -153,14 +172,14 @@ const Articulos = ({ route }) => {
           <Text style={styles.articuloInfo}>
             iva: {item?.iva}
           </Text>
-          <View style= {{ width: "10%",
+          <View style= {{ width: "15%",
                         borderWidth: 0 ,
                         flexDirection: 'row', // Hijos en columna vertical
                         alignItems: 'flex-end', // Alinear hijos a la izquierda
                       }}>
-            <Text style={styles.check}>{item.frecuente? "F": ""}</Text>
-            {/* <Text style={styles.check}>{item.seleccionados !== 0? "✓": ""}</Text> */}
-            <Text style={styles.check}>{item.seleccionados}</Text>
+            {/* <Text style={styles.check}>{item.frecuente? "F": ""}</Text> */}
+            <Text style={styles.check}>{item.seleccionados !== 0? `${item.seleccionados}  ✓` : ""}</Text> 
+            {/* <Text style={styles.check}>{item.seleccionados}</Text> */}
            </View>
         </View>
       </View>
@@ -182,17 +201,17 @@ const Articulos = ({ route }) => {
       <View style={styles.viewTitle}> 
         <Text style={styles.title}> Elegir articulos </Text>
       </View>
-      {/* <Searchbar
+      <Searchbar
         placeholder="Buscar artículo..."
         value={search}
         onChangeText={(value) => setSearch(value)}
         onIconPress={(value) => setSearch(value)}
-      /> */}
+      />
       <View style={{ backgroundColor:"#c9eefa", flexDirection: 'row', alignItems:"center", justifyContent: "space-between", margin: 4, borderBottomColor: "grey", borderBottomWidth:2 }} >
         <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length}    Lista: {listaDePrecios}</Text> 
         {hasInternetAccess && (
         <View style={[styles.barraFrecuentes, {alignItems: 'center'}]}>
-          <Text style={{ color:"red"}}>Ver frecuentes</Text>
+          <Text >Ver frecuentes</Text>
           <Switch value={mostrarFrecuentes} onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)} />
         </View>
         )}
@@ -231,8 +250,9 @@ const styles = StyleSheet.create({
     letterSpacing: 2, // Espaciado entre letras
   },
   check: {
-    fontSize: 24, // Tamaño del check
-    color: 'green', // Color del check
+    fontSize: 16, // Tamaño del check
+    color: '#1229f7', // Color del check
+    fontWeight: "bold",
   },
   articuloItem: {
     flexDirection: 'column',

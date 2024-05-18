@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native';
 import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
 import { useNavigation } from '@react-navigation/native';
-import { Keyboard } from 'react-native-keyboard-aware-scroll-view';
+// import { Keyboard } from 'react-native-keyboard-aware-scroll-view';
 
 const cantidadYDescuentoCargados= async (codigo) => {  
   const preventaActual = await obtenerPreventaDeStorage();
@@ -128,6 +128,11 @@ const AddArticulo = ({route}) => {
 
   const handleFocusCant = (text) => {
     setCantidad("");
+    setVerAgregar(false);
+  }
+  const handleFocusDescuento = (text) => {
+    setDescuento("");
+    setVerAgregar(false);
   }
 
   const handleDescuento = (text) => {
@@ -184,6 +189,7 @@ const AddArticulo = ({route}) => {
       <TextInput
         style={styles.input}
         editable={true}
+        onFocus={handleFocusDescuento}
         onChangeText={handleDescuento}
         onEndEditing={handleEnd}
         value={String(descuento)}
@@ -216,6 +222,7 @@ const AddArticulo = ({route}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 20,
     padding: 20,
     backgroundColor: '#06181e',
   },
@@ -235,7 +242,7 @@ const styles = StyleSheet.create({
   articuloInfo: {
     color: 'white',
     fontSize: 18,
-    marginBottom: 10,
+    marginBottom: 0,
   },
   label: {
     color: 'white',
@@ -244,7 +251,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: 'white',
-    padding: 10,
+    padding: 6,
     borderRadius: 5,
     marginBottom: 20,
   },
