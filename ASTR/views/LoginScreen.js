@@ -158,7 +158,7 @@ const closeModal = () => {
         onChangeText = { ( texto )  =>  {  handlePassword(texto)  } }
         />
       <Ingresar/>
-      <Text style={styles.vecsionText}>hernyDev version 1.1</Text>
+      <Text style={styles.vecsionText}>hernyDev version 1.1.2</Text>
       <IngresarRoot/>
       <IngresarUser/>
       <Modal

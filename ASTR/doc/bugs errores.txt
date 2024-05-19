@@ -3,8 +3,7 @@ Prioridad de 1 al 5. 5 es mucha importancia.
 
 1- si hay preventas en el webserver y instalamos un nuevo cel con los mismos datos, hay problemas al enviar preventas. igualmente no se deberian borral las preventas.
 --->2- permitir eliminar items de la preventa actual.
-    -5---- al cambiar la cantidad tiene que cambiar el precio.
---> 4 -permitir modificar una preventa en BDD local.
+---> 4 -permitir modificar una preventa en BDD local.
 3 - mostrar los errores de sincronizacion y un "porfavor espere"
 .pantalla configuracion que muestre si conecta bien al enpoint
 

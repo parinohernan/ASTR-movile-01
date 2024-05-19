@@ -35,3 +35,11 @@ backgroundColor: '#FAF7E6'
 
 comando magico                              eas build -p android --profile preview
 
+al replicar un proyecto y intentar crear el apk me suele dar errores.
+Waiting for build to complete. You can press Ctrl+C to exit.
+× Build failed
+🤖 Android build failed:
+Gradle build failed with unknown error. 
+See logs for the "Run gradlew" (https://expo.dev/accounts/hernanpa/projects/ASTR/builds/eb822d70-5cb0-4b9a-b797-e4dc7b4078d7#run-gradlew) phase for more information.
+
+intento solucionarlo cambiando la vercion de CLI en eas.json  y no funciona
