@@ -1,7 +1,7 @@
 // Usuarios.js
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { Text, FlatList } from 'react-native';
+import { Text, FlatList, StyleSheet, View } from 'react-native';
 // import { initDatabase, getUsuarios, insertUsuariosFromAPI } from '../database/database';
 
 import { getUsuarios } from '../database/controllers/Usuarios.controler';
@@ -18,24 +18,49 @@ const Usuarios = () => {
         console.error('Error al obtener o insertar usuarios: ', error);
       }
     };
-
     fetchData();
   }, []);
 
   return (
-    <>
-      <Text>Estos son los usuarios en la base de datos:</Text>
+  <View style={styles.container}>
+    <View style={styles.titulo}>
+      <Text style={styles.tituloText}>Osvi</Text>
+      <Text style={styles.subtituloText}>Listado de vendedores</Text>
+    </View>
+      <Text>Estos son los vendedores registrados:</Text>
       <FlatList
         data={usuarios}
         keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
-          <Text>{item.codigo} - {item.descripcion} - {item.clave}</Text>
+          <Text>{item.id} - {item.descripcion}</Text>
         )}
       />
-    </>
+  </View>
   );
 };
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop:60,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    padding: 20,
+  },
+  titulo: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  tituloText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  }, 
+})
 export default Usuarios;
 
 

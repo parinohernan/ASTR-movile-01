@@ -1,98 +1,150 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Button } from 'react-native-elements';
-import { eliminarTodasLasTablas, getTables } from '../database/database';
-import { actualizarAPP } from '../handlers/actualizarApp';
-// import limpiarDatos from "../database/database"r
+import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from '../src/utils/storageConfigData';
+import axios  from 'axios';
+import VendedoresSelect from '../src/components/VendedoresSelect';
 
+// import limpiarDatos from "../database/database"r
 const Configurar = () => {
-  const [webService, setWebService] = useState('');
-  const [sucursal, setSucursal] = useState('');
-  const [modificacionPrecios, setModificacionPrecios] = useState(false);
-  const [activarGeolocalizacion, setActivarGeolocalizacion] = useState(false);
-  const [cantidadMaximaArticulos, setCantidadMaximaArticulos] = useState('');
-  const [guardarHabilitado, setGuardarHabilitado] = useState(false);
+ 
+  const [configuracion, setConfiguracion]= useState({
+    endPoint:"",
+    siguientePreventa: 100,//este dato solo se visualiza, se actualiza automaticamente
+    vendedor: "",
+    sucursal: "",
+    usaGeolocalizacion: true,
+    cantidadMaximaArticulos: "18",
+  })
+  const [hasInternetAccess, setHasInternetAccess] = useState();
+  const [serverData, setServerData] =useState();
+  const [changes, setChanges]= useState(false);
+  // const [vendedores, setVendedores]= useState();
 
   useEffect(() => {
-    // Verificar si todos los campos están completos
-    if (webService && sucursal && cantidadMaximaArticulos) {
-      setGuardarHabilitado(true);
-    } else {
-      setGuardarHabilitado(false);
-    }
-  }, [webService, sucursal, cantidadMaximaArticulos]);
+    handleGetConfiguracion();
+    checkInternetAccess();
+    // handeBuscarVendedores();
+  }, []);
 
-  //esto en realidad sincroniza y actualiza la APP
-  const handleGuardar = async () => {
-    
-    await actualizarAPP();
- 
-  };
-    // if (guardarHabilitado) {
-    // } else {
-    //   Alert.alert('Error', 'Completa todos los campos antes de guardar.');
-    // }
-  const handleTablas =   () => {
-    console.log("tablas en BDD: ", getTables())
-    
-  };
-  const handleCancelar = () => {
-    // Implementa la lógica para cancelar la configuración
-    console.log('Configuración cancelada');
-  };
+  useEffect(() => {
+    setChanges(true);
+    checkInternetAccess();
+    // handeBuscarVendedores();
+  }, [configuracion]);
 
-  const handleLimpiarSQLite = async () => {
-    try {
-      await  eliminarTodasLasTablas();
-      console.log('Limpieza finalizada');
-    } catch (error) {
-      console.error('Error al limpiar la base de datos: ', error);
+  const handleGetConfiguracion = async ()=>{
+    let config = await getConfiguracionDelStorage();
+    console.log("Confi 70.. config ", config);
+    setConfiguracion(config);
+  }
+
+  const handleGuardarConfiguracion = ()=>{
+    console.log("guardando config:",configuracion);
+    guardarConfiguracionEnStorage(configuracion);
+    setChanges( !changes)
+  }
+
+  const checkInternetAccess = async () => {
+    let endpoint = configuracion.endPoint;
+    console.log("chequeando internet",endpoint, endpoint[endpoint.length -1] );
+    if (endpoint[endpoint.length -1] == "/") { 
+      try {
+        console.log("aca checkeando",endpoint);
+        const response = await axios(endpoint);
+        // Si la solicitud se completa con éxito, significa que hay acceso al servidor
+        setServerData(response.data);
+        
+        setHasInternetAccess(true);
+      } catch (error) {
+        // Si ocurre un error, no hay acceso al servidor
+        setHasInternetAccess(false);
+        setServerData("Sin coneccion");
+      }
+    }else{
+      setServerData("El endpoint debe terminar en / ");
     }
   };
 
   return (
-    <View style={{ padding: 20, backgroundColor: '#FAF7E6' }}>
-      <Text>WebService:</Text>
+    <View style={styles.container}>
+      <View style={styles.titulo}>
+        <Text style={styles.tituloText}>OSVI</Text>
+        <Text style={styles.subtituloText}>panel de configuracion,  {hasInternetAccess? console.log(hasInternetAccess, "tengo internet"): console.log("muerto, no tengo internet")}</Text>
+      <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ maxWidth: 250, marginTop:10 }} /> 
+      </View>
+      <Text >{hasInternetAccess? "✓":"X"} EndPoint:</Text>  
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
-        value={webService}
-        onChangeText={(text) => setWebService(text)}
-      />
-
+        value={configuracion.endPoint}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, endPoint: text })}
+        />
+      <Text style={styles.subtituloText}>{serverData}</Text> 
       <Text>Sucursal:</Text>
-      {/* <TextInput
+      <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
-        value={sucursal}
-        onChangeText={(text) => setSucursal(text.replace(/[^0-9]/g, ''))}
+        value={configuracion.sucursal}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, sucursal: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
-      />
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-        <Text style={{ flex: 1 }}>Actualizar Datos</Text>
-        <Switch value={modificacionPrecios} onValueChange={() => setModificacionPrecios(!modificacionPrecios)} />
-       {/* <Switch value={activarGeolocalizacion} onValueChange={() => setActivarGeolocalizacion(!activarGeolocalizacion)} /> * /}
-      </View> */}
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 20 }}>
-        <Text style={{ flex: 1 , padding: 5 }}>Activar Geolocalizacion</Text>
-        {/* <Switch value={modificacionPrecios} onValueChange={() => setModificacionPrecios(!modificacionPrecios)} /> */}
-       <Switch value={activarGeolocalizacion} onValueChange={() => setActivarGeolocalizacion(!activarGeolocalizacion)} />
-      </View>
+        />
+      
+      <Text>Vendedor:</Text>
+      <View style={{ height: 100, zIndex: 10, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }} >
 
+        <VendedoresSelect style={{ height: 100, zIndex: 20}} configuracion={configuracion} setConfiguracion={setConfiguracion}/>
+        
+    
+      </View>
       <Text>Cantidad máxima de artículos:</Text>
       <TextInput
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
-        value={cantidadMaximaArticulos}
-        onChangeText={(text) => setCantidadMaximaArticulos(text.replace(/[^0-9]/g, ''))}
+        value={configuracion.cantidadMaximaArticulos}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, cantidadMaximaArticulos: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
+      />
+      <Text>Siguente preventa:</Text>
+      <TextInput
+        style={{ height: 40,  borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        value={String(configuracion.siguientePreventa)}
+        onChangeText={(text) => setConfiguracion({ ...configuracion, siguientePreventa: text.replace(/[^0-9]/g, '') })}
+        // editable:false
       />
 
       {/* Botones */}
-      <Button title="Sincronizar" onPress={handleGuardar} /*disabled={!guardarHabilitado}*/ buttonStyle={{ marginTop: 40, backgroundColor:'green' }}/>
-      <Button title="tablas" onPress={handleTablas} buttonStyle={{ marginTop: 40 }} />
-      <Button title="Cancelar" onPress={handleCancelar} buttonStyle={{ marginTop: 40 }} />
-      <Button title="Limpiar BD" onPress={handleLimpiarSQLite} buttonStyle={{ marginTop: 40 }} />
+
+      
+ 
     </View>
   );
 };
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop:60,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    padding: 20,
+  },
+  picker: {
+    width: '80%',
+    // height: '167' ,
+    // zIndex: 712,
+  },
+  titulo: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
+  tituloText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  subtituloText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  }, 
+})
 
 export default Configurar;
 

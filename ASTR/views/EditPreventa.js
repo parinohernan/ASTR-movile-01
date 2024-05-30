@@ -15,7 +15,7 @@ import { borrarPreventaYSusItems } from '../database/controllers/Preventa.Contro
 
 // import { Fontisto } from '@expo/vector-icons';
 
-const Preventa = (props) => {
+const EditPreventa = (props) => {
   useFocusEffect(
     React.useCallback(() => {
       const handleBeforeRemove = async (e) => {
@@ -54,15 +54,11 @@ const Preventa = (props) => {
   const isFocused = useIsFocused();
   const {route} = props;
   const {params} = route;
-  const {preventaNumero, cliente, clienteCodigo, edit} = params;
+  const {preventaNumero, cliente, edit} = params;
   const navigation = useNavigation();
   const [carrito, setCarrito] = useState([]);
-  const [editando, setEditando] = useState(edit? edit : false);
   const [cantidadItems, setCantidadItems] = useState([]);
   const [total, setTotal] = useState();
-  const [nueva, setNueva] = useState(true);/* solo indica si es una nueva preventa o estoy editando*/
-  // const [dataCliente, setDataCliente] = useState( {codigo: params.cliente, id: params.cliente } );
-  // const [dataCliente, setDataCliente] = useState( params.objCliente );
   const [articulosFrecuentes, setArticulosFrecuentes] = useState([]);
   const [hasInternetAccess, setHasInternetAccess] = useState(false);
   const [estoyBuscandoFrecuentes, setEstoyBuscandoFrecuentes] = useState(false);
@@ -70,16 +66,30 @@ const Preventa = (props) => {
   const [isModalEditarVisible, setIsModalEditarVisible] = useState(false);
   const [nota, setNota] = useState('');
   const [selectedItem, setSelectedItem]= useState();
-  // const [listaDePrecios,setListaDePrecios]=useState();
+//   const [listaDePrecios,setListaDePrecios]=useState(cliente?.listaDePrecio);
+  const [noCarguePreventa, setNoCarguePreventa]=useState(true);
 
+  const siEstoyEditando = async () => {
+    // setNueva(false);
+    setNoCarguePreventa(false); //una ves que este en falso ya no voy a entrar a "siEstoyEditando"
+    await preventaDesdeBDD(preventaNumero);//busca la preventa en la BDD  y la carga al local storage
+    await cargarDatosEditando(); //cargar
+    
+  }
+  
   useEffect(() => {
     const loadData = async () => {
-      if (isFocused) {
-      // Cargar datos aquí
-        cargarDatos();
-      }
-    };
+      //tengo que cargar los datos en la storage
+        console.log("editando PREVENTA", preventaNumero);
+        noCarguePreventa? (
+            await siEstoyEditando()
+            
+        ):(
+        //   console.log("Editando pero ya cargue antes al strage")
+          cargarDatosEditando()
+        )
 
+    };
     const checkInternetAccess = async () => {
       try {
         let endpoint = await configuracionEndPoint()
@@ -94,25 +104,91 @@ const Preventa = (props) => {
     // console.log("entro a preventa editando= T nueva =fale ", edit);
     loadData();
     checkInternetAccess();
-    // console.log("hay internet?", hasInternetAccess);
+    console.log("hay internet?", hasInternetAccess);
   }, [isFocused, isModalEditarVisible]);
   
-  const cargarDatos = async () => {
-    const carritoData = await obtenerPreventaDeStorage();
-    console.log("prv166 ",carritoData);
-    if (carritoData.length != 0) {
-      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, 
-                                            descripcion: item.descripcion,
-                                            id: item.id,
-                                            iva: item.iva,
-                                            precio: item.precioTotal, 
-                                            descuento: item.descuento,
-                                            precioLista:( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),//calculo el precio de lista
-                                           })));
+  const cargarDatosEditando = async () => {
+
+    const calcularDescuento = async (elemento) => {
+      let itemArray = await getArticuloPorCodigo(elemento.id);
+      let articulo = itemArray[0];
+      let lista = await obtenerPrecio(articulo);
+      articulo.precio = lista;
+      let factorDescuento = elemento.precioTotal / (lista * elemento.cantidad);
+      let descuento = 0;
+      descuento = 100 - (factorDescuento * 100);
+      descuento == 0 ? descuento = 0 : descuento = Math.round(descuento * 100) / 100;
+      return {descuento: descuento, lista: lista};
     }
-    setCantidadItems (carritoData.length);
+  
+    const carritoData = await obtenerPreventaDeStorage();
+    console.log("prv129 ",carritoData);
+    
+    if (carritoData.length > 0) {
+      const updatedCarritoData = await Promise.all(carritoData.map(async (item) => {
+        const {descuento, lista} = await calcularDescuento(item);
+        console.log(lista);
+        return {
+          cantidad: item.cantidad,
+          descripcion: item.descripcion,
+          id: item.id,
+          iva: item.iva,
+          precio: item.precioTotal,
+          descuento: descuento.toFixed(),
+          precioLista: lista,/* lista con iva */
+          // precio: ( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),
+          
+        };
+      }));
+      console.log("prv156 ",updatedCarritoData);
+      setCarrito(updatedCarritoData);
+    }
+    setCantidadItems(carritoData.length);
     setTotal(await calcularTotal());
+   
   };
+
+//   const cargarDatos = async () => {
+    
+//     const calcularDescuento = async (elemento) => {
+//         let itemArray = await getArticuloPorCodigo(elemento.id);
+//         let articulo = itemArray[0];
+//         console.log("133prv data",cliente);
+//         let lista = await obtenerPrecio(articulo);
+//         console.log("134obteniendo precio de ",articulo, lista/*, cliente*/);
+//         articulo.precio = lista;
+//         let factorDescuento = elemento.precioTotal / (lista * elemento.cantidad);
+//         let descuento = 0;
+//         descuento = 100 - (factorDescuento * 100);
+//         console.info("138 ",descuento,lista);
+//         return {descuento: descuento, lista: lista};
+//       }
+    
+//       const carritoData = await obtenerPreventaDeStorage();
+//       console.log("prv129 ",carritoData);
+      
+//       if (carritoData.length > 0) {
+//         const updatedCarritoData = await Promise.all(carritoData.map(async (item) => {
+//           const {descuento, lista} = await calcularDescuento(item);
+//           console.log(lista);
+//           return {
+//             cantidad: item.cantidad,
+//             descripcion: item.descripcion,
+//             id: item.id,
+//             iva: item.iva,
+//             precio: item.precioTotal,
+//             descuento: descuento.toFixed(),
+//             precioLista: lista,/* lista con iva */
+//             // precio: ( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),
+            
+//           };
+//         }));
+//         console.log("prv156 ",updatedCarritoData);
+//         setCarrito(updatedCarritoData);
+//       }
+//       setCantidadItems(carritoData.length);
+//       setTotal(await calcularTotal());
+//   };
 
   const grabarPreventa = async () => {
     /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
@@ -123,9 +199,9 @@ const Preventa = (props) => {
     }
     if (carrito.length > 0) {
       let numero = preventaNumero
-      if (nueva) {
-      numero = await nextPreventa();
-    }
+    //   if (nueva) {
+    //   numero = await nextPreventa();
+    // }
     await grabarPreventaEnBDD (numero, nota , cliente .id, carrito);
     console.log("preventa guardada con exito  ");
     setCarrito ([]);    
@@ -133,7 +209,6 @@ const Preventa = (props) => {
     console.log("preventa estaba vacia  ");
     navigation.goBack();
   };
-
   
   const abrirModal = () => { //modal de la nota
     setIsModalVisible(true);
@@ -158,15 +233,15 @@ const Preventa = (props) => {
   };
 
   const handleDelete = async() =>{ /* borra un item seleccionado, deñ storage */
-  if (cantidadItems < 2) {
-    console.log("CHAU NO QUIERO ESTA PREVNTA");
-    navigation.navigate('Clientes', {});
-}
-    
+    if (cantidadItems < 2) {
+        console.log("CHAU NO QUIERO ESTA PREVNTA");
+        navigation.navigate('Informes', {});
+    }
+    console.log("borrar ",selectedItem);
+    console.info("esta");
     await eliminarItemEnPreventaEnStorage(selectedItem.id);
     setIsModalEditarVisible(false);
 
-    //refrescar la preventa
   }
 
   const obtenerPrecio = async (articulo)=>{
@@ -200,7 +275,7 @@ const Preventa = (props) => {
   }
 
   const handleEdit = async() =>{
-    //edita in articulo
+
 
     let itemArray = await getArticuloPorCodigo (selectedItem.id);
     let articulo = itemArray[0];
@@ -222,6 +297,7 @@ const Preventa = (props) => {
     // Aquí puedes implementar la lógica para guardar la nota en tu aplicación
     setEstoyBuscandoFrecuentes(true);
     hasInternetAccess == true? (
+    // console.log('buscando frecuentes:');
     setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(cliente.id))    
     ):(
     console.log('buscando frecuentes:'))
@@ -244,14 +320,17 @@ const Preventa = (props) => {
         ]
       );
     } else {
-      // console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
+      // console.log("cli CLI CLI listaprecio ", cliente.listaPrecio);
       navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: cliente.id, listaDePrecio: cliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
     }
   };
 
+
+
   const handleItem = (item) =>{
     setSelectedItem(item);
     abrirModalEditar(item);
+    
   }
 
   // Renderiza cada elemento del array reducido
@@ -317,6 +396,9 @@ const Preventa = (props) => {
         <Icon name="wpforms" size={30} color="cyan" />
         <Text  style={{ color:"cyan"}}>Nota</Text>
       </TouchableOpacity>
+      {/* <TouchableOpacity onPress={cargarDatos}>
+        <Fontisto size={30} color="cyan" name='preview' />
+      </TouchableOpacity> */}
     </View>
     )
   }
@@ -333,11 +415,12 @@ const Preventa = (props) => {
         {cliente?.descripcion}
       </Text>
       <TouchableOpacity onPress={traerFrecuentes}>
+        {/* <Icon name="plus" size={20} color="orange" />  */}
         <Text>articulos frecuentes: {(articulosFrecuentes.length == 0)? (
           (estoyBuscandoFrecuentes == false)? <Icon name="question-circle-o" size={20} color="black" /> : <Icon name="hourglass-2" size={20} color="black" />
           
           ): articulosFrecuentes.length}</Text>
-         
+          {/* <Text>Lista: {cliente?.listaPrecio}</Text> */}
       </TouchableOpacity>
       <View style= {styles.cabezaData}>
         <View style= {styles.cabezaSubdata}>
@@ -353,13 +436,12 @@ const Preventa = (props) => {
     )
   }
  
-  if (editando !== true) {
-    
-    return (    
-      <View style={styles.container}>
+ 
+return (
+  <View style={styles.container}>
   {/* <SafeAreaView style={styles.container}> */}
     <View style={styles.viewTitle} >
-      <Text style={styles.title}> PREVENTA </Text>
+     <Text style={styles.title}> EDITAR PREVENTA </Text>
     </View>
     
     <CabezaPreventa/>
@@ -375,9 +457,6 @@ const Preventa = (props) => {
               onChangeText={setNota}
               />
             <View style={styles.modalButtonsContainer}>
-              {/* <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity> */}
               <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
                 <Text style={styles.modalButtonText}>Guardar</Text>
               </TouchableOpacity>
@@ -392,42 +471,9 @@ const Preventa = (props) => {
           renderItem={renderItem}
           />
         </View>
-    </View> 
-<BarraIcons/>
-</View>
-  )
-} else
-return (
-  <View style={styles.container}>
-  {/* <SafeAreaView style={styles.container}> */}
-    <View style={styles.viewTitle} >
-     <Text style={styles.title}> PREVENTA </Text>
-    </View>
-    
-    <CabezaPreventa/>
-    <View style={styles.itemsContainer}>
-        <Modal visible={isModalVisible} /*animationType="slide" transparent*/>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Escribir nota</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Escribe una nota..."
-              placeholderTextColor="white"
-              value={nota}
-              onChangeText={setNota}
-              />
-            <View style={styles.modalButtonsContainer}>
-              {/* <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity> */}
-              <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        {isModalEditarVisible? <ModalEliminarEditarCancelar  item={selectedItem} handleEdit={handleEdit} handleDelete={handleDelete} cerrarModalEditar={cerrarModalEditar}/>:""}
-
+        {/* <TouchableOpacity style={styles.modalButton} onPress={cargarDatosEditando}>
+                <Text style={styles.modalButtonText}>cargar items</Text>
+        </TouchableOpacity> */}
     </View> 
 <BarraIcons/>
 </View>
@@ -555,5 +601,5 @@ const styles = StyleSheet.create({
 
 });
 
-export default Preventa;
+export default EditPreventa;
 
