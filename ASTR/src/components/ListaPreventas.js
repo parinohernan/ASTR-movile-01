@@ -22,7 +22,7 @@ const cargarPreventas = () => {
 db.transaction((tx) => {
     try {
     tx.executeSql(
-        'SELECT preventaCabeza.id as numero, clientes.descripcion as cliente, clientes.id as clienteCodigo, preventaCabeza.importetotal as importe FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
+        'SELECT preventaCabeza.id as numero, clientes.descripcion as cliente, clientes.id as clienteCodigo, preventaCabeza.importetotal as importe, preventaCabeza.observacion as observacion FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
         [],
         (_, result) => {
         const preventasArray = [];
@@ -30,7 +30,7 @@ db.transaction((tx) => {
             preventasArray.push(result.rows.item(i));
         }
         setPreventas(preventasArray);
-        // console.log("que tiene",preventasArray);
+        console.log("que tiene",preventasArray);
         },
         (_, error) => {
         console.error('Error al cargar preventas:', error);

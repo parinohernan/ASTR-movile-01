@@ -21,7 +21,7 @@ const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, impor
                 'INSERT OR REPLACE INTO preventaCabeza (id, cliente, vendedor, observacion, fecha, cantidadItems, importeTotal) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [numero, cliente, vendedor, nota, fecha, cantItems, importeTotal],
                 (_, cabezaResult) => {
-                    console.log('Cabeza insertada o actualizada con ID:', cabezaResult.insertId);
+                    console.log('Cabeza insertada o actualizada con ID:', cabezaResult.insertId, numero, cliente, vendedor, nota, fecha, cantItems, importeTotal);
                     resolve(cabezaResult.insertId);
                 },
                 (_, error) => {
@@ -74,7 +74,7 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
         console.error("no tenes items cargados");
         return
     }
-    // console.log('PrvControler108. grabado en la bdd CABEZA numero, nota', numero, nota, "cliente ", cliente, "items: ",items.length);
+    // console.log('PrvControler77. grabado en la bdd CABEZA numero, nota', numero, nota, "cliente ", cliente, "items: ",items.length);
     try {
         await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal, vendedor, sucursal );
         await grabarItemsPreventaEnBDD(numero, items);
@@ -125,13 +125,13 @@ const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
 const asyncPreventasBDDToArray = async() => {
     let sucursal = await configuracionSucursal();
     let vendedorCodigo = await configuracionVendedor();
-    console.log("Prev Ctrl 120 ");
+   
     return new Promise((resolve, reject) => {
         let preventasArray = [];
         db.transaction((tx) => {
             try {
                 tx.executeSql(
-                    'SELECT preventaCabeza.cantidadItems, preventaCabeza.vendedor, preventaCabeza.fecha, preventaCabeza.id as DocumentoNumero, clientes.id as ClienteCodigo, preventaCabeza.importetotal as ImporteTotal FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
+                    'SELECT preventaCabeza.cantidadItems, preventaCabeza.vendedor, preventaCabeza.observacion, preventaCabeza.fecha, preventaCabeza.id as DocumentoNumero, clientes.id as ClienteCodigo, preventaCabeza.importetotal as ImporteTotal FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
                     [],
                     (_, result) => {
                         preventasArray = [];
@@ -147,7 +147,7 @@ const asyncPreventasBDDToArray = async() => {
                               VendedorCodigo: vendedorCodigo,
                               ImporteTotal: result.rows.item(i).ImporteTotal,
                               Cant_items: result.rows.item(i).cantidadItems,
-                              Observacion: result.rows.item(i).nota,
+                              Observacion: result.rows.item(i).observacion,
                               ListaNumero : 1,
                               ImporteBonificado : 0,
                               PagoTipo : "CC",
@@ -175,7 +175,7 @@ const asyncPreventasBDDToArray = async() => {
 
 const preventasBDDToArray = async () => {
     try {
-        let preventasArray = await asyncPreventasBDDToArray();
+        let preventasArray = await asyncPreventasBDDToArray();//cabeza
         // //le tengo que agregar los items
         // console.log(buscarItemsPreventaEnBDD(100));
         for (let i = 0; i < preventasArray.length; i++) {

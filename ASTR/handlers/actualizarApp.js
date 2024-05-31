@@ -94,6 +94,7 @@ const enviarPreventas = async (setLogs) => {
     try {
       // Buscar en BDD local y transformarla en un ARRAY de JSON
       preventas = await preventasBDDToArray();
+      console.log("enviando preventas ",preventas);
       // Enviarlas por post
       for (let i = 0; i < preventas.length; i++) {
         try {

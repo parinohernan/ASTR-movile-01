@@ -81,6 +81,7 @@ const EditPreventa = (props) => {
     const loadData = async () => {
       //tengo que cargar los datos en la storage
         console.log("editando PREVENTA", preventaNumero);
+       
         noCarguePreventa? (
             await siEstoyEditando()
             
