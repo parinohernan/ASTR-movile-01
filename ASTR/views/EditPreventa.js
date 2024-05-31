@@ -54,7 +54,7 @@ const EditPreventa = (props) => {
   const isFocused = useIsFocused();
   const {route} = props;
   const {params} = route;
-  const {preventaNumero, cliente, edit} = params;
+  const {preventaNumero, cliente, edit, observacion} = params;
   const navigation = useNavigation();
   const [carrito, setCarrito] = useState([]);
   const [cantidadItems, setCantidadItems] = useState([]);
@@ -64,7 +64,7 @@ const EditPreventa = (props) => {
   const [estoyBuscandoFrecuentes, setEstoyBuscandoFrecuentes] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isModalEditarVisible, setIsModalEditarVisible] = useState(false);
-  const [nota, setNota] = useState('');
+  const [nota, setNota] = useState(observacion);
   const [selectedItem, setSelectedItem]= useState();
 //   const [listaDePrecios,setListaDePrecios]=useState(cliente?.listaDePrecio);
   const [noCarguePreventa, setNoCarguePreventa]=useState(true);

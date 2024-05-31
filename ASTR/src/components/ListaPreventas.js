@@ -55,6 +55,7 @@ const renderItem = ({ item }) => (
         <Text>Nº: {item.numero}</Text>
         <Text>Cliente: {item.cliente}</Text>
         <Text>Total: $ {item.importe}</Text>
+        <Text>OBS:{item.observacion}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -100,10 +101,11 @@ const renderItem = ({ item }) => (
         const  clientes = await getClientes();
         let objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
         const preventaNumero = selectedItem.numero;
+        const observacion = selectedItem.observacion;
         const clienteCodigo = selectedItem.clienteCodigo;
         let edit=true;
         setModalVisible(false);
-        navigation.navigate('EditPreventa', { preventaNumero, cliente : objCliente, edit });
+        navigation.navigate('EditPreventa', { preventaNumero, cliente : objCliente, edit , observacion});
 
         break;
       case 'Cancelar':
