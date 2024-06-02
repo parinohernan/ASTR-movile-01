@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput,Modal, Alert} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, Modal, Alert} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useIsFocused, useFocusEffect} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage, eliminarItemEnPreventaEnStorage } from "../src/utils/storageUtils";

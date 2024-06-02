@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import { View, Text, Image, StyleSheet, Modal } from 'react-native';
-import { Akira, Kaede } from 'react-native-textinput-effects';
+import { View, Text, Image, StyleSheet, Modal, StatusBar } from 'react-native';
+import { Kaede } from 'react-native-textinput-effects';
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { getUsuarios } from '../database/controllers/Usuarios.controler';
+import { version, empresa, producto } from '../src/cconstantes/constantes';
+
 // import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const LoginScreen = () => {
@@ -137,6 +139,7 @@ const closeModal = () => {
 };
   return (
     <View style={styles.container}>
+      <StatusBar hidden />
       <Image source={require('../assets/images/icon1.png')} style={styles.logo} />
       <Text style={styles.logoText}>Bienvenido</Text>
      
@@ -161,8 +164,8 @@ const closeModal = () => {
         />
       <Ingresar/>
       <IngresarRoot/>
-      <Text style={styles.vecsionText}>hernyDev version 1.2.0</Text>
-      {/* <IngresarUser/> */}
+      <Text style={styles.vecsionText}>{empresa} - {producto} - {version} </Text>
+      <IngresarUser/>
       <Modal
         visible={modalVisible}
         animationType="slide"

@@ -43,7 +43,6 @@ const UserMenuPPal = ({route}) => {
   return (
     <View style={styles.container}>
       <View style={styles.titulo}>
-        <View ></View>
         <Text style={styles.tituloText}>Vendedor </Text>
         <Text style={styles.tituloText}>{user.vendedor}</Text>
       </View>
@@ -81,8 +80,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // width: "100%",
     // padding: 20,
-    marginTop: 40,
+    marginTop: -40,
     backgroundColor: '#96ddf5',
+    paddingTop:60,
+  },
+  container222: {
+    flex: 1,
+    backgroundColor: '#96ddf5',
+    // alignItems: 'center',
+    // justifyContent: 'center',
+    padding: 10,
   },
   titulo: {
     width: '100%',

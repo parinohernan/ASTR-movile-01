@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Controller';
 import { getClientes } from '../../database/controllers/Clientes.Controller';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import { empresa, producto } from '../cconstantes/constantes';
 const ListaPreventas = () => {
   const navigation = useNavigation();
   const [preventas, setPreventas] = useState([]);
@@ -131,30 +131,16 @@ const renderItem = ({ item }) => (
     <View style={styles.container}>
       <View style={styles.titulo}>
         <View ></View>
-        <Text style={styles.tituloText}>ASTR</Text>
-        <Text style={styles.subTituloText}>Informe de prefacturas:</Text>
+        <Text style={styles.tituloText}>{empresa} - {producto}</Text>
+        <Text style={styles.tituloText}>Informe de prefacturas</Text>
       </View>
-      <FlatList
-        data={preventas}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.numero.toString()}
-      />
-
-      {/* <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={closeModal}
-      >
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
-            <Text>Opciones para Nº {selectedItem?.numero}</Text>
-            <Button title="Borrar" onPress={() => handleAction('Borrar')} />
-            <Button title="Editar" onPress={() => handleAction('Editar')} />
-            <Button title="Cancelar" onPress={() => handleAction('Cancelar')} />
-          </View>
-        </View>
-      </Modal> */}
+      <View style={styles.containerResults}>
+        <FlatList
+          data={preventas}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.numero.toString()}
+        />
+      </View>
       <Modal 
         visible={modalVisible}
         animationType="slide"
@@ -186,6 +172,30 @@ const renderItem = ({ item }) => (
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+    justifyContent: 'center',
+    alignItems: 'flex-center',
+    // width: "90%",
+    // padding: 20,
+    marginBottom: -50,
+    backgroundColor: '#96ddf5',
+    paddingTop:0,
+  },
+  containerResults: {
+    // flex: 1,
+    // flexDirection: 'column',
+    // flexWrap: 'nowrap',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    width: "94%",
+    height: "80%",
+    padding: 2,
+    backgroundColor: '#c9eefa',
+    marginLeft:10,
+  },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,27 +209,22 @@ const styles = StyleSheet.create({
   dangerButton: {
     color: 'red',
   },
-  container: {
-    flex: 1,
-    flexDirection: 'column',
-    flexWrap: 'nowrap',
-    justifyContent: 'space-between',
-    // alignItems: 'center',
-    // width: "100%",
-    // padding: 20,
-    marginTop: 40,
-    backgroundColor: '#c9eefa',
-  },
   titulo: {
-    marginBottom: 30,
-    alignItems: 'center',
-    backgroundColor: '#96ddf5',
-    padding:24,
+    width: '100%',
+    margin: 0,
+    padding: 10,
+    // border: 10,
+    borderTopWidth: 2,
+    borderTopRightRadius: 30,
+    borderBottomRightRadius: 60,
+    backgroundColor: '#0c2f3c',
+    borderColor: "#30bced",
+    borderWidth: 10,
   },
   tituloText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    alignContent: "center",
+    fontSize: 30,
+    color: '#c9eefa',
   },
   subtituloText: {
     fontSize: 16,

@@ -3,6 +3,7 @@ import { View, Text, Switch, ScrollView, StyleSheet } from 'react-native';
 import { Button } from 'react-native-elements';
 import { /*actualizarClientes, actualizarVendedores, actualizarArticulos,*/ actualizarAPP } from '../handlers/actualizarApp';
 import ConsoleComponent from '../src/components/ConsoleComponent';
+import { empresa, producto } from '../src/cconstantes/constantes';
 // import { initDatabase } from '../handlers/actualizarApp';
 
 const Sincronizar = () => {
@@ -20,7 +21,7 @@ const Sincronizar = () => {
     <ScrollView style={styles.container}>
       {/* Switch para actualizar datos */}
       <View style={styles.titulo}>
-        <Text style={styles.tituloText}>ASTR</Text>
+      <Text style={styles.tituloText}>{empresa} - {producto}</Text>
         <Text style={styles.subtituloText}>Sincronizacion</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
@@ -41,15 +42,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#96ddf5',
     paddingTop:60,
+    marginTop:-40,
     // alignItems: 'center',
     // justifyContent: 'center',
     padding: 10,
   },
-  titulo: {
-      marginBottom: 30,
-      alignItems: 'center',
+  // titulo: {
+  //     marginBottom: 30,
+  //     alignItems: 'center',
+  //     backgroundColor: '#0c2f3c',
+  //     padding: 20,
+  //   },
+    titulo: {
+      width: '100%',
+      margin: 0,
+      padding: 10,
+      // border: 10,
+      borderTopWidth: 2,
+      borderTopRightRadius: 30,
+      borderBottomRightRadius: 60,
       backgroundColor: '#0c2f3c',
-      padding: 20,
+      borderColor: "#30bced",
+      borderWidth: 10,
     },
     // titulo: {
     //   marginBottom: 30,

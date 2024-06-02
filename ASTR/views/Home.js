@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-
+import { version, producto, empresa, whatsapp, mail } from '../src/cconstantes/constantes';
 const Home = ({user}) => {
   const navigation = useNavigation();
   const menuOptions = [
@@ -53,20 +53,20 @@ const Home = ({user}) => {
         <View style={{ flexDirection: 'column' }}>
           <View style={{ flexDirection: 'row' }}>
             <MaterialCommunityIcons name="cellphone" size={24} color="#000" />
-            <Text style={styles.footerText}>Version 0.0.4 - hpDev </Text>
+            <Text style={styles.footerText}>{empresa} - {producto} - {version} </Text>
           </View>
           <View style={{ flexDirection: 'row' }}>
             <MaterialCommunityIcons name="email" size={24} color="#D44638" />
-            <Text style={styles.footerText}> parinohernan@gmail.com </Text>
+            <Text style={styles.footerText}> {mail} </Text>
           </View>
           <View style={{ flexDirection: 'row' }}>
             <MaterialCommunityIcons name="whatsapp" size={24} color="#075E54" />
-            <Text style={styles.footerText}>+54 2923570231 </Text>
+            <Text style={styles.footerText}>{whatsapp} </Text>
           </View>
-          <View style={{ flexDirection: 'row' }}>
+          {/* <View style={{ flexDirection: 'row' }}>
             <MaterialCommunityIcons name="trademark" size={24} color="#000" />
             <Text style={styles.footerText}> Hernan Parino - 2024   </Text>
-          </View>
+          </View> */}
         </View>
         <Image
           source={require('../assets/hpdev.png')}

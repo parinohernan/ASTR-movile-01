@@ -122,6 +122,19 @@ const getArticulosFiltrados = (searchWord) => {
     });
   });
 };
+const getArticulosFiltradosXCodigo = (searchWord) => {
+  return new Promise((resolve, reject) => {
+    console.log("Obteniendo artículos cor codigo filtrados de la base de datos local...");
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM articulos WHERE id LIKE ?', [`%${searchWord}%`], (_, { rows }) => {
+        // console.log("rows._array 91 art controler",rows._array);
+        resolve(rows._array);
+      }, (_, error) => {
+        reject(error);
+      });
+    });
+  });
+};
 
   const getArticulos = () => {
     return new Promise((resolve, reject) => {
@@ -136,4 +149,4 @@ const getArticulosFiltrados = (searchWord) => {
     });
   };
 
-  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite, insertArticulosFrecuentesToSqlite, getArticuloPorCodigo}
+  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite, insertArticulosFrecuentesToSqlite, getArticuloPorCodigo, getArticulosFiltradosXCodigo}

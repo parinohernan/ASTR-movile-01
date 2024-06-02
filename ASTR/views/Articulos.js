@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { Searchbar } from 'react-native-paper';
-import { getArticulosFiltrados } from '../database/controllers/Articulos.Controller';
+import { getArticulosFiltrados, getArticulosFiltradosXCodigo } from '../database/controllers/Articulos.Controller';
 import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
@@ -26,6 +26,7 @@ const Articulos = ({ route }) => {
   //const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [buscoXCodigo, setBuscoXCodigo]= useState(false);
   var buscoDesde = 2;
   
 
@@ -100,7 +101,16 @@ const Articulos = ({ route }) => {
     //paso 3 filtrar segun configuracion
 
       //paso 1
-      const filteredArticulosBDD = await getArticulosFiltrados(search);
+      
+      let filteredArticulosBDD = [];
+      if (buscoXCodigo) {
+       
+        filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
+      }else{
+        
+        filteredArticulosBDD = await getArticulosFiltrados(search);
+      }
+      // const filteredArticulosBDD = await getArticulosFiltrados(search);
       // console.log("encontrados filtrando ", filteredArticulosBDD[1]);
       //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
       let filteredArticulos = await Promise.all(
@@ -201,6 +211,9 @@ const Articulos = ({ route }) => {
       <View style={styles.viewTitle}> 
         <Text style={styles.title}> Elegir articulos </Text>
       </View>
+        <TouchableOpacity onPress={() => setBuscoXCodigo(!buscoXCodigo)}>
+          <Text style={styles.buscandox} > Buscando por {buscoXCodigo? "codigo":"Descripcion"} </Text> 
+        </TouchableOpacity>
       <Searchbar
         placeholder="Buscar artículo..."
         value={search}
@@ -213,8 +226,10 @@ const Articulos = ({ route }) => {
         <View style={[styles.barraFrecuentes, {alignItems: 'center'}]}>
           <Text >Ver frecuentes</Text>
           <Switch value={mostrarFrecuentes} onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)} />
+          
         </View>
-        )}
+        
+      )}
       </View>
       <View style={styles.itemsContainer} >
           {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : ((articulosList.length > 0)? <RenderList/> : "")}
@@ -246,6 +261,14 @@ const styles = StyleSheet.create({
     marginBottom: -10,
     fontSize: 20, // Tamaño de fuente
     fontWeight: 'bold', // Fuente en negrita
+    color: 'cyan', // Color de texto
+    letterSpacing: 2, // Espaciado entre letras
+  },
+  buscandox: {
+    marginLeft: 10,
+    marginBottom: 6,
+    fontSize: 10, // Tamaño de fuente
+    // fontWeight: 'bold', // Fuente en negrita
     color: 'cyan', // Color de texto
     letterSpacing: 2, // Espaciado entre letras
   },
