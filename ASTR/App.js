@@ -15,6 +15,7 @@ import {AddArticulo} from './src/components/AddArticulo';
 import ListaPreventas from './src/components/ListaPreventas';
 import About from './views/about';
 import UserMenuPPal from './views/UserMenuPPal';
+import ClientesInfo from './src/components/clientes/ClientesInfo';
 
 const Stack = createStackNavigator();
 
@@ -35,6 +36,7 @@ const App = () => {
   const RenderAbout = (props) => <About />;
   const RenderUsuariosScreen = (props) => <Usuarios />;
   const RenderClientesScreen = (props) => <Clientes {...props} setClienteSeleccionado={setClienteSeleccionado} />;
+  const RenderClientesInfoScreen = (props) => <ClientesInfo {...props} />;
   const RenderPreventaScreen = (props) => <Preventa {...props} clienteSeleccionado={clienteSeleccionado} setPreventaSeleccionada={setPreventaSeleccionada} />;
   const RenderEditPreventaScreen = (props) => <EditPreventa {...props} clienteSeleccionado={clienteSeleccionado} setPreventaSeleccionada={setPreventaSeleccionada} />;
   const RenderUserMenuPPal = (props) => <UserMenuPPal {...props}/>;
@@ -53,6 +55,7 @@ const App = () => {
         <Stack.Screen name="AddArticulo" component={RenderAddArticuloScreen} />
         <Stack.Screen name="Usuarios" component={RenderUsuariosScreen} />
         <Stack.Screen name="Clientes" component={RenderClientesScreen} />
+        <Stack.Screen name="ClientesInfo" component={RenderClientesInfoScreen} />
         <Stack.Screen name="Preventa" component={RenderPreventaScreen} />
         <Stack.Screen name="EditPreventa" component={RenderEditPreventaScreen} />
         <Stack.Screen name="UserMenuPPal" component={RenderUserMenuPPal} />

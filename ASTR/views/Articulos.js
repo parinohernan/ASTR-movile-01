@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { Searchbar } from 'react-native-paper';
-import { getArticulosFiltrados, getArticulosFiltradosXCodigo } from '../database/controllers/Articulos.Controller';
+import { getArticulosFiltrados, getArticulosFiltradosXCodigo, getArticulosFrecuentes } from '../database/controllers/Articulos.Controller';
 import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
@@ -43,9 +43,22 @@ const Articulos = ({ route }) => {
         setLoading(false);
       }
     };
+    const fetchDataFrecuentes = async () => {
+      try {
+        setLoading(true);
+        // console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
+        setArticulosList(await buscarAdaptarFiltrar(search));
+        setLoading(false);
+        // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
+      } catch (error) {
+        // console.error('Error al obtener artículos filtrados: ', error);
+        setLoading(false);
+      }
+    };
     // console.log("entre a articulos y quiero cargar");
-    if ((mostrarFrecuentes) && (search.length > buscoDesde-1)) {
-        fetchData();
+    if ((mostrarFrecuentes) /*&& (search.length > 1)*/) {
+        //fetchData();
+        fetchDataFrecuentes();
     }else{
       if (search.length > buscoDesde) { /* no hago busquedas hasta tener 2 letras */
         fetchData();
@@ -88,31 +101,43 @@ const Articulos = ({ route }) => {
       }
     }
 
-    const filtrarBusqueda = async (articulos) =>{
+    const filtrarBusqueda = async (articulos) => {
+      let filtrados = articulos;
+    
       if (mostrarFrecuentes) {
-        return articulos.filter(element => element.frecuente === true);
+        filtrados = filtrados.filter(element => element.frecuente === true);
       }
-      return articulos;
-    }
+    
+      return filtrados.sort((a, b) => {
+        if (a.descripcion.toLowerCase() < b.descripcion.toLowerCase()) return -1;
+        if (a.descripcion.toLowerCase() > b.descripcion.toLowerCase()) return 1;
+        return 0;
+      });
+    };
+    
     
     // console.log("a buscar a bucar", searchOld, search)
     //paso 1 traer articulos de la BDD
     //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
     //paso 3 filtrar segun configuracion
-
+    //paso 4 ordenar alfabeticamente
       //paso 1
       
       let filteredArticulosBDD = [];
-      if (buscoXCodigo) {
-       
-        filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
-      }else{
-        
-        filteredArticulosBDD = await getArticulosFiltrados(search);
+      if (mostrarFrecuentes) {
+        filteredArticulosBDD = await getArticulosFrecuentes(articulosFrecuentes);
+      } else{
+        if (buscoXCodigo) {
+          
+          filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
+        }else{
+          
+          filteredArticulosBDD = await getArticulosFiltrados(search);
+        }
       }
       // const filteredArticulosBDD = await getArticulosFiltrados(search);
       // console.log("encontrados filtrando ", filteredArticulosBDD[1]);
-      //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
+      //paso 2 y 3 agregar cantidad y descuento en preventa actual y si es frecuente
       let filteredArticulos = await Promise.all(
         filteredArticulosBDD.map(async (element) => {
           // const cantidadYDescuento = await cantidadYDescuentoCargados(element.id);
@@ -132,11 +157,8 @@ const Articulos = ({ route }) => {
           return element;
         })
       )
+      //paso 4 ordenar alfabeticamente
       
-      // console.log("encontrados 2 ", filteredArticulos.length);
-      // setFilteredArticulosConCantidad ( filteredArticulos );
-    // }
-    //paso 3
     return await filtrarBusqueda(filteredArticulos);
   }
 
@@ -187,7 +209,7 @@ const Articulos = ({ route }) => {
                         flexDirection: 'row', // Hijos en columna vertical
                         alignItems: 'flex-end', // Alinear hijos a la izquierda
                       }}>
-            <Text style={styles.check}>{item.frecuente? "F": ""}</Text>
+            <Text style={styles.checkF}>{item.frecuente? "F  ": ""}</Text>
             <Text style={styles.check}>{item.seleccionados !== 0? `${item.seleccionados}  ✓` : ""}</Text> 
             {/* <Text style={styles.check}>{item.seleccionados}</Text> */}
            </View>
@@ -276,6 +298,11 @@ const styles = StyleSheet.create({
     fontSize: 16, // Tamaño del check
     color: '#1229f7', // Color del check
     fontWeight: "bold",
+  },
+  checkF: {
+    fontSize: 13, // Tamaño del check
+    color: '#4949f7', // Color del check
+    
   },
   articuloItem: {
     flexDirection: 'column',

@@ -136,17 +136,35 @@ const getArticulosFiltradosXCodigo = (searchWord) => {
   });
 };
 
-  const getArticulos = () => {
-    return new Promise((resolve, reject) => {
-      console.log("traigo los articulos de la base de datos local");
-      db.transaction(tx => {
-        tx.executeSql('SELECT * FROM articulos', [], (_, { rows }) => {
-          resolve(rows._array);
-        }, (_, error) => {
-          reject(error);
-        });
+const getArticulosFrecuentes = (arrayDeCodigos) => {
+  return new Promise((resolve, reject) => {
+    console.log("Obteniendo artículos frecuentes de la base de datos local...");
+
+    // Convierte el array de códigos en una lista separada por comas
+    const placeholders = arrayDeCodigos.map(() => '?').join(',');
+    
+    db.transaction(tx => {
+      tx.executeSql(`SELECT * FROM articulos WHERE id IN (${placeholders})`, arrayDeCodigos, (_, { rows }) => {
+        resolve(rows._array);
+      }, (_, error) => {
+        reject(error);
       });
     });
-  };
+  });
+};
 
-  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite, insertArticulosFrecuentesToSqlite, getArticuloPorCodigo, getArticulosFiltradosXCodigo}
+
+  function getArticulos() {
+  return new Promise((resolve, reject) => {
+    console.log("traigo los articulos de la base de datos local");
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM articulos', [], (_, { rows }) => {
+        resolve(rows._array);
+      }, (_, error) => {
+        reject(error);
+      });
+    });
+  });
+}
+
+  export {insertArticulosFromAPI, getArticulosFiltrados, borrarArticulosDeSqlite, insertArticulosFrecuentesToSqlite, getArticuloPorCodigo, getArticulosFiltradosXCodigo, getArticulosFrecuentes}

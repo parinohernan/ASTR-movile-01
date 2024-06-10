@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
 import { Button } from 'react-native-elements';
 import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from '../src/utils/storageConfigData';
 import axios  from 'axios';
 import VendedoresSelect from '../src/components/VendedoresSelect';
+
 
 // import limpiarDatos from "../database/database"r
 const Configurar = () => {
@@ -67,54 +68,58 @@ const Configurar = () => {
   };
 
   return (
-    <View style={styles.container}>
+
+    <ScrollView contentContainer Style={styles.container}>
       <View style={styles.titulo}>
         <Text style={styles.tituloText}>OSVI</Text>
         <Text style={styles.subtituloText}>panel de configuracion,  {hasInternetAccess? console.log(hasInternetAccess, "tengo internet"): console.log("muerto, no tengo internet")}</Text>
-      <Button title="guardar configuracion" onPress={handleGuardarConfiguracion} buttonStyle={{ maxWidth: 250, marginTop:10 }} /> 
       </View>
       <Text >{hasInternetAccess? "✓":"X"} EndPoint:</Text>  
       <TextInput
-        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 , paddingLeft: 10 }}
         value={configuracion.endPoint}
         onChangeText={(text) => setConfiguracion({ ...configuracion, endPoint: text })}
         />
       <Text style={styles.subtituloText}>{serverData}</Text> 
       <Text>Sucursal:</Text>
       <TextInput
-        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 , paddingLeft: 10}}
         value={configuracion.sucursal}
         onChangeText={(text) => setConfiguracion({ ...configuracion, sucursal: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
         />
       
       <Text>Vendedor:</Text>
-      <View style={{ height: 100, zIndex: 10, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }} >
+      <View style={{ height: 130, zIndex: 10, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }} >
 
         <VendedoresSelect style={{ height: 100, zIndex: 20}} configuracion={configuracion} setConfiguracion={setConfiguracion}/>
-        
+        <TextInput
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, margin: 10 , paddingLeft: 10}}
+        value={configuracion.vendedor}
+        editable={false}
+        keyboardType="numeric"
+      />
     
       </View>
       <Text>Cantidad máxima de artículos:</Text>
       <TextInput
-        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10 , paddingLeft: 10}}
         value={configuracion.cantidadMaximaArticulos}
         onChangeText={(text) => setConfiguracion({ ...configuracion, cantidadMaximaArticulos: text.replace(/[^0-9]/g, '') })}
         keyboardType="numeric"
       />
       <Text>Siguente preventa:</Text>
       <TextInput
-        style={{ height: 40,  borderColor: 'gray', borderWidth: 1, marginBottom: 10 }}
+        style={{ height: 40,  borderColor: 'gray', borderWidth: 1, marginBottom: 10, paddingLeft: 10 }}
         value={String(configuracion.siguientePreventa)}
         onChangeText={(text) => setConfiguracion({ ...configuracion, siguientePreventa: text.replace(/[^0-9]/g, '') })}
         // editable:false
       />
-
-      {/* Botones */}
-
+      <View style={styles.buttonContainer}>
+        <Button title="guardar" onPress={handleGuardarConfiguracion} buttonStyle={{ alignItems: 'center', minWidth:200, maxWidth: 300, borderRadius: 40, borderWidth: 2, borderColor: "black" }} /> 
+      </View>
+    </ScrollView>
       
- 
-    </View>
   );
 };
 const styles = StyleSheet.create({
@@ -123,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop:60,
     // alignItems: 'center',
-    // justifyContent: 'center',
+    justifyContent: 'center',
     padding: 20,
   },
   picker: {
@@ -132,10 +137,12 @@ const styles = StyleSheet.create({
     // zIndex: 712,
   },
   titulo: {
+    paddingTop:60,
     marginBottom: 30,
     alignItems: 'center',
   },
   tituloText: {
+
     fontSize: 32,
     fontWeight: 'bold',
     color: '#2c3e50',
@@ -144,6 +151,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7f8c8d',
   }, 
+  buttonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: 20,
+  },
 })
 
 export default Configurar;

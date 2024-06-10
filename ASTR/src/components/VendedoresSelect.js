@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   buttonVendedores: {
-    // marginRight: 30,
+    alignItems: 'center', maxWidth: 150, borderRadius: 40, borderWidth: 2, borderColor: "black"
   },
   placeholderStyle: {
     color: '#999',

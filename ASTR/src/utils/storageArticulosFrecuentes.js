@@ -3,22 +3,7 @@ import { db } from '../../database/database';
 
 const STORAGE_KEY = '@MyApp:ArticulosFrecuentes';
 
-// Guardar una preventa en AsyncStorage
-// const guardarPreventaEnStorage = async (preventa) => {
-//     console.log("grabando guardarPreventaEnStorage ",preventa);
-//     try {
-//       if (preventa !== null && preventa !== undefined ) {
-//         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preventa));
-//         console.log('Preventa guardada con éxito en Storage');
-//       } else {
-//         console.error('Error: El valor de la preventa es null o undefined');
-//       }
-//     } catch (error) {
-//       console.error('Error al guardar la preventa en AsyncStorage:', error);
-//       throw error;
-//     }
-//   };
-  
+
 //trae una preventa de la BDD al localstorege
 const guardarPreventaEditando = async (preventa) => {
   console.log("transformar ",preventa);

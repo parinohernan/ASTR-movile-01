@@ -30,12 +30,19 @@ const Clientes = () => {
       cliente.id.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleClienteInfoClick = async (cliente) => {
+    console.log('Código del cliente:', cliente);
+    // navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+    navigation.navigate('ClientesInfo', {cliente});
+  };
+
   const handleClientClick = async (cliente) => {
     let preventaNumero = await nextPreventa();
     // console.log('Código del cliente:', cliente.descripcion);
     console.log('Preventa Número:', preventaNumero, cliente);
     let edit= false;
     navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+   
   };
 
   return (
@@ -56,16 +63,27 @@ const Clientes = () => {
         data={filteredClientes}
         keyExtractor={(item) => `${item.id}-${item.descripcion}`}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleClientClick(item)}> 
-            <View style={styles.clienteItem}>
-              <View >
+          <View style={styles.item}>
+              <View style={styles.clienteItem}>
                 {/* <Icon name="user" size={24} color="#626262" /> */}
                 <Text style={styles.text}>{item.descripcion}</Text>
                 <Text style={styles.text}>Lista {item.listaPrecio}</Text>
                 <Text style={styles.codigo}>Codigo {item.id}</Text>
               </View>
+              <View style={styles.BotonesItem} >
+                <TouchableOpacity onPress={() => handleClienteInfoClick(item)}> 
+                <View style={styles.BotonItem}>
+                  <Icon name="info" size={30} color="#112FfF" />
+                </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleClientClick(item)}>
+                  <View style={styles.BotonItem}>
+                    <Icon name="cart-plus" size={30} color="#112FfF" />
+                  </View> 
+                </TouchableOpacity>
+                
+              </View>
             </View>
-          </TouchableOpacity>
         )}
       />
       </View>
@@ -93,11 +111,41 @@ const styles = StyleSheet.create({
     color: 'cyan', // Color de texto
     letterSpacing: 2, // Espaciado entre letras
   },
+  item: {
+    display :'flex',
+    flexDirection: 'row', 
+
+    // alignItems: "center",
+    borderBottomWidth: 1,
+    
+    borderBottomColor: 'black',
+    paddingVertical: 10,
+  },
+  BotonesItem: {
+    width: "40%",
+    flexDirection: 'row', 
+    justifyContent: "space-around",
+    borderWidth: 0,
+    borderColor: 'red',
+    paddingVertical: 10,
+  },
+  BotonItem: {
+    width: 50,
+    backgroundColor: "#2223ff50",
+    borderWidth: 2,
+    // justifyContent: "center",
+    // alignContent:"center",
+    alignItems:"center",
+    borderColor: 'cyan',
+    borderRadius: 40,
+    paddingVertical: 10,
+  },
   clienteItem: {
+    width: "60%",
     // display :'flex',
     // flexDirection: 'row',  
     // alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     borderBottomColor: 'gray',
     paddingVertical: 10,
   },

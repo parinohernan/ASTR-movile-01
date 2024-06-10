@@ -165,7 +165,7 @@ const closeModal = () => {
       <Ingresar/>
       <IngresarRoot/>
       <Text style={styles.vecsionText}>{empresa} - {producto} - {version} </Text>
-      <IngresarUser/>
+      {/* <IngresarUser/> */}
       <Modal
         visible={modalVisible}
         animationType="slide"

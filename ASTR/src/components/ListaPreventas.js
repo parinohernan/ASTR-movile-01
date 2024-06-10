@@ -6,6 +6,7 @@ import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Con
 import { getClientes } from '../../database/controllers/Clientes.Controller';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { empresa, producto } from '../cconstantes/constantes';
+
 const ListaPreventas = () => {
   const navigation = useNavigation();
   const [preventas, setPreventas] = useState([]);
@@ -41,7 +42,18 @@ db.transaction((tx) => {
     }
 });
 };
-  
+
+const ListaPreventasActuales = () =>{
+  return(
+   <View style={styles.containerResults}>
+      <FlatList
+        data={preventas}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.numero.toString()}
+        />
+    </View>
+  )
+}  
 
 const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -134,13 +146,8 @@ const renderItem = ({ item }) => (
         <Text style={styles.tituloText}>{empresa} - {producto}</Text>
         <Text style={styles.tituloText}>Informe de prefacturas</Text>
       </View>
-      <View style={styles.containerResults}>
-        <FlatList
-          data={preventas}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.numero.toString()}
-        />
-      </View>
+
+      <ListaPreventasActuales/>
       <Modal 
         visible={modalVisible}
         animationType="slide"
@@ -277,3 +284,4 @@ const styles = StyleSheet.create({
 });
 
 export default ListaPreventas;
+// export {ListaPrenentasActuales};
