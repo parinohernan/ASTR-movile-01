@@ -114,7 +114,7 @@ const getArticulosFiltrados = (searchWord) => {
     console.log("Obteniendo artículos filtrados de la base de datos local...");
     db.transaction(tx => {
       tx.executeSql('SELECT * FROM articulos WHERE descripcion LIKE ?', [`%${searchWord}%`], (_, { rows }) => {
-        // console.log("rows._array 91 art controler",rows._array);
+        // console.log("rows._array 117 art controler",rows._array);
         resolve(rows._array);
       }, (_, error) => {
         reject(error);
@@ -122,6 +122,7 @@ const getArticulosFiltrados = (searchWord) => {
     });
   });
 };
+
 const getArticulosFiltradosXCodigo = (searchWord) => {
   return new Promise((resolve, reject) => {
     console.log("Obteniendo artículos cor codigo filtrados de la base de datos local...");

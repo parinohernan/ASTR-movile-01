@@ -13,7 +13,7 @@ import Configurar from './views/Configurar';
 import Usuarios from './views/Usuarios';
 import {AddArticulo} from './src/components/AddArticulo';
 import ListaPreventas from './src/components/ListaPreventas';
-import About from './views/about';
+// import About from './views/about';
 import UserMenuPPal from './views/UserMenuPPal';
 import ClientesInfo from './src/components/clientes/ClientesInfo';
 
@@ -33,7 +33,7 @@ const App = () => {
   const RenderConfigurarScreen = (props) => <Configurar />;
   const RenderArticulosScreen = (props) => <Articulos {...props} />;
   const RenderAddArticuloScreen = (props) => <AddArticulo {...props} />;
-  const RenderAbout = (props) => <About />;
+  // const RenderAbout = (props) => <About />;
   const RenderUsuariosScreen = (props) => <Usuarios />;
   const RenderClientesScreen = (props) => <Clientes {...props} setClienteSeleccionado={setClienteSeleccionado} />;
   const RenderClientesInfoScreen = (props) => <ClientesInfo {...props} />;

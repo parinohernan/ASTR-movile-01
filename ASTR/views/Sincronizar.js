@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Switch, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Button } from 'react-native-elements';
-import { /*actualizarClientes, actualizarVendedores, actualizarArticulos,*/ actualizarAPP } from '../handlers/actualizarApp';
+import { actualizarAPP, errorSincronizando } from '../handlers/actualizarApp';
 import ConsoleComponent from '../src/components/ConsoleComponent';
 import { empresa, producto } from '../src/cconstantes/constantes';
-// import { initDatabase } from '../handlers/actualizarApp';
+import checkServerHandler from '../src/utils/checkServerHandler';
+import { limpiarDatos } from '../database/database';
 
 const Sincronizar = () => {
   const [actualizarDatos, setActualizarDatos] = useState(false);
@@ -12,14 +13,53 @@ const Sincronizar = () => {
 
 
   const handleEnviarPreventas = async () => {
-    await actualizarAPP(actualizarDatos, logs, setLogs);
+    setLogs (["Conectando al servidor"]);
+    if (await checkServerHandler()) {
+      await actualizarAPP(actualizarDatos, logs, setLogs);
+    }
+    else{
+      errorSincronizando( logs, setLogs);
+      console.log("error ");
+    }
+
+  };
+  
+  const handleLimpiarDatos = async () => {
+
+      Alert.alert(
+        'Confirmar eliminación de todas las preventas',
+        '¿Está seguro que desea borrar TODO ?',
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+          },
+          {
+            text: 'Borrar',
+            style: 'destructive',
+            onPress: async () => {
+              // setLogs (["Borrando tablas"]);
+                  if (await checkServerHandler()) {
+                    await limpiarDatos( logs, setLogs);
+                  }
+                  else{
+                    errorSincronizando( logs, setLogs);
+                    console.log("error ");
+                  }
+              // closeModal();
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+
+    
 
   };
 
 
   return (
     <ScrollView style={styles.container}>
-      {/* Switch para actualizar datos */}
       <View style={styles.titulo}>
       <Text style={styles.tituloText}>{empresa} - {producto}</Text>
         <Text style={styles.subtituloText}>Sincronizacion</Text>
@@ -28,12 +68,15 @@ const Sincronizar = () => {
         <Button title="Sincronizar" onPress={handleEnviarPreventas} buttonStyle={{ margin: 10, width: "70%", backgroundColor:'blue', borderWidth: 3 , borderRadius: 20 }}/>
         <Text style={{ flex: 1 }}>Activar Actualizar Datos</Text>
         <Switch value={actualizarDatos} onValueChange={() => setActualizarDatos(!actualizarDatos)} />
-        {/* <Text style={styles.explanationText}>Si quiere solo enviar las preventas no es necesario que active Actualizar Datos.</Text> */}
       </View>
-      {/* <ConsoleComponent logs="logs mostrar" /> */}
       <ConsoleComponent logs={logs} />
-      <Text style={styles.explanationText}>* Si quiere solo enviar las preventas no es necesario que active Actualizar Datos.</Text>
-      <Text style={styles.explanationText}>* Una vez enviadad las preventas no quedan guardadas en su telefono.</Text>
+      <View style={{  flexDirection: 'row' }}>
+        <Button title="borrar datos" onPress={handleLimpiarDatos} buttonStyle={{ margin: 15, width: "auto", backgroundColor:'#991111', borderWidth: 1 , borderRadius: 20 }}/>
+        <Button title="borrar logs" onPress={()=>{setLogs([])}} buttonStyle={{ margin: 15, width: "auto", backgroundColor:'green', borderWidth: 1 , borderRadius: 20 }}/>
+      </View >
+      {/* <View style={styles.explanation}>
+        <Text style={styles.explanationText}>* En esta version solo puede enviar las preventas una a una desde informes.</Text>
+      </View> */}
     </ScrollView>
   );
 };
@@ -43,21 +86,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#96ddf5',
     paddingTop:60,
     marginTop:-40,
-    // alignItems: 'center',
-    // justifyContent: 'center',
     padding: 10,
   },
-  // titulo: {
-  //     marginBottom: 30,
-  //     alignItems: 'center',
-  //     backgroundColor: '#0c2f3c',
-  //     padding: 20,
-  //   },
     titulo: {
       width: '100%',
       margin: 0,
       padding: 10,
-      // border: 10,
       borderTopWidth: 2,
       borderTopRightRadius: 30,
       borderBottomRightRadius: 60,
@@ -65,23 +99,22 @@ const styles = StyleSheet.create({
       borderColor: "#30bced",
       borderWidth: 10,
     },
-    // titulo: {
-    //   marginBottom: 30,
-    //   alignItems: 'center',
-    //   backgroundColor: '#0c2f3c',
-    //   // width: '100%',
-    //   paddingLeft: 10,
-    //   paddingLeft: -50,
-    // },
     tituloText: {
       fontSize: 32,
       fontWeight: 'bold',
       color: "cyan",
-    // color: '#2c3e50',
   },
   subtituloText: {
     fontSize: 16,
     color: 'cyan',
   }, 
+  explanationText: {
+    fontSize: 16,
+    color: 'red',
+    fontWeight: ''
+  },
+  explanation: {
+    paddingHorizontal:20
+  }
 })
 export default Sincronizar;

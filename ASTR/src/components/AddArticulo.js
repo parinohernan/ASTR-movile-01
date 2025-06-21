@@ -64,7 +64,7 @@ const AddArticulo = ({route}) => {
 
   const articuloConDetalles = {
     ...articulo,
-    cantidad: parseInt(cantidad),
+    cantidad: parseFloat(cantidad),
     descuento: parseInt(descuento),
     precioTotal: parseFloat(precioTotal),
   };
@@ -83,7 +83,7 @@ const AddArticulo = ({route}) => {
   }
 
   const agregarItemPreventaStorage = async() => {
-    // console.log("agregarItemPreventaStorage", articuloConDetalles);
+    console.log("agregarItemPreventaStorage", articuloConDetalles);
     const preventa = await obtenerPreventaDeStorage();
     preventa.push(articuloConDetalles);
     guardarPreventaEnStorage(preventa);
@@ -122,9 +122,39 @@ const AddArticulo = ({route}) => {
     return;
   };
 
+  // const handleCantidad = (text) => {
+  //   // setCantidad(text.replace(/[^0-9]/g, ''))
+  //   setCantidad(text);
+  //   console.log("cantidad .. ",cantidad, text);
+  // }
   const handleCantidad = (text) => {
-    setCantidad(text.replace(/[^0-9]/g, ''))
-  }
+    // Permite solo números y un solo punto decimal
+    const newText = text.replace(/[^0-9.]/g, '');
+
+    // Asegura que solo haya un punto decimal
+    if (newText.split('.').length > 2) {
+      setCantidad(newText.slice(0, -1)); // Elimina el último carácter si hay más de un punto
+    } else {
+      setCantidad(newText);
+    }
+  };
+
+  const formatCantidad = (text) => {
+    if (text === '') return '';
+    
+    // Agrega .00 si el número es un entero
+    if (!text.includes('.')) {
+      return `${text}.00`;
+    }
+    
+    // Asegura dos dígitos después del punto decimal
+    const parts = text.split('.');
+    if (parts[1].length === 1) {
+      return `${parts[0]}.${parts[1]}0`;
+    }
+
+    return text;
+  };
 
   const handleFocusCant = (text) => {
     setCantidad("");
@@ -182,6 +212,7 @@ const AddArticulo = ({route}) => {
         onFocus={handleFocusCant}
         onChangeText={handleCantidad}
         onEndEditing={handleEnd}
+        onBlur={() => setCantidad(formatCantidad(cantidad))}
         value={String(cantidad)}
         keyboardType="numeric"
       />
@@ -192,6 +223,7 @@ const AddArticulo = ({route}) => {
         onFocus={handleFocusDescuento}
         onChangeText={handleDescuento}
         onEndEditing={handleEnd}
+        // onBlur={() => setDescuento(formatCantidad(descuento))}
         value={String(descuento)}
         keyboardType="numeric"
       />

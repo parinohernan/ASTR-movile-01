@@ -8,32 +8,32 @@ import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.
 import { configuracionEndPoint } from '../src/utils/storageConfigData';
 
 const handleLogs = (logs, mensaje, setLogs) => {
-  console.log("L M ",mensaje);
+  console.log("handleLogs actualizaAPP ",mensaje);
   setLogs( [...logs, mensaje]);
   return [...logs, mensaje];
 };
 
-const actualizarVendedores = async (setLogs) => {
+const actualizarVendedores = async (logs, setLogs) => {
     console.log("Trayendo Vendedores...");
-    let logs=[];
+    // let logs=[];
     let endPoint = await configuracionEndPoint() + 'vendedores'
     
     try {
       const response = await axios.get(endPoint);
       logs = handleLogs(logs,("actualizando vendedores..."),setLogs);
       const data = response.data;
-      //console.log("data",data);
+      
       // Inserta los usuarios desde la API a la base de datos
-      await insertUsuariosFromAPI(data, setLogs);
+      await insertUsuariosFromAPI(data, logs, setLogs);
     } catch (error) {
       console.log(error);
       logs = handleLogs(logs,('Error al obtener o insertar vendedores: '),setLogs);
     }
   };
 
-const actualizarClientes = async (setLogs) => {
+const actualizarClientes = async (logs, setLogs) => {
     console.log("Trayendo Clientes...");
-    let logs=[];
+    // let logs=[];
     try {
     const response = await axios.get(await configuracionEndPoint() + 'clientes');
     logs = handleLogs(logs,("actualizando clientes..."),setLogs);
@@ -46,9 +46,9 @@ const actualizarClientes = async (setLogs) => {
 }
 };
 
-const actualizarArticulos = async (setLogs) => {
+const actualizarArticulos = async (logs, setLogs) => {
     console.log("Trayendo Articulos...");
-    let logs=[];
+    // let logs=[];
     try {
         const response = await axios.get(await configuracionEndPoint() + 'articulos');
         logs = handleLogs(logs,("actualizando articulos..."),setLogs);
@@ -76,7 +76,7 @@ const actualizarArticulos = async (setLogs) => {
 };
 
 const actualizarPreventas = async (preventasJSON, mensajes) => {
-  console.log("!!actiaApp 78 :",await configuracionEndPoint() + 'preventas', preventasJSON);  
+  // console.log("!!actiaApp 78 :", await configuracionEndPoint() + 'preventas', preventasJSON);  
   try {
         const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
     } catch (error) {
@@ -86,9 +86,22 @@ const actualizarPreventas = async (preventasJSON, mensajes) => {
     }
 }
 
-const enviarPreventas = async (setLogs) => {
+//envia solo una preventa
+const sincronizarPreventa = async (preventaNumero, cliente) => {
+  // console.log("sincronizando preventa",preventaNumero, cliente);
+  let preventas = await preventasBDDToArray();
+  let preventaJSON= preventas.filter(e => e.DocumentoNumero == preventaNumero); 
+  console.log("enviando preventa",preventaJSON[0]);
+  let mensajes = {hayErrores: false,
+    mensaje: "No hay errores."};    
+    await actualizarPreventas(preventaJSON[0], mensajes);
+  console.log("errores",mensajes);
+  return !mensajes.hayErrores
+};
+
+const enviarPreventas = async (logs, setLogs) => {
     let preventas = [];
-    let logs = [];
+    // let logs = [];
     let mensajes = {hayErrores: false,
                     mensaje: "No hay errores."};    
     try {
@@ -123,24 +136,27 @@ const enviarPreventas = async (setLogs) => {
   
   };
 
-  const actualizarAPP = async (esCompleta, logs, setLogs) => {
-    // let logs= [];
-    esCompleta 
-    ? (
-      console.log("Sincronizando todos los datos."),
-      logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs),
-      await initDatabase(setLogs),
-      await actualizarVendedores(setLogs),
-      await actualizarClientes(setLogs),
-      await borrarArticulosDeSqlite(),
-      await actualizarArticulos(setLogs),
-      await enviarPreventas(setLogs),
-      logs = handleLogs(logs, "Sincronizacion completa.", setLogs)
-      )
-      : ( await enviarPreventas(setLogs)
-      
-      );
+  const errorSincronizando = (logs, setLogs) =>{
+    logs = handleLogs(logs, "ERROR CONECTANDO AL SERVIDOR...", setLogs)
   }
+
+  const actualizarAPP = async (esCompleta, logs, setLogs) => {
+    console.log(logs);
+    if (esCompleta) {
+      logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs);
+      await initDatabase(logs, setLogs);
+      //await actualizarVendedores(logs, setLogs);
+      await actualizarClientes(logs, setLogs);
+      await borrarArticulosDeSqlite(); 
+      await actualizarArticulos(logs, setLogs);
+      // await enviarPreventas(logs, setLogs);
+      logs = handleLogs(logs, "Sincronización completa.", setLogs);
+    } else {
+      logs = handleLogs(logs, "SOLO SE ENVIAN LAS PREVENTAS SIN ACTUALIZAR DATOS", setLogs);
+      await enviarPreventas(logs, setLogs);
+    }
+  }
+  
 
   const getArticulosFrecuentesDesdeAPI = async (cliente) => {
     // Obtener la fecha actual
@@ -171,33 +187,17 @@ const enviarPreventas = async (setLogs) => {
     }
   };  
 
-  const getFacturasC = async (cliente) => {
-    // Obtener la fecha actual
-    const today = new Date();
-    const year = today.getFullYear();
-    // JavaScript cuenta los meses desde 0 (enero es 0, diciembre es 11)
-    const month = today.getMonth() + 1;
-    const day = today.getDate();
-    
-    // Formatear la fecha actual en el formato AAAA-MM-DD
-    const formattedToday = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-  
-    // Obtener la fecha de un año atrás
-    const oneYearAgo = new Date(year -1, month , day); // Restar 1 al año actual
-  
-    // Formatear la fecha de un año atrás en el formato AAAA-MM-DD
-    const formattedOneYearAgo = `${oneYearAgo.getFullYear()}-${(oneYearAgo.getMonth() + 1).toString().padStart(2, '0')}-${oneYearAgo.getDate().toString().padStart(2, '0')}`;
-    
-    console.log("Trayendo Articulos frecuentes...");
+  const getInformeOnline = async (cliente) => {
+    console.log("cargando documentos de ",cliente);
    
     try {
-      const response = await axios.get(await configuracionEndPoint() + "articulosfrecuentes?clienteCodigo=" + cliente + "&fechaDesde=" + formattedOneYearAgo + "&fechaHasta=" + formattedToday);
+      const response = await axios.get(await configuracionEndPoint() + "clientesdeuda?clienteCodigo=" + cliente );
       const data = response.data;
-      console.log(data);
+      // console.log(data);
       return data;
     } catch (error) {
       console.log('Error al obtener artículos frecuentes ', error);
     }
   };  
 
-export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI};
+export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI, getInformeOnline, sincronizarPreventa, errorSincronizando};

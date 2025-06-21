@@ -1,0 +1,4 @@
+* se pueden cargar fracciones de articulos (ej: 0.5 caja de alfajor chocolate)
+* se pueden enviar las preventas de a 1. desde informes.(esto permite tener mayor control en caso de errores de sincronizacion)
+* se muestran los articulos alfabeticamente.
+* se pueden ver los articulos frecuentes (solo online).

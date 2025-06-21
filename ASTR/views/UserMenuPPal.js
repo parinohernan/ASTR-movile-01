@@ -1,10 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet,Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import NetInfo from '@react-native-community/netinfo';
+import checkServerHandler from '../src/utils/checkServerHandler';
 
-const UserMenuPPal = ({route}) => {
-  const {params} = route;
+const UserMenuPPal = ({ route }) => {
+  const { params } = route;
   const vendedor = params.vendedor;
   const user = {
     vendedor: vendedor.descripcion,
@@ -12,17 +14,34 @@ const UserMenuPPal = ({route}) => {
     id: vendedor.id,
   };
   const navigation = useNavigation();
-  // console.log("Usuario",params);
   const menuOptions = [
     { name: 'Preventa', icon: 'clipboard-check' },
-    // { name: 'Acerca de', icon: 'AppShortcut' },
-    // { name: 'Cobros', icon: 'account-group' },
     { name: 'Informes', icon: 'file-chart' },
     { name: 'Sincronizar', icon: 'sync' },
   ];
+  const [isServerOnline, setIsServerOnline] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+
+  const verServer = async () => {
+    const serverStatus = await checkServerHandler();
+    setIsServerOnline(serverStatus);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const unsubscribe = NetInfo.addEventListener(state => {
+        setIsConnected(state.isConnected);
+        verServer();
+      });
+
+      // Cleanup function
+      return () => {
+        unsubscribe();
+      };
+    }, [])
+  );
 
   const handleOptionPress = (option) => {
-    // Implementar lógica según la opción seleccionada
     console.log(`Seleccionaste: ${option.name}`);
     switch (option.name) {
       case 'Preventa':
@@ -34,7 +53,6 @@ const UserMenuPPal = ({route}) => {
       case 'Sincronizar':
         navigation.navigate('Sincronizar', {});
         break;
-      // Agrega otros casos según sea necesario
       default:
         break;
     }
@@ -46,26 +64,44 @@ const UserMenuPPal = ({route}) => {
         <Text style={styles.tituloText}>Vendedor </Text>
         <Text style={styles.tituloText}>{user.vendedor}</Text>
       </View>
-      <View>
-      {/* <Image
-          source={require('../assets/images/adaptive-icon.png')}
+      <View style={styles.logoContainer}>
+        <Image
+          source={require('../assets/images/logo.png')}
           style={styles.logo} // Establece el ancho de la imagen
           resizeMode="contain" // Ajusta la imagen proporcionalmente dentro de su contenedor
-        />*/}
-      </View> 
+        />
+      </View>
+      <View style={styles.connectionStatus}>
+        <MaterialCommunityIcons
+          name={isConnected ? 'wifi' : 'wifi-off'}
+          size={24}
+          color={isConnected ? 'green' : 'red'}
+        />
+        <Text style={{ color: isConnected ? 'green' : 'red' }}>
+          {isConnected ? 'Conectado' : 'Sin conexión'}
+        </Text>
+        <MaterialCommunityIcons
+          name={isServerOnline ? 'check-circle' : 'alert-circle' }
+          size={24}
+          color={isServerOnline ? 'green' : 'red'}
+        />
+        <Text style={{ color: isServerOnline ? 'green' : 'red' }}>
+          {isServerOnline ? 'Servidor online' : 'Servidor Offline'}
+        </Text>
+      </View>
       <View style={styles.bottonContainer}>
-      {menuOptions.map((option, index) => (
-        <TouchableOpacity
-        key={index}
-        style={styles.menuItem}
-        onPress={() => handleOptionPress(option)}
-        >
-          <View style={styles.menuItem}>
-          <MaterialCommunityIcons name={option.icon} size={50} color="cyan" />
-          <Text style={styles.menuItemText}>{option.name}</Text>
-          </View>
-        </TouchableOpacity>
-      ))}
+        {menuOptions.map((option, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.menuItem}
+            onPress={() => handleOptionPress(option)}
+          >
+            <View style={styles.menuItem}>
+              <MaterialCommunityIcons name={option.icon} size={50} color="cyan" />
+              <Text style={styles.menuItemText}>{option.name}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -78,8 +114,6 @@ const styles = StyleSheet.create({
     flexWrap: 'nowrap',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // width: "100%",
-    // padding: 20,
     marginTop: -40,
     backgroundColor: '#96ddf5',
     paddingTop:60,
@@ -87,15 +121,12 @@ const styles = StyleSheet.create({
   container222: {
     flex: 1,
     backgroundColor: '#96ddf5',
-    // alignItems: 'center',
-    // justifyContent: 'center',
     padding: 10,
   },
   titulo: {
     width: '100%',
     margin: 0,
     padding: 10,
-    // border: 10,
     borderTopWidth: 2,
     borderTopRightRadius: 30,
     borderBottomRightRadius: 60,
@@ -107,14 +138,16 @@ const styles = StyleSheet.create({
     margin: 0,
     padding: 0,
     color: '#96ddf5',
-    // border: 1,
     borderColor: '#96ddf5',
-    // backgroundColor: '#0c2f3c',
   },
   logo: {
-    // marginBottom: 20,
     flex: 1,
-    width: 100
+    width: "100%"
+  },
+  logoContainer: {
+    flex: 1,
+    width: 280,
+    height: 200,
   },
   tituloText: {
     alignContent: "center",
@@ -122,19 +155,14 @@ const styles = StyleSheet.create({
     color: '#c9eefa',
   },
   menuItem :{
-    // flex:1,
-    // alignContent: 'space-around',
-    // justifyContent:'flex-start',
-    // alignItems:'center,',
   },
+
   menuItemText: {
     color: "#c9eefa",
   },
 
   bottonContainer: {
-    // flex: 1,
     flexDirection: 'row',
-    // flexWrap: 'nowrap',
     width: "100%",
     justifyContent: 'space-between',
     alignItems: 'center',

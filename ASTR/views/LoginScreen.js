@@ -1,20 +1,24 @@
-import React, {useEffect, useState} from 'react';
-import { View, Text, Image, StyleSheet, Modal, StatusBar } from 'react-native';
-import { Kaede } from 'react-native-textinput-effects';
-import { Button } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
-import { getUsuarios } from '../database/controllers/Usuarios.controler';
-import { version, empresa, producto } from '../src/cconstantes/constantes';
+import React, { useEffect, useState } from "react";
+import { View, Text, Image, StyleSheet, Modal, StatusBar } from "react-native";
+import { Kaede } from "react-native-textinput-effects";
+import { Button } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
+import {
+  getUsuarios,
+  insertUsuariosPrueba,
+} from "../database/controllers/Usuarios.controler";
+import { initDatabase } from "../database/database";
+import { version, empresa, producto } from "../src/cconstantes/constantes";
 
 // import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
 
-  const [form, setForm]= useState({
-    vendedor:"",
-    password:"",
-  })
+  const [form, setForm] = useState({
+    vendedor: "",
+    password: "",
+  });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [mostrar, setMostrar] = useState(false);
@@ -23,167 +27,201 @@ const LoginScreen = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      
       try {
+        // Inicializar la base de datos primero
+        await initDatabase([], () => {});
+
         const usuariosFromDB = await getUsuarios();
-        setUsuarios(usuariosFromDB);
+
+        // Si no hay usuarios, insertar usuarios de prueba
+        if (usuariosFromDB.length === 0) {
+          console.log(
+            "No hay usuarios en la base de datos, insertando usuarios de prueba..."
+          );
+          await insertUsuariosPrueba();
+          const usuariosActualizados = await getUsuarios();
+          setUsuarios(usuariosActualizados);
+        } else {
+          setUsuarios(usuariosFromDB);
+        }
+
         isAuhoriced();
       } catch (error) {
-        console.error('Error al obtener o insertar usuarios: ', error);
+        console.error("Error al obtener o insertar usuarios: ", error);
       }
     };
     fetchData();
   }, [form]);
 
-  useEffect (() => {
+  useEffect(() => {
     setMostrar(form.vendedor && form.password.length > 3);
-  },[form]);
+  }, [form]);
 
   const isAuhoriced = () => {
-    
-    
     //busco si coinside
     for (let i = 0; i < usuarios.length; i++) {
       const element = usuarios[i];
-      if ((form.password == element.clave) && (form.vendedor == element.id)) {
+      if (form.password == element.clave && form.vendedor == element.id) {
         console.log("Usuario ", element, " log", form);
         //seteo el vendedor
-        setVendedor(
-          {
-            clave: form.password,
-            id: form.vendedor,
-            descripcion: element.descripcion,
-          })
+        setVendedor({
+          clave: form.password,
+          id: form.vendedor,
+          descripcion: element.descripcion,
+        });
         console.log("vendedor", vendedor);
         return true;
       }
-      
     }
     return false;
-  }
+  };
 
   const handleVendedor = (text) => {
     console.log(text);
-    setForm({vendedor: text, password: form.password})
-  }
+    setForm({ vendedor: text, password: form.password });
+  };
   const handlePassword = (text) => {
     console.log(text);
-    setForm({vendedor: form.vendedor, password: text})
-  }
-
+    setForm({ vendedor: form.vendedor, password: text });
+  };
 
   const handleIngresar = () => {
-   
-    if ((form.vendedor.toLocaleLowerCase() == "root") && form.password.toLocaleLowerCase() === "root" ) {
+    if (
+      form.vendedor.toLocaleLowerCase() == "root" &&
+      form.password.toLocaleLowerCase() === "root"
+    ) {
       console.log("ingresando a aplicacion", form);
-      navigation.navigate('Home', {form});
+      navigation.navigate("Home", { form });
       return;
-    }else{
+    } else {
       if (isAuhoriced()) {
-        console.log("Vendedor ",vendedor);
+        console.log("Vendedor ", vendedor);
         // navigation.navigate('Preventa', { preventaNumero, cliente });
-        navigation.navigate('UserMenuPPal', {vendedor});
-      return;
+        navigation.navigate("UserMenuPPal", { vendedor });
+        return;
       }
       setModalVisible(true);
     }
-  }
+  };
 
-const Ingresar = () => {
+  const Ingresar = () => {
+    return (
+      <View style={styles.boton}>
+        <Button
+          theme={{ colors: { primary: "blue" } }}
+          mode={mostrar ? "contained" : "disabled"}
+          // onPress={() => handleIngresar()}
+          onPress={mostrar ? () => handleIngresar() : console.log("")}
+        >
+          Ingresar
+        </Button>
+      </View>
+    );
+  };
 
-  return (
-    <View style={styles.boton}>
-      <Button theme={{ colors: { primary: 'blue' } }} 
-      mode={mostrar ? 'contained' : 'disabled'} 
-      // onPress={() => handleIngresar()}
-      onPress={mostrar ? (() => handleIngresar()) : (console.log(""))}>
-        Ingresar
-      </Button>
-    </View>
-  );
-};
+  const IngresarRoot = () => {
+    return (
+      <View>
+        <Button
+          theme={{ colors: { primary: "#073a70" } }}
+          // onPress={() => handleIngresar()}
+          onPress={() => navigation.navigate("Home", { form })}
+        >
+          CONFIGURAR
+        </Button>
+      </View>
+    );
+  };
+  const IngresarUser = () => {
+    // setForm({vendedor: "1", password: "1234"})
+    let vendedor = {
+      clave: "1234",
+      id: "1",
+      descripcion: "Hernan Parino",
+    };
+    return (
+      <View>
+        <Button
+          theme={{ colors: { primary: "white" } }}
+          // onPress={() => handleIngresar()}
+          onPress={() => navigation.navigate("UserMenuPPal", { vendedor })}
+        >
+          Ingresar User
+        </Button>
+      </View>
+    );
+  };
 
-const IngresarRoot = () => {
- 
-  return (
-    <View >
-      <Button theme={{ colors: { primary: '#073a70' } }}  
-      // onPress={() => handleIngresar()}
-      onPress={()=>navigation.navigate('Home', {form})}>
-        CONFIGURAR
-      </Button>
-    </View>
-  );
-};
-const IngresarUser = () => {
-  // setForm({vendedor: "1", password: "1234"})
-  let vendedor={
-    clave: "1234",
-    id: "1",
-    descripcion: "Hernan Parino",
-  }
-  return (
-    <View>
-      <Button theme={{ colors: { primary: 'white' } }} 
-      // onPress={() => handleIngresar()}
-      onPress={()=>navigation.navigate('UserMenuPPal', {vendedor})}>
-        Ingresar User
-      </Button>
-    </View>
-  );
-};
-
-const closeModal = () => {
-  setModalVisible(false);
-  // setSelectedItem(null);
-};
+  const closeModal = () => {
+    setModalVisible(false);
+    // setSelectedItem(null);
+  };
   return (
     <View style={styles.container}>
       <StatusBar hidden />
-      <Image source={require('../assets/images/icon1.png')} style={styles.logo} />
+      <Image
+        source={require("../assets/images/logo.png")}
+        style={styles.logo}
+      />
       <Text style={styles.logoText}>Bienvenido</Text>
-     
-      <Kaede style={styles.input}
-        label={'Vendedor'}
+
+      <Kaede
+        style={styles.input}
+        label={"Vendedor"}
         // this is used as active and passive border color
         inputPadding={16}
         labelHeight={18}
-        inputStyle={{ backgroundColor: '#FFFFFF75', color: '#112233' }}
-        labelStyle={{ color: '#112233' }}
-        onChangeText = { ( texto )  =>  {  handleVendedor(texto)  } }
-        keyboardType='numeric'
+        inputStyle={{ backgroundColor: "#FFFFFF75", color: "#112233" }}
+        labelStyle={{ color: "#112233" }}
+        onChangeText={(texto) => {
+          handleVendedor(texto);
+        }}
+        keyboardType="numeric"
       />
-      <Kaede style={styles.input}
-        label={'Contraseña'}
+      <Kaede
+        style={styles.input}
+        label={"Contraseña"}
         secureTextEntry={true}
         // this is used as active and passive border color
-        inputStyle={{ backgroundColor: '#FFFFFF75', color: '#112233' }}
-        labelStyle={{ color: '#112233'}}
-        onChangeText = { ( texto )  =>  {  handlePassword(texto)  } }
-        keyboardType='numeric'
-        />
-      <Ingresar/>
-      <IngresarRoot/>
-      <Text style={styles.vecsionText}>{empresa} - {producto} - {version} </Text>
+        inputStyle={{ backgroundColor: "#FFFFFF75", color: "#112233" }}
+        labelStyle={{ color: "#112233" }}
+        onChangeText={(texto) => {
+          handlePassword(texto);
+        }}
+        keyboardType="numeric"
+      />
+      <Ingresar />
+      <IngresarRoot />
+      <Text style={styles.vecsionText}>
+        {empresa} - {producto} - {version}{" "}
+      </Text>
       {/* <IngresarUser/> */}
       <Modal
         visible={modalVisible}
         animationType="slide"
         transparent={true}
         onRequestClose={closeModal}
+      >
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+          <View
+            style={{ backgroundColor: "white", padding: 20, borderRadius: 10 }}
+          >
             {/* <Text>Opciones para Nº {selectedItem?.numero}</Text>
             <Button title="Borrar" onPress={() => handleAction('Borrar')} />
           <Button title="Editar" onPress={() => handleAction('Editar')} /> */}
-           <Text>Error. usuario o password es incorrecta</Text>
-            <Button theme={{ colors: { primary: 'red' }}}  mode= 'contained'  onPress={() => closeModal()}>
+            <Text>Error. usuario o password es incorrecta</Text>
+            <Button
+              theme={{ colors: { primary: "red" } }}
+              mode="contained"
+              onPress={() => closeModal()}
+            >
               cerrar
             </Button>
           </View>
         </View>
-      </Modal> 
+      </Modal>
     </View>
   );
 };
@@ -191,29 +229,29 @@ const closeModal = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#30bced'
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#30bced",
   },
   logo: {
     width: 200,
     height: 200,
-    borderRadius: 100,
+    borderRadius: 30,
   },
   logoText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 10,
   },
   logoText: {
     fontSize: 10,
-    
+
     marginVertical: 10,
   },
   input: {
     // backgroundColor: "#EEEEEE",
     // borderColor: "red",
-    width: '100%',
+    width: "100%",
     // height: 45,
   },
   boton: {

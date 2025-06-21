@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa } from '../src/utils/storageConfigData';
 import { Searchbar } from 'react-native-paper';
+import checkServerHandler from '../src/utils/checkServerHandler';
 
 const Clientes = () => {
   const [search, setSearch] = useState('');
   const [clientes, setClientes] = useState([]);
   const navigation = useNavigation();
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,15 +33,18 @@ const Clientes = () => {
   );
 
   const handleClienteInfoClick = async (cliente) => {
-    console.log('Código del cliente:', cliente);
-    // navigation.navigate('Preventa', { preventaNumero, cliente, edit });
-    navigation.navigate('ClientesInfo', {cliente});
+    setIsButtonDisabled(true);
+    const hayInternet = await checkServerHandler();
+    if (hayInternet) {
+      navigation.navigate('ClientesInfo', {cliente});
+    }else{
+      console.log("no hay acceso al servidor");
+    }
+    setIsButtonDisabled(false);
   };
 
   const handleClientClick = async (cliente) => {
-    let preventaNumero = await nextPreventa();
-    // console.log('Código del cliente:', cliente.descripcion);
-    console.log('Preventa Número:', preventaNumero, cliente);
+    let preventaNumero = await nextPreventa(); 
     let edit= false;
     navigation.navigate('Preventa', { preventaNumero, cliente, edit });
    
@@ -58,27 +63,27 @@ const Clientes = () => {
       />
       </View>
       <View style={styles.itemsContainer}  >
-
+    
       <FlatList 
         data={filteredClientes}
         keyExtractor={(item) => `${item.id}-${item.descripcion}`}
         renderItem={({ item }) => (
           <View style={styles.item}>
               <View style={styles.clienteItem}>
-                {/* <Icon name="user" size={24} color="#626262" /> */}
                 <Text style={styles.text}>{item.descripcion}</Text>
                 <Text style={styles.text}>Lista {item.listaPrecio}</Text>
                 <Text style={styles.codigo}>Codigo {item.id}</Text>
               </View>
               <View style={styles.BotonesItem} >
-                <TouchableOpacity onPress={() => handleClienteInfoClick(item)}> 
-                <View style={styles.BotonItem}>
-                  <Icon name="info" size={30} color="#112FfF" />
-                </View>
+                <TouchableOpacity onPress={() => handleClienteInfoClick(item)} disabled={isButtonDisabled}> 
+                  <View style={styles.BotonItem}>
+                    <Icon name="info" size={30} color="#c9eefa" />
+                  </View>
                 </TouchableOpacity>
+        
                 <TouchableOpacity onPress={() => handleClientClick(item)}>
                   <View style={styles.BotonItem}>
-                    <Icon name="cart-plus" size={30} color="#112FfF" />
+                    <Icon name="cart-plus" size={30} color="#c9eefa" />
                   </View> 
                 </TouchableOpacity>
                 
@@ -125,20 +130,20 @@ const styles = StyleSheet.create({
     width: "40%",
     flexDirection: 'row', 
     justifyContent: "space-around",
-    borderWidth: 0,
-    borderColor: 'red',
-    paddingVertical: 10,
+    paddingHorizontal: 0,
   },
   BotonItem: {
     width: 50,
-    backgroundColor: "#2223ff50",
-    borderWidth: 2,
+    backgroundColor: "#0c2f3c",
+    borderWidth: 1,
     // justifyContent: "center",
     // alignContent:"center",
     alignItems:"center",
-    borderColor: 'cyan',
-    borderRadius: 40,
+    borderColor: '#2223ff10',
+    borderRadius: 50,
+    marginTop: 16,
     paddingVertical: 10,
+    paddingHorizontal:10,
   },
   clienteItem: {
     width: "60%",

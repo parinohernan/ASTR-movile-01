@@ -6,12 +6,12 @@ import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Con
 import { getClientes } from '../../database/controllers/Clientes.Controller';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { empresa, producto } from '../cconstantes/constantes';
+import { sincronizarPreventa } from '../../handlers/actualizarApp';
+
 
 const ListaPreventas = () => {
   const navigation = useNavigation();
   const [preventas, setPreventas] = useState([]);
-//   const [preventa, setPreventa] = useState(""); //codigo de preventa seleccionada
-//   const [cliente, setCliente] = useState(""); //codigo de cliente seleccionado
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -84,7 +84,7 @@ const renderItem = ({ item }) => (
   }
 
   const handleAction = async(action) => {
-    // Agrega la lógica para manejar las acciones (Borrar, Editar, Cancelar)
+    // Agrega la lógica para manejar las acciones (Borrar, Editar, Sincronizar Cancelar)
     switch (action) {
       case 'Borrar':
         Alert.alert(
@@ -110,16 +110,31 @@ const renderItem = ({ item }) => (
         break;
       case 'Editar':
         // editar la preventa seleccionada
-        const  clientes = await getClientes();
+        let  clientes = await getClientes();
         let objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
-        const preventaNumero = selectedItem.numero;
-        const observacion = selectedItem.observacion;
-        const clienteCodigo = selectedItem.clienteCodigo;
+        let preventaNumero = selectedItem.numero;
+        let observacion = selectedItem.observacion;
+        let clienteCodigo = selectedItem.clienteCodigo;
         let edit=true;
         setModalVisible(false);
         navigation.navigate('EditPreventa', { preventaNumero, cliente : objCliente, edit , observacion});
 
         break;
+      case 'Sincronizar':
+        clientes = await getClientes();
+        objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
+        preventaNumero = selectedItem.numero;
+        observacion = selectedItem.observacion;
+        setModalVisible(false);
+        
+        if ( await sincronizarPreventa(preventaNumero, objCliente) ){
+          borrarPreventaYSusItems(selectedItem.numero);
+          cargarPreventas();
+        } else {
+          Alert.alert('Error de sincronización, comuníquese con soporte.');
+        }
+        break;
+
       case 'Cancelar':
         closeModal();
         break;
@@ -165,6 +180,12 @@ const renderItem = ({ item }) => (
             <Icon name="trash" size={40} color="red" />
             <Text style={styles.modalOptionText}>Eliminar</Text>
             </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ backgroundColor: "cyan" , padding: 14, borderBottomRightRadius : 23, borderTopRightRadius : 23}} onPress={() => handleAction('Sincronizar')}>
+          <View style={styles.modalOption}>
+            <Icon name="cloud-upload" size={40} color="black" />
+            <Text style={styles.modalOptionText}>Sincronizar</Text>
+          </View>
         </TouchableOpacity>
         <TouchableOpacity style={{ backgroundColor: "cyan" , padding: 14, borderBottomRightRadius : 23, borderTopRightRadius : 23}} onPress={() => handleAction('Cancelar')}>
             <View style={styles.modalOption}>
