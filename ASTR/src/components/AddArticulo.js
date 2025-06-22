@@ -9,8 +9,10 @@ const cantidadYDescuentoCargados= async (codigo) => {
   for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id === codigo) {
       console.log("encontre ",preventaActual[i]);
-      return {cantidad: preventaActual[i].seleccionados,
-              descuento: preventaActual[i].descuento
+      const descuento = preventaActual[i].descuento;
+      return {
+        cantidad: preventaActual[i].seleccionados,
+        descuento: descuento !== null && descuento !== undefined ? descuento : 0
       }
     }
   }
@@ -37,10 +39,10 @@ const descuentoCargado= async (codigo) => {
   // console.log("preventa actual",preventaActual);
   for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id == codigo) {
-      
-      return preventaActual[i].descuento;
+      // Asegurar que el descuento sea un número válido
+      const descuento = preventaActual[i].descuento;
+      return descuento !== null && descuento !== undefined ? descuento : 0;
     }
-    
   }
   return 0;
 }
@@ -50,7 +52,7 @@ const AddArticulo = ({route}) => {
   const {articulo, preventaNumero, cliente, cantItems} = params;
   console.log("paarametros",params);
   const [cantidad, setCantidad] = useState(articulo.seleccionados? articulo.seleccionados : 0 );
-  const [descuento, setDescuento] = useState(articulo.descuento? articulo.descuento : 0);
+  const [descuento, setDescuento] = useState(articulo.descuento !== null && articulo.descuento !== undefined ? articulo.descuento : 0);
   const calcularTotal = ()=>{
     let porcentage = descuento==0? 1 : (1+(100/descuento));
     console.log("calculando Todtal: ", articulo.precio, porcentage, cantidad);
@@ -65,7 +67,7 @@ const AddArticulo = ({route}) => {
   const articuloConDetalles = {
     ...articulo,
     cantidad: parseFloat(cantidad),
-    descuento: parseInt(descuento),
+    descuento: parseInt(descuento || 0),
     precioTotal: parseFloat(precioTotal),
     uniqueId: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único para permitir productos repetidos
   };
@@ -160,8 +162,15 @@ const AddArticulo = ({route}) => {
   }
 
   const handleDescuento = (text) => {
-    setDescuento(text.replace(/[^0-9]/g, ''));
+    // Limpiar el texto y permitir solo números
+    const cleanText = text.replace(/[^0-9]/g, '');
     
+    // Si el texto está vacío, establecer 0
+    if (cleanText === '') {
+      setDescuento(0);
+    } else {
+      setDescuento(cleanText);
+    }
   };
   
   const handleEnd = async() => {
@@ -169,8 +178,12 @@ const AddArticulo = ({route}) => {
     if (cantidad == 0) {
       setCantidad(0)
     }
+    
+    // Asegurar que el descuento sea un número válido
+    const descuentoValido = descuento !== null && descuento !== undefined && descuento !== '' ? parseFloat(descuento) : 0;
+    
     cuenta = (precioUnitario.toFixed(2)) * (cantidad); 
-    cuenta = cuenta - (cuenta * (descuento / 100)) 
+    cuenta = cuenta - (cuenta * (descuentoValido / 100)) 
     setPrecioTotal(cuenta);
     setVerAgregar(true);
   };
@@ -223,8 +236,7 @@ const AddArticulo = ({route}) => {
         onFocus={handleFocusDescuento}
         onChangeText={handleDescuento}
         onEndEditing={handleEnd}
-        // onBlur={() => setDescuento(formatCantidad(descuento))}
-        value={String(descuento)}
+        value={String(descuento || 0)}
         keyboardType="numeric"
       />
 

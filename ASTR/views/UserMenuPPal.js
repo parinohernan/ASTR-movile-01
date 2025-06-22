@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions } from 'react-native';
+import { Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
@@ -9,19 +10,29 @@ const { width, height } = Dimensions.get('window');
 
 const UserMenuPPal = ({ route }) => {
   const { params } = route;
-  const vendedor = params.vendedor;
-  const user = {
-    vendedor: vendedor.descripcion,
-    password: vendedor.clave,
-    id: vendedor.id,
-  };
+  const vendedor = params?.vendedor;
   const navigation = useNavigation();
+  
+  console.log("UserMenuPPal - Datos recibidos:", { params, vendedor });
   
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
   const [isServerOnline, setIsServerOnline] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+
+  // Procesar datos del vendedor directamente
+  const user = vendedor ? {
+    vendedor: vendedor.descripcion || 'Usuario',
+    password: vendedor.clave || '',
+    id: vendedor.id || '0',
+  } : {
+    vendedor: 'Usuario',
+    password: '',
+    id: '0',
+  };
+  
+  console.log("UserMenuPPal - Usuario procesado:", user);
 
   const menuOptions = [
     { 
@@ -169,18 +180,6 @@ const UserMenuPPal = ({ route }) => {
           <Text style={styles.appSubtitle}>Sistema de Gestión De Preventas</Text>
         </View>
 
-        {/* Estado general de conexión */}
-        {/* <View style={styles.overallStatus}>
-          <MaterialCommunityIcons
-            name={isCheckingConnection ? 'loading' : (isConnected && isServerOnline ? 'check-circle' : 'alert-circle')}
-            size={24}
-            color={getConnectionStatusColor()}
-          />
-          <Text style={[styles.overallStatusText, { color: getConnectionStatusColor() }]}>
-            {getConnectionStatusText()}
-          </Text>
-        </View> */}
-
         {/* Menú de opciones */}
         <View style={styles.menuContainer}>
           <Text style={styles.menuTitle}>¿Qué deseas hacer?</Text>
@@ -206,13 +205,6 @@ const UserMenuPPal = ({ route }) => {
             ))}
           </View>
         </View>
-
-        {/* Footer */}
-        {/* <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Sesión iniciada como vendedor
-          </Text>
-        </View> */}
       </Animated.View>
     </View>
   );
@@ -297,26 +289,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     opacity: 0.8,
   },
-  overallStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  overallStatusText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
   menuContainer: {
     flex: 1,
   },
@@ -365,15 +337,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.9,
     lineHeight: 12,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#ffffff',
-    opacity: 0.7,
   },
 });
 

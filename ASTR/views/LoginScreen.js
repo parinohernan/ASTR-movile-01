@@ -63,12 +63,13 @@ const LoginScreen = () => {
       const element = usuarios[i];
       if (form.password === element.clave && form.vendedor === element.id) {
         console.log("Usuario ", element, " log", form);
-        setVendedor({
+        const vendedorData = {
           clave: form.password,
           id: form.vendedor,
           descripcion: element.descripcion,
-        });
-        return true;
+        };
+        setVendedor(vendedorData);
+        return vendedorData;
       }
     }
     return false;
@@ -103,9 +104,13 @@ const LoginScreen = () => {
     }
 
     // User access
-    if (isAuthorized()) {
-      console.log("Vendedor autorizado: ", vendedor);
-      navigation.navigate("UserMenuPPal", { vendedor });
+    const vendedorData = isAuthorized();
+    if (vendedorData) {
+      console.log("Vendedor autorizado: ", vendedorData);
+      // Pequeño delay para asegurar que los datos se procesen
+      setTimeout(() => {
+        navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
+      }, 100);
       return;
     }
 
@@ -142,8 +147,8 @@ const LoginScreen = () => {
               source={require("../assets/images/logo.png")}
               style={styles.logo}
             />
-            <Text style={styles.welcomeText}>Bienvenido a ASTR</Text>
-            <Text style={styles.subtitleText}>Sistema de Gestión Comercial</Text>
+            <Text style={styles.welcomeText}>Bienvenido a Osvi</Text>
+            <Text style={styles.subtitleText}>Sistema de Gestión de Preventas</Text>
           </View>
 
           <View style={styles.formContainer}>
