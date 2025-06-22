@@ -23,6 +23,7 @@ const initDatabase = async (logs, setLogs) => {
       (tx) => {
         handleLogs(logs, "Transacción iniciada", setLogs);
         console.log("Transacción iniciada");
+        
         // Crea la tabla usuarios si no existe
         tx.executeSql(
           "CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT)",
@@ -45,6 +46,147 @@ const initDatabase = async (logs, setLogs) => {
             reject(error);
           }
         );
+
+        // Crea la tabla clientes si no existe
+        tx.executeSql(
+          `CREATE TABLE IF NOT EXISTS clientes (
+            id TEXT PRIMARY KEY, 
+            descripcion TEXT, 
+            cuit TEXT, 
+            calle TEXT, 
+            numero TEXT, 
+            piso TEXT, 
+            departamento TEXT, 
+            codigoPostal TEXT, 
+            localidad TEXT, 
+            telefono TEXT, 
+            mail TEXT, 
+            contactoComercial TEXT, 
+            categoriaIva TEXT, 
+            listaPrecio TEXT, 
+            importeDeuda REAL, 
+            codigoVendedor TEXT, 
+            actualizado TEXT, 
+            saldoNTCNoAplicado REAL, 
+            limiteCredito REAL
+          )`,
+          [],
+          () => {
+            logs = handleLogs(
+              logs,
+              "Tabla clientes creada exitosamente",
+              setLogs
+            );
+            console.log("Tabla clientes creada/verificada exitosamente");
+          },
+          (_, error) => {
+            handleLogs(
+              logs,
+              "Error al crear la tabla clientes" + error,
+              setLogs
+            );
+            console.error("Error al crear tabla clientes:", error);
+            reject(error);
+          }
+        );
+
+        // Crea la tabla articulos si no existe
+        tx.executeSql(
+          `CREATE TABLE IF NOT EXISTS articulos (
+            id TEXT PRIMARY KEY, 
+            descripcion TEXT, 
+            existencia INTEGER, 
+            precioCosto REAL, 
+            unidadVenta TEXT, 
+            iva REAL, 
+            lista1 REAL, 
+            lista2 REAL, 
+            lista3 REAL, 
+            lista4 REAL, 
+            lista5 REAL
+          )`,
+          [],
+          () => {
+            logs = handleLogs(
+              logs,
+              "Tabla articulos creada exitosamente",
+              setLogs
+            );
+            console.log("Tabla articulos creada/verificada exitosamente");
+          },
+          (_, error) => {
+            handleLogs(
+              logs,
+              "Error al crear la tabla articulos" + error,
+              setLogs
+            );
+            console.error("Error al crear tabla articulos:", error);
+            reject(error);
+          }
+        );
+
+        // Crea la tabla preventaCabeza si no existe
+        tx.executeSql(
+          `CREATE TABLE IF NOT EXISTS preventaCabeza (
+            id TEXT PRIMARY KEY, 
+            cliente TEXT, 
+            vendedor TEXT, 
+            observacion TEXT, 
+            fecha TEXT, 
+            cantidadItems INTEGER, 
+            importeTotal REAL
+          )`,
+          [],
+          () => {
+            logs = handleLogs(
+              logs,
+              "Tabla preventaCabeza creada exitosamente",
+              setLogs
+            );
+            console.log("Tabla preventaCabeza creada/verificada exitosamente");
+          },
+          (_, error) => {
+            handleLogs(
+              logs,
+              "Error al crear la tabla preventaCabeza" + error,
+              setLogs
+            );
+            console.error("Error al crear tabla preventaCabeza:", error);
+            reject(error);
+          }
+        );
+
+        // Crea la tabla preventaItem si no existe
+        tx.executeSql(
+          `CREATE TABLE IF NOT EXISTS preventaItem (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            idPreventa TEXT, 
+            articulo TEXT, 
+            cantidad INTEGER, 
+            importe REAL,
+            porcentajeBonificacion REAL,
+            precioLista REAL,
+            iva REAL
+          )`,
+          [],
+          () => {
+            logs = handleLogs(
+              logs,
+              "Tabla preventaItem creada exitosamente",
+              setLogs
+            );
+            console.log("Tabla preventaItem creada/verificada exitosamente");
+          },
+          (_, error) => {
+            handleLogs(
+              logs,
+              "Error al crear la tabla preventaItem" + error,
+              setLogs
+            );
+            console.error("Error al crear tabla preventaItem:", error);
+            reject(error);
+          }
+        );
       },
       (error) => {
         console.error("Error en transacción de inicialización:", error);
@@ -52,7 +194,16 @@ const initDatabase = async (logs, setLogs) => {
       },
       () => {
         console.log("Inicialización de base de datos completada");
-        resolve();
+        // Ejecutar migración después de la inicialización
+        migrateDatabase()
+          .then(() => {
+            console.log("Migración de base de datos completada");
+            resolve();
+          })
+          .catch((error) => {
+            console.error("Error en migración:", error);
+            resolve(); // Resolver de todas formas para no bloquear la app
+          });
       }
     );
   });
@@ -177,6 +328,56 @@ const limpiarDatos = async (logs, setLogs) => {
           setLogs
         ))
     );
+  });
+};
+
+// Función para migrar la base de datos y agregar nuevas columnas
+const migrateDatabase = async () => {
+  return new Promise((resolve, reject) => {
+    db.transaction((tx) => {
+      // Agregar columna porcentajeBonificacion si no existe
+      tx.executeSql(
+        "PRAGMA table_info(preventaItem)",
+        [],
+        (_, result) => {
+          const columns = [];
+          for (let i = 0; i < result.rows.length; i++) {
+            columns.push(result.rows.item(i).name);
+          }
+          
+          if (!columns.includes('porcentajeBonificacion')) {
+            tx.executeSql(
+              "ALTER TABLE preventaItem ADD COLUMN porcentajeBonificacion REAL",
+              [],
+              () => console.log("Columna porcentajeBonificacion agregada"),
+              (_, error) => console.error("Error agregando porcentajeBonificacion:", error)
+            );
+          }
+          
+          if (!columns.includes('precioLista')) {
+            tx.executeSql(
+              "ALTER TABLE preventaItem ADD COLUMN precioLista REAL",
+              [],
+              () => console.log("Columna precioLista agregada"),
+              (_, error) => console.error("Error agregando precioLista:", error)
+            );
+          }
+          
+          if (!columns.includes('iva')) {
+            tx.executeSql(
+              "ALTER TABLE preventaItem ADD COLUMN iva REAL",
+              [],
+              () => console.log("Columna iva agregada"),
+              (_, error) => console.error("Error agregando iva:", error)
+            );
+          }
+        },
+        (_, error) => {
+          console.error("Error verificando estructura de tabla:", error);
+          reject(error);
+        }
+      );
+    }, reject, resolve);
   });
 };
 

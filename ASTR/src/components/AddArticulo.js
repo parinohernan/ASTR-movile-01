@@ -67,6 +67,7 @@ const AddArticulo = ({route}) => {
     cantidad: parseFloat(cantidad),
     descuento: parseInt(descuento),
     precioTotal: parseFloat(precioTotal),
+    uniqueId: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único para permitir productos repetidos
   };
 
   const estaCargado= async (codigo) =>{  //articulo.id
@@ -93,31 +94,24 @@ const AddArticulo = ({route}) => {
   const eliminar1PreventaStorage = async () =>{
     // eliminar item de la preventa de sorage actual
      console.log("elimina solo uno",articuloConDetalles);
-     await eliminarItemEnPreventaEnStorage(articuloConDetalles.id);
-     navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente : cliente});
+     await eliminarItemEnPreventaEnStorage(articuloConDetalles.uniqueId);
+     navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente: cliente});
      return
   }
 
   const handleSave = async () => {
     await handleEnd();
-    const yaEsta = await estaCargado(articulo.id);
+    
     if ((cantidad == 0) && (cantItems == 1)) {
       await vaciarPreventaStorage();
-      return;
-    } 
-    if (yaEsta && (cantidad == 0)) {
-      await eliminar1PreventaStorage();
-      return;
-    } 
-    if (yaEsta && cantidad > 0) {
-      console.log("toi aca");
-      await modificarItemPreventaStorage();
       return;
     } 
     if (cantidad == 0) {
       navigation.goBack();
       return;
     }
+    
+    // Siempre agregar como nuevo item (permitir productos repetidos)
     await agregarItemPreventaStorage();
     return;
   };
@@ -198,6 +192,12 @@ const AddArticulo = ({route}) => {
     await agregarItemPreventaStorage();
   }
 
+  const vaciarPreventaStorage = async () => {
+    console.log("vaciarPreventaStorage");
+    await limpiarPreventaDeStorage();
+    navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente: cliente});
+    return;
+  }
 
   return (
     <View style={styles.container}>

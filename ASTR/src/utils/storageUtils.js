@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../database/database';
 
@@ -117,12 +116,12 @@ const limpiarPreventaDeStorage = async () => {
 };
 
 // solo para eliminar un item
-const eliminarItemEnPreventaEnStorage = async (codigo) => {
+const eliminarItemEnPreventaEnStorage = async (uniqueId) => {
   const preventa = await obtenerPreventaDeStorage();
   // console.log("PREVENTA cant items",preventa.length);
   if (preventa.length > 1){
-    console.log("ELIMINAR de la preventa actual", codigo, preventa);
-    guardarPreventaEnStorage(preventa.filter(item => item.id !== codigo));
+    console.log("ELIMINAR de la preventa actual", uniqueId, preventa);
+    guardarPreventaEnStorage(preventa.filter(item => item.uniqueId !== uniqueId));
   } else {
     // Eliminar todo el valor del storage
     await limpiarPreventaDeStorage();

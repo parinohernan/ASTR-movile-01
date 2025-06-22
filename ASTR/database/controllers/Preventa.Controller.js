@@ -41,8 +41,8 @@ const grabarItemsPreventaEnBDD = async (numero, items) => {
             items.forEach((item) => {
                 console.log("80grabo BDD item ",numero, item);
                 tx.executeSql(
-                    'INSERT INTO preventaItem (idPreventa, articulo, cantidad, importe, porcentajeBonificacion, precioLista ) VALUES (?, ?, ?, ?, ?, ?)',
-                    [numero, item.id, item.cantidad, item.precio, item.descuento, item.precioLista],
+                    'INSERT INTO preventaItem (idPreventa, articulo, cantidad, importe, porcentajeBonificacion, precioLista, iva) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [numero, item.id, item.cantidad, item.precio, item.descuento, item.precioLista, item.iva],
                     (_, itemResult) => {
                         // console.log('Item insertado en la base de datos:', item);
                         console.log('ID del nuevo item:', itemResult.insertId, item);
@@ -86,6 +86,34 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
     }
 };
 
+// Función para validar los datos de la preventa antes de enviar
+const validarPreventaParaEnvio = (preventa) => {
+    const errores = [];
+    
+    if (!preventa.items || preventa.items.length === 0) {
+        errores.push("La preventa no tiene items");
+        return errores;
+    }
+    
+    // Validar cada item
+    preventa.items.forEach((item, index) => {
+        if (!item.CodigoArticulo) {
+            errores.push(`Item ${index + 1}: Falta código de artículo`);
+        }
+        if (item.Cantidad <= 0) {
+            errores.push(`Item ${index + 1}: Cantidad debe ser mayor a 0`);
+        }
+        if (item.PrecioUnitario < 0) {
+            errores.push(`Item ${index + 1}: Precio unitario no puede ser negativo`);
+        }
+        if (item.PorcentajeBonificacion < 0 || item.PorcentajeBonificacion > 100) {
+            errores.push(`Item ${index + 1}: Porcentaje de bonificación debe estar entre 0 y 100`);
+        }
+    });
+    
+    return errores;
+};
+
 // busco ITEMS desde sqlite y preparo el json para mandar a la api
 const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
     return new Promise((resolve, reject) => {
@@ -98,14 +126,21 @@ const buscarItemsPreventaEnBDD = async (numeroPreventa) => {
                     for (let i = 0; i < result.rows.length; i++) {
                         const row = result.rows.item(i);
                         console.log("mirando el contenido de ROW:",row);
+                        
+                        // Calcular PrecioUnitario de forma segura
+                        let precioUnitario = 0;
+                        if (row.cantidad > 0) {
+                            precioUnitario = row.importe / row.cantidad;
+                        }
+                        
                         //adapto la respuesta al JSON de la API
                         let itemObjet={
                             CodigoArticulo : row.articulo,
                             Cantidad: row.cantidad,
-                            PrecioUnitario: (row.importe/ row.cantidad),// calcular bien
-                            PrecioLista: row.precioLista,// ver el correcto
-                            PorcentajeBonificacion: row.porcentajeBonificacion,// tengo que ver el correcto
-                            iva: row.iva,    
+                            PrecioUnitario: precioUnitario,
+                            PrecioLista: row.precioLista || 0,
+                            PorcentajeBonificacion: row.porcentajeBonificacion || 0,
+                            iva: row.iva || 0,    
                         }
                         items.push(itemObjet);
                         console.log("mirando el item creado:",itemObjet);
@@ -258,4 +293,4 @@ const borrarPreventaYSusItems = async (numeroPreventa) => {
     });
 };
 
-export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD, borrarPreventaYSusItems}
+export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD, borrarPreventaYSusItems, validarPreventaParaEnvio}

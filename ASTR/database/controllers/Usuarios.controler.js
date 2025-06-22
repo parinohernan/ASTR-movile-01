@@ -43,9 +43,9 @@ const insertUsuariosFromAPI = (data, logs, setLogs) => {
   return new Promise((resolve, reject) => {
     db.transaction(
       (tx) => {
-        // Verificar y crear la tabla vendedores si no existe
+        // Verificar y crear la tabla usuarios si no existe
         tx.executeSql(
-          "CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, nombre TEXT)",
+          "CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT)",
           [],
           (_, result) => {
             logs = handleLogs(

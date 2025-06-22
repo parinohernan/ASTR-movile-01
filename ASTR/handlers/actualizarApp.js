@@ -15,35 +15,94 @@ const handleLogs = (logs, mensaje, setLogs) => {
 
 const actualizarVendedores = async (logs, setLogs) => {
     console.log("Trayendo Vendedores...");
-    // let logs=[];
-    let endPoint = await configuracionEndPoint() + 'vendedores'
-    
     try {
-      const response = await axios.get(endPoint);
-      logs = handleLogs(logs,("actualizando vendedores..."),setLogs);
-      const data = response.data;
-      
-      // Inserta los usuarios desde la API a la base de datos
-      await insertUsuariosFromAPI(data, logs, setLogs);
+        const endpoint = await configuracionEndPoint();
+        logs = handleLogs(logs, `Conectando a: ${endpoint}vendedores`, setLogs);
+        
+        const response = await axios.get(endpoint + 'vendedores', {
+            timeout: 30000, // 30 segundos de timeout
+            validateStatus: function (status) {
+                return status < 500; // Resuelve solo si el status es menor a 500
+            }
+        });
+        
+        logs = handleLogs(logs, "Conexión exitosa al servidor de vendedores", setLogs);
+        const data = response.data;
+        logs = handleLogs(logs, `Se obtuvieron ${data.length} vendedores del servidor`, setLogs);
+        
+        // Inserta los usuarios desde la API a la base de datos
+        await insertUsuariosFromAPI(data, logs, setLogs);
+        logs = handleLogs(logs, "Sincronización de vendedores completada", setLogs);
+        
     } catch (error) {
-      console.log(error);
-      logs = handleLogs(logs,('Error al obtener o insertar vendedores: '),setLogs);
+        console.error('Error en actualizarVendedores:', error);
+        
+        let mensajeError = 'Error desconocido';
+        
+        if (error.code === 'ECONNREFUSED') {
+            mensajeError = 'El servidor no está disponible. Verifique la dirección IP y puerto.';
+        } else if (error.code === 'ENOTFOUND') {
+            mensajeError = 'No se puede resolver la dirección del servidor. Verifique la configuración.';
+        } else if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+            mensajeError = 'Problema con el certificado SSL del servidor.';
+        } else if (error.code === 'ECONNABORTED') {
+            mensajeError = 'Tiempo de espera agotado. El servidor no responde.';
+        } else if (error.response) {
+            mensajeError = `Error del servidor: ${error.response.status} - ${error.response.statusText}`;
+        } else if (error.request) {
+            mensajeError = 'No se recibió respuesta del servidor.';
+        } else {
+            mensajeError = error.message || 'Error de conexión';
+        }
+        
+        logs = handleLogs(logs, `Error al sincronizar vendedores: ${mensajeError}`, setLogs);
     }
-  };
+};
 
 const actualizarClientes = async (logs, setLogs) => {
     console.log("Trayendo Clientes...");
-    // let logs=[];
     try {
-    const response = await axios.get(await configuracionEndPoint() + 'clientes');
-    logs = handleLogs(logs,("actualizando clientes..."),setLogs);
-    const data = response.data;
-    // await initDatabase();
-    // Inserta los clientes desde la API a la base de datos
-    await insertClientesFromAPI(data);
-} catch (error) {
-  logs = handleLogs(logs,('Error al obtener o insertar clientes: '),setLogs);
-}
+        const endpoint = await configuracionEndPoint();
+        logs = handleLogs(logs, `Conectando a: ${endpoint}clientes`, setLogs);
+        
+        const response = await axios.get(endpoint + 'clientes', {
+            timeout: 30000, // 30 segundos de timeout
+            validateStatus: function (status) {
+                return status < 500; // Resuelve solo si el status es menor a 500
+            }
+        });
+        
+        logs = handleLogs(logs, "Conexión exitosa al servidor", setLogs);
+        const data = response.data;
+        logs = handleLogs(logs, `Se obtuvieron ${data.length} clientes del servidor`, setLogs);
+        
+        // Inserta los clientes desde la API a la base de datos
+        const resultado = await insertClientesFromAPI(data);
+        logs = handleLogs(logs, `Sincronización de clientes completada: ${resultado.clientesInsertados} procesados, ${resultado.clientesEliminados} eliminados`, setLogs);
+        
+    } catch (error) {
+        console.error('Error en actualizarClientes:', error);
+        
+        let mensajeError = 'Error desconocido';
+        
+        if (error.code === 'ECONNREFUSED') {
+            mensajeError = 'El servidor no está disponible. Verifique la dirección IP y puerto.';
+        } else if (error.code === 'ENOTFOUND') {
+            mensajeError = 'No se puede resolver la dirección del servidor. Verifique la configuración.';
+        } else if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+            mensajeError = 'Problema con el certificado SSL del servidor.';
+        } else if (error.code === 'ECONNABORTED') {
+            mensajeError = 'Tiempo de espera agotado. El servidor no responde.';
+        } else if (error.response) {
+            mensajeError = `Error del servidor: ${error.response.status} - ${error.response.statusText}`;
+        } else if (error.request) {
+            mensajeError = 'No se recibió respuesta del servidor.';
+        } else {
+            mensajeError = error.message || 'Error de conexión';
+        }
+        
+        logs = handleLogs(logs, `Error al sincronizar clientes: ${mensajeError}`, setLogs);
+    }
 };
 
 const actualizarArticulos = async (logs, setLogs) => {
@@ -76,13 +135,28 @@ const actualizarArticulos = async (logs, setLogs) => {
 };
 
 const actualizarPreventas = async (preventasJSON, mensajes) => {
-  // console.log("!!actiaApp 78 :", await configuracionEndPoint() + 'preventas', preventasJSON);  
+  console.log("Enviando preventa al servidor:", JSON.stringify(preventasJSON, null, 2));
   try {
         const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
+        console.log("Respuesta del servidor:", response.status, response.data);
+        return response;
     } catch (error) {
         mensajes.hayErrores = true;
         mensajes.mensaje = ('Error al enviar preventas:' + error);
         console.error('Error al enviar preventas:', error);
+        
+        if (error.response) {
+            console.error('Error del servidor:', error.response.status, error.response.data);
+            mensajes.mensaje = `Error del servidor: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
+        } else if (error.request) {
+            console.error('Error de red:', error.request);
+            mensajes.mensaje = 'Error de conexión al servidor';
+        } else {
+            console.error('Error:', error.message);
+            mensajes.mensaje = `Error: ${error.message}`;
+        }
+        
+        throw error;
     }
 }
 
@@ -91,10 +165,27 @@ const sincronizarPreventa = async (preventaNumero, cliente) => {
   // console.log("sincronizando preventa",preventaNumero, cliente);
   let preventas = await preventasBDDToArray();
   let preventaJSON= preventas.filter(e => e.DocumentoNumero == preventaNumero); 
-  console.log("enviando preventa",preventaJSON[0]);
+  
+  if (preventaJSON.length === 0) {
+    console.error("No se encontró la preventa", preventaNumero);
+    return false;
+  }
+  
+  const preventa = preventaJSON[0];
+  console.log("enviando preventa", preventa);
+  
+  // Validar la preventa antes de enviar
+  const { validarPreventaParaEnvio } = await import('../database/controllers/Preventa.Controller.js');
+  const errores = validarPreventaParaEnvio(preventa);
+  
+  if (errores.length > 0) {
+    console.error("Errores de validación:", errores);
+    return false;
+  }
+  
   let mensajes = {hayErrores: false,
     mensaje: "No hay errores."};    
-    await actualizarPreventas(preventaJSON[0], mensajes);
+    await actualizarPreventas(preventa, mensajes);
   console.log("errores",mensajes);
   return !mensajes.hayErrores
 };
@@ -145,7 +236,7 @@ const enviarPreventas = async (logs, setLogs) => {
     if (esCompleta) {
       logs = handleLogs(logs, "Sincronizando todos los datos...", setLogs);
       await initDatabase(logs, setLogs);
-      //await actualizarVendedores(logs, setLogs);
+      await actualizarVendedores(logs, setLogs);
       await actualizarClientes(logs, setLogs);
       await borrarArticulosDeSqlite(); 
       await actualizarArticulos(logs, setLogs);

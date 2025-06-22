@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, Modal, Alert} from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, Modal, Alert, ActivityIndicator} from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useIsFocused, useFocusEffect} from '@react-navigation/native';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage, eliminarItemEnPreventaEnStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
@@ -22,22 +22,18 @@ const Preventa = (props) => {
         e.preventDefault();
   
         try {
-          // Aquí la lógica para verificar si hay una preventa sin grabar
-          // y preguntar al usuario si quiere guardar o descartar los cambios
           const carrito2 = await obtenerPreventaDeStorage();
           if (carrito2.length > 0) {
             e.preventDefault();
             Alert.alert(
-              'No guardaste la preventa',
+              'Preventa sin guardar',
               '¿Quieres guardar los cambios antes de salir?',
               [
-                { text: 'Descartar preventa', style: 'destructive', onPress: () => {limpiarPreventaDeStorage(); navigation.goBack() }},
-                // { text: 'Guardar', style: 'default', onPress: () => grabarPreventa() },
-                { text: 'Volver a preventa', style: 'cancel', onPress: () => {} },
+                { text: 'Descartar', style: 'destructive', onPress: () => {limpiarPreventaDeStorage(); navigation.goBack() }},
+                { text: 'Volver', style: 'cancel', onPress: () => {} },
               ]
             );
           } else {
-            // Si no hay cambios sin guardar, puedes dejar que el usuario salga
             navigation.dispatch(e.data.action);
           }
         } catch (error) {
@@ -70,6 +66,7 @@ const Preventa = (props) => {
   const [isModalEditarVisible, setIsModalEditarVisible] = useState(false);
   const [nota, setNota] = useState('');
   const [selectedItem, setSelectedItem]= useState();
+  const [loading, setLoading] = useState(false);
   // const [listaDePrecios,setListaDePrecios]=useState();
 
   useEffect(() => {
@@ -101,37 +98,58 @@ const Preventa = (props) => {
     const carritoData = await obtenerPreventaDeStorage();
     console.log("prv166 ",carritoData);
     if (carritoData.length != 0) {
-      setCarrito(carritoData.map(item => ({ cantidad: item.cantidad, 
-                                            descripcion: item.descripcion,
-                                            id: item.id,
-                                            iva: item.iva,
-                                            precio: item.precioTotal, 
-                                            descuento: item.descuento,
-                                            precioLista:( item.precioTotal / ((100-item.descuento)/100) / item.cantidad ),//calculo el precio de lista
-                                           })));
+      setCarrito(carritoData.map(item => {
+        let precioLista = 0;
+        if (item.descuento === 100) {
+          // Si el descuento es 100%, el precio de lista es 0
+          precioLista = 0;
+        } else if (item.cantidad > 0 && item.precioTotal > 0) {
+          // Calcular precio de lista normal
+          precioLista = (item.precioTotal / ((100-item.descuento)/100) / item.cantidad);
+        }
+        
+        return { 
+          cantidad: item.cantidad, 
+          descripcion: item.descripcion,
+          id: item.id,
+          iva: item.iva,
+          precio: item.precioTotal, 
+          descuento: item.descuento,
+          precioLista: precioLista,
+          uniqueId: item.uniqueId
+        };
+      }));
     }
     setCantidadItems (carritoData.length);
     setTotal(await calcularTotal());
   };
 
   const grabarPreventa = async () => {
-    /* Grabar la preventa en la base de datos requiere cabeza de la preventa y grabar cada item */
-    /* todos los errores deben estar controlados */
-    if (edit) {
-      console.log(  "PRV184   eliminal la preventa antes de guardar ", preventaNumero);
-      await borrarPreventaYSusItems(preventaNumero);
+    setLoading(true);
+    try {
+      if (edit) {
+        console.log("PRV184 eliminal la preventa antes de guardar ", preventaNumero);
+        await borrarPreventaYSusItems(preventaNumero);
+      }
+      if (carrito.length > 0) {
+        let numero = preventaNumero
+        if (nueva) {
+          numero = await nextPreventa();
+        }
+        await grabarPreventaEnBDD (numero, nota , cliente .id, carrito);
+        console.log("preventa guardada con exito  ");
+        setCarrito ([]);    
+        Alert.alert("Éxito", "Preventa guardada correctamente");
+      } else {
+        Alert.alert("Aviso", "La preventa está vacía");
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error al guardar preventa:", error);
+      Alert.alert("Error", "No se pudo guardar la preventa");
+    } finally {
+      setLoading(false);
     }
-    if (carrito.length > 0) {
-      let numero = preventaNumero
-      if (nueva) {
-      numero = await nextPreventa();
-    }
-    await grabarPreventaEnBDD (numero, nota , cliente .id, carrito);
-    console.log("preventa guardada con exito  ");
-    setCarrito ([]);    
-    }
-    console.log("preventa estaba vacia  ");
-    navigation.goBack();
   };
 
   
@@ -163,10 +181,9 @@ const Preventa = (props) => {
     navigation.navigate('Clientes', {});
 }
     
-    await eliminarItemEnPreventaEnStorage(selectedItem.id);
+    await eliminarItemEnPreventaEnStorage(selectedItem.uniqueId);
     setIsModalEditarVisible(false);
-
-    //refrescar la preventa
+    cargarDatos(); // Recargar datos
   }
 
   const obtenerPrecio = async (articulo)=>{
@@ -201,7 +218,6 @@ const Preventa = (props) => {
 
   const handleEdit = async() =>{
     //edita in articulo
-
     let itemArray = await getArticuloPorCodigo (selectedItem.id);
     let articulo = itemArray[0];
     articulo.seleccionados = selectedItem.cantidad;
@@ -209,6 +225,10 @@ const Preventa = (props) => {
     articulo.descuento = selectedItem.descuento;
     console.log("editar ",articulo, selectedItem);
     setIsModalEditarVisible(false);
+    
+    // Eliminar el item actual antes de editar (para productos repetidos)
+    await eliminarItemEnPreventaEnStorage(selectedItem.uniqueId);
+    
     navigation.navigate('AddArticulo', { articulo });
     //refrescar la preventa
   }
@@ -221,10 +241,12 @@ const Preventa = (props) => {
   const traerFrecuentes = async() => {
     // Aquí puedes implementar la lógica para guardar la nota en tu aplicación
     setEstoyBuscandoFrecuentes(true);
-    hasInternetAccess == true? (
-    setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(cliente.id))    
-    ):(
-    console.log('buscando frecuentes:'))
+    if (hasInternetAccess) {
+      setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(cliente.id));
+    } else {
+      console.log('buscando frecuentes:');
+    }
+    setEstoyBuscandoFrecuentes(false);
   };
 
   const abrirArticulos = async () => {
@@ -259,7 +281,10 @@ const Preventa = (props) => {
     // console.log("prv152 intem ", item);
     return (
     <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
-      <Text style={{fontWeight: "bold"}}>{`${item.descripcion} `}</Text>
+      <View style={styles.itemHeader}>
+        <Text style={{fontWeight: "bold", fontSize: 16}}>{`${item.descripcion} `}</Text>
+        <Text style={styles.itemCode}>Código: {item.id}</Text>
+      </View>
       <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',}}>
         
         <View style= {{ width: "20%",
@@ -274,14 +299,14 @@ const Preventa = (props) => {
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
-          <Text>Lista {cliente.listaPrecio }: $ {String(item.precioLista.toFixed(2))}  </Text>              
+          <Text>Lista {cliente?.listaPrecio || 'N/A'}: $ {String((item.precioLista || 0).toFixed(2))}  </Text>              
                        
         </View>
         <View style= {{ borderWidth: 0 , width: "22%", borderRightWidth:1,
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
-          <Text>Descuento: { String(item.descuento)} % </Text>              
+          <Text>Descuento: { String(item.descuento || 0)} % </Text>              
                        
         </View>
         <View style= {{ borderWidth: 0 , width: "22%",
@@ -289,14 +314,14 @@ const Preventa = (props) => {
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
                         
-          <Text>Total: {`$ ${String(item.precio?.toFixed(2))}`}</Text>               
+          <Text>Total: {`$ ${String((item.precio || 0).toFixed(2))}`}</Text>               
         </View>
         <View style= {{ borderWidth: 0 , width: "10%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
                         flexDirection: 'column', // Hijos en columna vertical
                         alignItems: 'flex-start', // Alinear hijos a la izquierda
                       }}>
           {/* <Text>Editar</Text> */}
-          <Icon name="edit" size={30} color="#9203F9" />            
+          <MaterialCommunityIcons name="pencil" size={30} color="#9203F9" />            
         </View>
       </View>
       <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, margin:2, marginBottom: 4 }} />
@@ -304,255 +329,380 @@ const Preventa = (props) => {
   )};
   const BarraIcons = () =>{
     return (
-    <View style={styles.iconBar}>
-      <TouchableOpacity onPress={grabarPreventa}>
-        <Icon name="save" size={30} color= "cyan" />
-        <Text style={{ color:"cyan"}}>Guardar</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={abrirArticulos}>
-        <Icon name="plus" size={30} color="cyan" />
-        <Text style={{ color:"cyan"}}>Agrega Item</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={abrirModal}>
-        <Icon name="wpforms" size={30} color="cyan" />
-        <Text  style={{ color:"cyan"}}>Nota</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.iconBar}>
+        <TouchableOpacity onPress={grabarPreventa} disabled={loading} style={styles.iconButton}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <MaterialCommunityIcons name="content-save" size={24} color="#ffffff" />
+          )}
+          <Text style={styles.iconButtonText}>Guardar</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={abrirArticulos} style={styles.iconButton}>
+          <MaterialCommunityIcons name="plus" size={24} color="#ffffff" />
+          <Text style={styles.iconButtonText}>Agregar</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={abrirModal} style={styles.iconButton}>
+          <MaterialCommunityIcons name="note-text" size={24} color="#ffffff" />
+          <Text style={styles.iconButtonText}>Nota</Text>
+        </TouchableOpacity>
+      </View>
     )
   }
   
   const CabezaPreventa = () =>{
     return (
-    <View style= {styles.cabezaContainer} >
-      <Text style={{ 
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    color: 'black',
-                    letterSpacing: 2,
-                  }}>
-        {cliente?.descripcion}
-      </Text>
-      <TouchableOpacity onPress={traerFrecuentes}>
-        <Text>articulos frecuentes: {(articulosFrecuentes.length == 0)? (
-          (estoyBuscandoFrecuentes == false)? <Icon name="question-circle-o" size={20} color="black" /> : <Icon name="hourglass-2" size={20} color="black" />
-          
-          ): articulosFrecuentes.length}</Text>
-         
-      </TouchableOpacity>
-      <View style= {styles.cabezaData}>
-        <View style= {styles.cabezaSubdata}>
-          <Text>Codigo: {cliente?.id}</Text>
-          <Text>Saldo: $ -{cliente?.importeDeuda}</Text>
+      <View style={styles.cabezaContainer}>
+        <View style={styles.clienteInfo}>
+          <MaterialCommunityIcons name="account" size={24} color="#2c3e50" />
+          <Text style={styles.clienteName}>{cliente?.descripcion}</Text>
         </View>
-        <View style= {styles.cabezaSubdata}>
-            <Text>Total $: {total?.toFixed(2)} </Text>
-            <Text>Items: {carrito.length.toString()} </Text>
-        </View >
+        
+        <TouchableOpacity onPress={traerFrecuentes} style={styles.frecuentesButton}>
+          <MaterialCommunityIcons 
+            name={estoyBuscandoFrecuentes ? "loading" : "star"} 
+            size={20} 
+            color="#f39c12" 
+          />
+          <Text style={styles.frecuentesText}>
+            Frecuentes: {articulosFrecuentes.length}
+          </Text>
+        </TouchableOpacity>
+        
+        <View style={styles.cabezaData}>
+          <View style={styles.cabezaSubdata}>
+            <Text style={styles.dataText}>Código: {cliente?.id}</Text>
+            <Text style={styles.dataText}>Saldo: ${cliente?.importeDeuda}</Text>
+          </View>
+          <View style={styles.cabezaSubdata}>
+            <Text style={[styles.dataText, styles.totalText]}>Total: ${total?.toFixed(2)}</Text>
+            <Text style={styles.dataText}>Items: {carrito.length}</Text>
+          </View>
+        </View>
       </View>
-    </View>
     )
   }
  
   if (editando !== true) {
-    
     return (    
       <View style={styles.container}>
-  {/* <SafeAreaView style={styles.container}> */}
-    <View style={styles.viewTitle} >
-      <Text style={styles.title}> PREVENTA </Text>
-    </View>
-    
-    <CabezaPreventa/>
-    <View style={styles.itemsContainer}>
-        <Modal visible={isModalVisible} /*animationType="slide" transparent*/>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Escribir nota</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Escribe una nota..."
-              placeholderTextColor="white"
-              value={nota}
-              onChangeText={setNota}
-              />
-            <View style={styles.modalButtonsContainer}>
-              {/* <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity> */}
-              <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Guardar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        {isModalEditarVisible? <ModalEliminarEditarCancelar  item={selectedItem} handleEdit={handleEdit} handleDelete={handleDelete} cerrarModalEditar={cerrarModalEditar}/>:""}
-        <View style={{ flex: 1, }}>
-          <FlatList
-          data={carrito}
-          keyExtractor={(item, index) => index.toString()} // Puedes ajustar la clave según tus necesidades
-          renderItem={renderItem}
-          />
+        <View style={styles.header}>
+          <Text style={styles.title}>PREVENTA</Text>
         </View>
-    </View> 
-<BarraIcons/>
-</View>
-  )
-} else
-return (
-  <View style={styles.container}>
-  {/* <SafeAreaView style={styles.container}> */}
-    <View style={styles.viewTitle} >
-     <Text style={styles.title}> PREVENTA </Text>
-    </View>
-    
-    <CabezaPreventa/>
-    <View style={styles.itemsContainer}>
-        <Modal visible={isModalVisible} /*animationType="slide" transparent*/>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Escribir nota</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Escribe una nota..."
-              placeholderTextColor="white"
-              value={nota}
-              onChangeText={setNota}
-              />
-            <View style={styles.modalButtonsContainer}>
-              {/* <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity> */}
-              <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
-                <Text style={styles.modalButtonText}>Guardar</Text>
-              </TouchableOpacity>
+        
+        <CabezaPreventa/>
+        
+        <View style={styles.itemsContainer}>
+          <Modal visible={isModalVisible} animationType="slide" transparent>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Escribir nota</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Escribe una nota..."
+                  placeholderTextColor="#95a5a6"
+                  value={nota}
+                  onChangeText={setNota}
+                  multiline
+                />
+                <View style={styles.modalButtonsContainer}>
+                  <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+                    <Text style={styles.modalButtonText}>Guardar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
+          </Modal>
+          
+          {isModalEditarVisible && (
+            <ModalEliminarEditarCancelar 
+              item={selectedItem} 
+              handleEdit={handleEdit} 
+              handleDelete={handleDelete} 
+              cerrarModalEditar={cerrarModalEditar}
+            />
+          )}
+          
+          <View style={styles.listContainer}>
+            {carrito.length === 0 ? (
+              <View style={styles.emptyState}>
+                <MaterialCommunityIcons name="cart-outline" size={60} color="#95a5a6" />
+                <Text style={styles.emptyStateText}>No hay artículos en la preventa</Text>
+                <Text style={styles.emptyStateSubtext}>Toca "Agregar" para comenzar</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={carrito}
+                keyExtractor={(item) => item.uniqueId || item.id || Math.random().toString()}
+                renderItem={renderItem}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
           </View>
-        </Modal>
-        {isModalEditarVisible? <ModalEliminarEditarCancelar  item={selectedItem} handleEdit={handleEdit} handleDelete={handleDelete} cerrarModalEditar={cerrarModalEditar}/>:""}
-
-    </View> 
-<BarraIcons/>
-</View>
-)
+        </View> 
+        
+        <BarraIcons/>
+      </View>
+    )
+  } else {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>PREVENTA</Text>
+        </View>
+        
+        <CabezaPreventa/>
+        
+        <View style={styles.itemsContainer}>
+          <Modal visible={isModalVisible} animationType="slide" transparent>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Escribir nota</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Escribe una nota..."
+                  placeholderTextColor="#95a5a6"
+                  value={nota}
+                  onChangeText={setNota}
+                  multiline
+                />
+                <View style={styles.modalButtonsContainer}>
+                  <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+                    <Text style={styles.modalButtonText}>Guardar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+          
+          {isModalEditarVisible && (
+            <ModalEliminarEditarCancelar 
+              item={selectedItem} 
+              handleEdit={handleEdit} 
+              handleDelete={handleDelete} 
+              cerrarModalEditar={cerrarModalEditar}
+            />
+          )}
+        </View> 
+        
+        <BarraIcons/>
+      </View>
+    )
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: '#0c2f3c '
-    backgroundColor: '#06181e',
-    
+    backgroundColor: '#30bced',
   },
-  viewTitle: {
-    alignItems: 'center', // Centrar horizontalmente
-    justifyContent: 'center', // Centrar verticalmente
-    marginVertical: 20, // Margen vertical
-    padding: 0,
+  header: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    backgroundColor: '#0c2f3c',
   },
   title: {
-    marginTop: 20,
-    marginBottom: -10,
-    fontSize: 20, // Tamaño de fuente
-    fontWeight: 'bold', // Fuente en negrita
-    color: 'cyan', // Color de texto
-    letterSpacing: 2, // Espaciado entre letras
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    letterSpacing: 2,
+  },
+  cabezaContainer: {
+    padding: 20,
+    backgroundColor: '#ffffff',
+    margin: 15,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  clienteInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  clienteName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginLeft: 10,
+  },
+  frecuentesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  frecuentesText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginLeft: 5,
+  },
+  cabezaData: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cabezaSubdata: {
+    flex: 1,
+  },
+  dataText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 2,
+  },
+  totalText: {
+    color: '#27ae60',
+    fontWeight: 'bold',
   },
   itemsContainer: {
     flex: 1,
-    padding: 10,
-    paddingTop: 20,
-    margin: 6,
-    marginTop: -22,
-    zIndex: -1,
-    backgroundColor: '#c9eefa',//background liviano
-    borderWidth: 2, // Agregar borde
-    borderColor: '#000', // Color del borde
-    borderRadius: 10, // Radio de las esquinas (para hacerlas redondeadas)
-    shadowColor: '#000', // Color de la sombra
-    shadowOffset: { width: 0, height: 2 }, // Offset de la sombra
-    shadowOpacity: 0.5, // Opacidad de la sombra
-    shadowRadius: 2, // Radio de la sombra
-    elevation: 50, // Elevación de la sombra (solo para Android)
+    backgroundColor: '#f8f9fa',
+    margin: 15,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-
-  // estilos para la cabecera
-  cabezaContainer: {
-    paddingLeft: 10,
-    paddingRight: 10,
-    paddingBottom: 30,
-    backgroundColor: '#96ddf5',// 96ddf5 non Photo blue--- background intermedio
-    borderWidth: 1, // Agregar borde
-    borderColor: '#000', // Color del borde
-    borderRadius: 10, // Radio de las esquinas (para hacerlas redondeadas)
-    shadowColor: '#000', // Color de la sombra
-    shadowOffset: { width: 0, height: 2 }, // Offset de la sombra
-    shadowOpacity: 0.5, // Opacidad de la sombra
-    shadowRadius: 2, // Radio de la sombra
-    elevation: 5, // Elevación de la sombra (solo para Android)
+  listContainer: {
+    flex: 1,
+    padding: 15,
   },
-
-  cabezaData: {
-    flexDirection: 'row', // Hijos en línea horizontal
-    justifyContent: 'flex-start', 
-    alignItems: 'center', // Centrar verticalmente
-  },
-  cabezaSubdata: {
-    width: "50%",
-    flexDirection: 'column', // Hijos en columna vertical
-    alignItems: 'flex-start', // Alinear hijos a la izquierda
-  },
-
-  // estilos para la barra de ICONOS
-  iconBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: "#000000",
+  itemCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 15,
     marginBottom: 10,
-    padding: 20,
-    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  separator: {
-    height: 1,
-    backgroundColor: 'gray',
-    marginVertical: 2,
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-
-  // ESTILOS DEL MODAL
-  modalContainer: {
-    backgroundColor: '#06181e',
-    padding: 20,
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginLeft: 8,
+    flex: 1,
+  },
+  itemDetails: {
+    marginBottom: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginLeft: 5,
+  },
+  editIndicator: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+  },
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+  },
+  iconBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: "#0c2f3c",
+    padding: 20,
+  },
+  iconButton: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    margin: 20,
+    width: '90%',
+    maxWidth: 400,
   },
   modalTitle: {
-    color: "#30bced",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#2c3e50',
+    marginBottom: 15,
+    textAlign: 'center',
   },
   modalInput: {
-    color: "#30bced",
-    width: '100%',
-    height: 40,
     borderWidth: 1,
-    borderColor: 'gray',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+    borderColor: '#ecf0f1',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#2c3e50',
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
   modalButtonsContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
   },
   modalButton: {
-    backgroundColor: 'blue',
-    padding: 10,
-    marginHorizontal: 5,
-    borderRadius: 5,
+    backgroundColor: '#3498db',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
   modalButtonText: {
-    color: 'white',
+    color: '#ffffff',
     fontWeight: 'bold',
-}, 
-
+    fontSize: 16,
+  },
+  itemCode: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+  },
 });
 
 export default Preventa;

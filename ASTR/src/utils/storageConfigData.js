@@ -81,5 +81,38 @@ const limpiarConfiguracionDelStorage = async () => {
   }
 };
 
+// Función para establecer configuración de prueba
+const establecerConfiguracionPrueba = async () => {
+  const configuracionPrueba = {
+    endPoint: "http://localhost:3003/", // Endpoint local para pruebas
+    siguientePreventa: "15",
+    vendedor: "0001",
+    sucursal: "0001",
+    usaGeolocalizacion: true,
+    cantidadMaximaArticulos: "18"
+  };
+  
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(configuracionPrueba));
+    console.log('Configuración de prueba establecida');
+    return configuracionPrueba;
+  } catch (error) {
+    console.error('Error al establecer configuración de prueba:', error);
+    throw error;
+  }
+};
+
+// Función para obtener el endpoint actual
+const obtenerEndpointActual = async () => {
+  try {
+    const config = await getConfiguracionDelStorage();
+    return config.endPoint;
+  } catch (error) {
+    console.error('Error al obtener endpoint actual:', error);
+    return null;
+  }
+};
+
 export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa,
-  configuracionCantidadMaximaArticulos, mas1NexPreventa, configuracionVendedor, configuracionSucursal, configuracionEndPoint };
+  configuracionCantidadMaximaArticulos, mas1NexPreventa, configuracionVendedor, configuracionSucursal, configuracionEndPoint, 
+  limpiarConfiguracionDelStorage, establecerConfiguracionPrueba, obtenerEndpointActual };

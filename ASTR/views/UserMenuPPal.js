@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
 import checkServerHandler from '../src/utils/checkServerHandler';
+
+const { width, height } = Dimensions.get('window');
 
 const UserMenuPPal = ({ route }) => {
   const { params } = route;
@@ -14,27 +16,71 @@ const UserMenuPPal = ({ route }) => {
     id: vendedor.id,
   };
   const navigation = useNavigation();
-  const menuOptions = [
-    { name: 'Preventa', icon: 'clipboard-check' },
-    { name: 'Informes', icon: 'file-chart' },
-    { name: 'Sincronizar', icon: 'sync' },
-  ];
+  
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(30));
   const [isServerOnline, setIsServerOnline] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+
+  const menuOptions = [
+    { 
+      name: 'Preventa', 
+      icon: 'clipboard-check',
+      description: 'Crear y gestionar preventas',
+      color: '#3498db',
+      route: 'Clientes'
+    },
+    { 
+      name: 'Informes', 
+      icon: 'file-chart',
+      description: 'Ver reportes y estadísticas',
+      color: '#e74c3c',
+      route: 'Informes'
+    },
+    { 
+      name: 'Sincronizar', 
+      icon: 'sync',
+      description: 'Sincronizar datos con el servidor',
+      color: '#27ae60',
+      route: 'Sincronizar'
+    },
+  ];
 
   const verServer = async () => {
-    const serverStatus = await checkServerHandler();
-    setIsServerOnline(serverStatus);
+    try {
+      setIsCheckingConnection(true);
+      const serverStatus = await checkServerHandler();
+      setIsServerOnline(serverStatus);
+    } catch (error) {
+      console.error('Error checking server:', error);
+      setIsServerOnline(false);
+    } finally {
+      setIsCheckingConnection(false);
+    }
   };
 
   useFocusEffect(
     useCallback(() => {
+      // Animación de entrada
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
       const unsubscribe = NetInfo.addEventListener(state => {
         setIsConnected(state.isConnected);
         verServer();
       });
 
-      // Cleanup function
       return () => {
         unsubscribe();
       };
@@ -43,66 +89,131 @@ const UserMenuPPal = ({ route }) => {
 
   const handleOptionPress = (option) => {
     console.log(`Seleccionaste: ${option.name}`);
-    switch (option.name) {
-      case 'Preventa':
-        navigation.navigate('Clientes', {});
-        break;
-      case 'Informes':
-        navigation.navigate('Informes', {});
-        break;
-      case 'Sincronizar':
-        navigation.navigate('Sincronizar', {});
-        break;
-      default:
-        break;
-    }
+    navigation.navigate(option.route, {});
+  };
+
+  const getConnectionStatusText = () => {
+    if (isCheckingConnection) return 'Verificando conexión...';
+    if (!isConnected) return 'Sin conexión a internet';
+    if (!isServerOnline) return 'Servidor no disponible';
+    return 'Todo conectado';
+  };
+
+  const getConnectionStatusColor = () => {
+    if (isCheckingConnection) return '#f39c12';
+    if (!isConnected || !isServerOnline) return '#e74c3c';
+    return '#27ae60';
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.titulo}>
-        <Text style={styles.tituloText}>Vendedor </Text>
-        <Text style={styles.tituloText}>{user.vendedor}</Text>
-      </View>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../assets/images/logo.png')}
-          style={styles.logo} // Establece el ancho de la imagen
-          resizeMode="contain" // Ajusta la imagen proporcionalmente dentro de su contenedor
-        />
-      </View>
-      <View style={styles.connectionStatus}>
-        <MaterialCommunityIcons
-          name={isConnected ? 'wifi' : 'wifi-off'}
-          size={24}
-          color={isConnected ? 'green' : 'red'}
-        />
-        <Text style={{ color: isConnected ? 'green' : 'red' }}>
-          {isConnected ? 'Conectado' : 'Sin conexión'}
-        </Text>
-        <MaterialCommunityIcons
-          name={isServerOnline ? 'check-circle' : 'alert-circle' }
-          size={24}
-          color={isServerOnline ? 'green' : 'red'}
-        />
-        <Text style={{ color: isServerOnline ? 'green' : 'red' }}>
-          {isServerOnline ? 'Servidor online' : 'Servidor Offline'}
-        </Text>
-      </View>
-      <View style={styles.bottonContainer}>
-        {menuOptions.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.menuItem}
-            onPress={() => handleOptionPress(option)}
-          >
-            <View style={styles.menuItem}>
-              <MaterialCommunityIcons name={option.icon} size={50} color="cyan" />
-              <Text style={styles.menuItemText}>{option.name}</Text>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        {/* Header con información del usuario */}
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatarContainer}>
+              <MaterialCommunityIcons 
+                name="account-circle" 
+                size={60} 
+                color="#3498db" 
+              />
             </View>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{user.vendedor}</Text>
+              <Text style={styles.userId}>ID: {user.id}</Text>
+            </View>
+          </View>
+          
+          {/* Estado de conexión */}
+          <View style={styles.connectionStatus}>
+            <View style={styles.statusItem}>
+              <MaterialCommunityIcons
+                name={isConnected ? 'wifi' : 'wifi-off'}
+                size={20}
+                color={isConnected ? '#27ae60' : '#e74c3c'}
+              />
+              <Text style={[styles.statusText, { color: isConnected ? '#27ae60' : '#e74c3c' }]}>
+                {isConnected ? 'Online' : 'Offline'}
+              </Text>
+            </View>
+            
+            <View style={styles.statusItem}>
+              <MaterialCommunityIcons
+                name={isServerOnline ? 'server' : 'server-off'}
+                size={20}
+                color={isServerOnline ? '#27ae60' : '#e74c3c'}
+              />
+              <Text style={[styles.statusText, { color: isServerOnline ? '#27ae60' : '#e74c3c' }]}>
+                {isServerOnline ? 'Servidor OK' : 'Servidor Off'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Logo central */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.appTitle}>Osvi</Text>
+          <Text style={styles.appSubtitle}>Sistema de Gestión De Preventas</Text>
+        </View>
+
+        {/* Estado general de conexión */}
+        {/* <View style={styles.overallStatus}>
+          <MaterialCommunityIcons
+            name={isCheckingConnection ? 'loading' : (isConnected && isServerOnline ? 'check-circle' : 'alert-circle')}
+            size={24}
+            color={getConnectionStatusColor()}
+          />
+          <Text style={[styles.overallStatusText, { color: getConnectionStatusColor() }]}>
+            {getConnectionStatusText()}
+          </Text>
+        </View> */}
+
+        {/* Menú de opciones */}
+        <View style={styles.menuContainer}>
+          <Text style={styles.menuTitle}>¿Qué deseas hacer?</Text>
+          <View style={styles.menuGrid}>
+            {menuOptions.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.menuItem, { backgroundColor: option.color }]}
+                onPress={() => handleOptionPress(option)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.menuItemContent}>
+                  <MaterialCommunityIcons 
+                    name={option.icon} 
+                    size={40} 
+                    color="#ffffff" 
+                    style={styles.menuIcon}
+                  />
+                  <Text style={styles.menuItemTitle}>{option.name}</Text>
+                  <Text style={styles.menuItemDescription}>{option.description}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Footer */}
+        {/* <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Sesión iniciada como vendedor
+          </Text>
+        </View> */}
+      </Animated.View>
     </View>
   );
 };
@@ -110,71 +221,160 @@ const UserMenuPPal = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
-    flexWrap: 'nowrap',
-    justifyContent: 'space-between',
+    backgroundColor: '#30bced',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+  },
+  header: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  userInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: -40,
-    backgroundColor: '#96ddf5',
-    paddingTop:60,
+    marginBottom: 15,
   },
-  container222: {
+  avatarContainer: {
+    marginRight: 15,
+  },
+  userDetails: {
     flex: 1,
-    backgroundColor: '#96ddf5',
-    padding: 10,
   },
-  titulo: {
-    width: '100%',
-    margin: 0,
-    padding: 10,
-    borderTopWidth: 2,
-    borderTopRightRadius: 30,
-    borderBottomRightRadius: 60,
-    backgroundColor: '#0c2f3c',
-    borderColor: "#30bced",
-    borderWidth: 10,
+  userName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
   },
-  subTituloText: {
-    margin: 0,
-    padding: 0,
-    color: '#96ddf5',
-    borderColor: '#96ddf5',
+  userId: {
+    fontSize: 14,
+    color: '#7f8c8d',
   },
-  logo: {
-    flex: 1,
-    width: "100%"
+  connectionStatus: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: '#ecf0f1',
+    paddingTop: 15,
+  },
+  statusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 12,
+    marginLeft: 5,
+    fontWeight: '600',
   },
   logoContainer: {
-    flex: 1,
-    width: 280,
-    height: 200,
-  },
-  tituloText: {
-    alignContent: "center",
-    fontSize: 30,
-    color: '#c9eefa',
-  },
-  menuItem :{
-  },
-
-  menuItemText: {
-    color: "#c9eefa",
-  },
-
-  bottonContainer: {
-    flexDirection: 'row',
-    width: "100%",
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    marginBottom: 0,
-    backgroundColor: '#0c2f3c',
-    borderColor: "#30bced",
-    borderWidth: 10,
-    borderTopLeftRadius:80,
-    borderBottomWidth:3,
-    borderRightWidth:2,
-  }
+    marginVertical: 30,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    borderRadius: 20,
+    marginBottom: 15,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 5,
+  },
+  appSubtitle: {
+    fontSize: 16,
+    color: '#ffffff',
+    opacity: 0.8,
+  },
+  overallStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  overallStatusText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  menuContainer: {
+    flex: 1,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  menuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  menuItem: {
+    width: (width - 60) / 3,
+    aspectRatio: 1,
+    borderRadius: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  menuItemContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
+  menuIcon: {
+    marginBottom: 8,
+  },
+  menuItemTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  menuItemDescription: {
+    fontSize: 10,
+    color: '#ffffff',
+    textAlign: 'center',
+    opacity: 0.9,
+    lineHeight: 12,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#ffffff',
+    opacity: 0.7,
+  },
 });
 
 export default UserMenuPPal;

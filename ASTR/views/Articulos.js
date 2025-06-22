@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { Searchbar } from 'react-native-paper';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getArticulosFiltrados, getArticulosFiltradosXCodigo, getArticulosFrecuentes } from '../database/controllers/Articulos.Controller';
 import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -12,249 +13,243 @@ const Articulos = ({ route }) => {
   const isFocused = useIsFocused();
   const navigation = useNavigation();
   const { params } = route;
-  const preventaNumero = params.numeroPreventa; /*solo el numero de la preventa, va a estar en el local storage*/
-  const cliente =params.cliente; //solo el codigo del cliente
-  const listaDePrecios =params.listaDePrecio; //solo la lista
+  const preventaNumero = params.numeroPreventa;
+  const cliente = params.cliente;
+  const listaDePrecios = params.listaDePrecio;
   const articulosFrecuentes = params.articulosFrecuentes;
   const hasInternetAccess = params.hasInternetAccess;
-  console.log('ART20 linea en la preventa numroº  frecuentes',articulosFrecuentes.length);
-  const [search, setSearch] = useState('');
   
-  const [articulosList, setArticulosList] = useState([]); /*necesita estar en un estado?*/
-  const [filteredArticulosConCantidad, setFilteredArticulosConCantidad] =useState([]);
-  const [filtredArticulos, setFilteredArticulos] = useState([]);
-  //const [articulosEnPreventa, setArticulosEnPreventa] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [search, setSearch] = useState('');
+  const [articulosList, setArticulosList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [buscoXCodigo, setBuscoXCodigo]= useState(false);
   var buscoDesde = 2;
-  
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
         setArticulosList(await buscarAdaptarFiltrar(search));
-        setLoading(false);
-        // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
       } catch (error) {
-        // console.error('Error al obtener artículos filtrados: ', error);
+        console.error('Error al obtener artículos filtrados: ', error);
+      } finally {
         setLoading(false);
       }
     };
-    const fetchDataFrecuentes = async () => {
-      try {
-        setLoading(true);
-        // console.log("esta cargando fethchdata, frecuentes? " ,mostrarFrecuentes);
-        setArticulosList(await buscarAdaptarFiltrar(search));
-        setLoading(false);
-        // console.log( filteredArticulos.length, 'artículos filtrados con: ',search, filteredArticulos[0], articulosList[1]);
-      } catch (error) {
-        // console.error('Error al obtener artículos filtrados: ', error);
-        setLoading(false);
-      }
-    };
-    // console.log("entre a articulos y quiero cargar");
-    if ((mostrarFrecuentes) /*&& (search.length > 1)*/) {
-        //fetchData();
-        fetchDataFrecuentes();
-    }else{
-      if (search.length > buscoDesde) { /* no hago busquedas hasta tener 2 letras */
+    
+    if (mostrarFrecuentes) {
+      fetchData();
+    } else {
+      if (search.length > buscoDesde) {
         fetchData();
-      }else{
+      } else {
         setArticulosList([]);
       }
     }
-    
   }, [search, isFocused, mostrarFrecuentes]);
   
-  /*para quitar campos innecesarios*/
   const buscarAdaptarFiltrar = async (search) =>{
-    
     const obtenerPrecio = async (articulo)=>{
-      // console.log("AR61 lista", listaDePrecios ,"articulo", articulo);
       let costo = articulo.precioCosto;
       let iva = articulo.iva;
       let costoIva = costo * (1+ iva/100);
       let ganancia = 0;
       switch (listaDePrecios) {
-        case "1":
-          ganancia = articulo.lista1;
-          return (costoIva * (1 + ganancia /100)) 
-        case "2":
-          ganancia = articulo.lista2;
-          return (costoIva * (1 + ganancia /100)) 
-        case "3":
-          ganancia = articulo.lista3;
-          return (costoIva * (1 + ganancia /100)) 
-        case "4":
-          ganancia = articulo.lista4;
-          return (costoIva * (1 + ganancia /100)) 
-        case "5":
-          ganancia = articulo.lista5;
-          return (costoIva * (1 + ganancia /100)) 
-          break;
-        default:
-          return 0;
-          // código a ejecutar si la expresión no coincide con ningún valor
+        case "1": ganancia = articulo.lista1; break;
+        case "2": ganancia = articulo.lista2; break;
+        case "3": ganancia = articulo.lista3; break;
+        case "4": ganancia = articulo.lista4; break;
+        case "5": ganancia = articulo.lista5; break;
+        default: return 0;
       }
+      return (costoIva * (1 + ganancia /100));
     }
 
-    const filtrarBusqueda = async (articulos) => {
-      let filtrados = articulos;
-    
-      if (mostrarFrecuentes) {
-        filtrados = filtrados.filter(element => element.frecuente === true);
+    let filteredArticulosBDD = [];
+    if (mostrarFrecuentes) {
+      filteredArticulosBDD = await getArticulosFrecuentes(articulosFrecuentes);
+    } else {
+      if (buscoXCodigo) {
+        filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
+      } else {
+        filteredArticulosBDD = await getArticulosFiltrados(search);
       }
+    }
     
-      return filtrados.sort((a, b) => {
-        if (a.descripcion.toLowerCase() < b.descripcion.toLowerCase()) return -1;
-        if (a.descripcion.toLowerCase() > b.descripcion.toLowerCase()) return 1;
-        return 0;
-      });
-    };
+    let filteredArticulos = await Promise.all(
+      filteredArticulosBDD.map(async (element) => {
+        const cantidad = await cantidadCargado(element.id);
+        const descuento = await descuentoCargado(element.id);
+        const frecuente = articulosFrecuentes?.includes(element.id);
+        const precio = await obtenerPrecio(element);
+        
+        element.seleccionados = cantidad;
+        element.descuento = descuento;
+        element.frecuente = frecuente;
+        element.precio = precio;
+        
+        return element;
+      })
+    )
     
-    
-    // console.log("a buscar a bucar", searchOld, search)
-    //paso 1 traer articulos de la BDD
-    //paso 2 agregar cantidad y descuento en preventa actual y si es frecuente
-    //paso 3 filtrar segun configuracion
-    //paso 4 ordenar alfabeticamente
-      //paso 1
-      
-      let filteredArticulosBDD = [];
-      if (mostrarFrecuentes) {
-        filteredArticulosBDD = await getArticulosFrecuentes(articulosFrecuentes);
-      } else{
-        if (buscoXCodigo) {
-          
-          filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
-        }else{
-          
-          filteredArticulosBDD = await getArticulosFiltrados(search);
-        }
-      }
-      // const filteredArticulosBDD = await getArticulosFiltrados(search);
-      // console.log("encontrados filtrando ", filteredArticulosBDD[1]);
-      //paso 2 y 3 agregar cantidad y descuento en preventa actual y si es frecuente
-      let filteredArticulos = await Promise.all(
-        filteredArticulosBDD.map(async (element) => {
-          // const cantidadYDescuento = await cantidadYDescuentoCargados(element.id);
-          const cantidad = await cantidadCargado(element.id);
-          const descuento = await descuentoCargado(element.id);
-          const frecuente = articulosFrecuentes?.includes(element.id);
-          const precio = await obtenerPrecio(element);
-          // console.log("precio", precio); //depende de la lista del cliente
-          if (frecuente) {
-            // console.log("es frecuente ",element.descripcion);
-          }
-          element.seleccionados = cantidad;
-          element.descuento = descuento;
-          element.frecuente = frecuente;
-          element.precio = precio;
-          // console.log("articulos filtrados ",element.descripcion, "cant", cantidad);
-          return element;
-        })
-      )
-      //paso 4 ordenar alfabeticamente
-      
-    return await filtrarBusqueda(filteredArticulos);
+    return filteredArticulos.sort((a, b) => {
+      if (a.descripcion.toLowerCase() < b.descripcion.toLowerCase()) return -1;
+      if (a.descripcion.toLowerCase() > b.descripcion.toLowerCase()) return 1;
+      return 0;
+    });
   }
 
-  
   const openModal = async (articulo) => {
-    // let datos = await cantidadYDescuentoCargados(articulo.id)
-    // console.log("AAAAAAAAAAAAAAAAAAAAAAAAAarticulo ",datos);
-    let cantidad = await configuracionCantidadMaximaArticulos();
-    const carrito = await obtenerPreventaDeStorage();
-    // console.log("CANTIDAD ", cantidad, carrito.length);
-  
-    if (carrito.length >= cantidad) {
-      Alert.alert(
-        "Límite de artículos alcanzado",
-        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
-        [
-          {
-            text: "Aceptar",
-            onPress: () => console.log("Aceptar presionado"),
-            style: "cancel"
-          }
-        ]
-      );}else{
-        console.log("art 153 ",articulo);
+    try {
+      let cantidad = await configuracionCantidadMaximaArticulos();
+      const carrito = await obtenerPreventaDeStorage();
+    
+      if (carrito.length >= cantidad) {
+        Alert.alert(
+          "Límite alcanzado",
+          `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
+          [{ text: "Aceptar", style: "cancel" }]
+        );
+      } else {
         navigation.navigate('AddArticulo', { articulo });
       }
+    } catch (error) {
+      console.error("Error al abrir modal:", error);
+      Alert.alert("Error", "No se pudo procesar el artículo");
+    }
   };
   
-  const renderItem = ({ item }) => {
-    // console.log("item", item);
-    return(
-    <TouchableOpacity onPress={() => openModal(item)}>
-      <View style={styles.articuloItem}>
-        <View  style={styles.articuloItemLinea}>
-          <Text style={styles.articuloInfo}>{item.id} - {item.descripcion}</Text>
+  const renderItem = ({ item }) => (
+    <TouchableOpacity onPress={() => openModal(item)} style={styles.articuloCard}>
+      <View style={styles.articuloHeader}>
+        <MaterialCommunityIcons name="package-variant" size={20} color="#3498db" />
+        <Text style={styles.articuloTitle}>{item.id} - {item.descripcion}</Text>
+      </View>
+      
+      <View style={styles.articuloDetails}>
+        <View style={styles.detailRow}>
+          <View style={styles.detailItem}>
+            <MaterialCommunityIcons name="warehouse" size={16} color="#7f8c8d" />
+            <Text style={styles.detailText}>Stock: {item.existencia}</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <MaterialCommunityIcons name="currency-usd" size={16} color="#27ae60" />
+            <Text style={styles.detailText}>${item?.precio?.toFixed(2)}</Text>
+          </View>
         </View>
-        <View style={styles.articuloItemLinea}>
-          <Text style={styles.articuloInfo}>Stock: {item.existencia}</Text>
-          <Text style={styles.articuloInfo}>
-            {/* Precio s/iva: ${(item?.precio / (1+(item.iva /100))) .toFixed(2) } */}
-            Precio c/iva: ${item?.precio?.toFixed(2)}
-          </Text>
-          <Text style={styles.articuloInfo}>
-            iva: {item?.iva}
-          </Text>
-          <View style= {{ width: "15%",
-                        borderWidth: 0 ,
-                        flexDirection: 'row', // Hijos en columna vertical
-                        alignItems: 'flex-end', // Alinear hijos a la izquierda
-                      }}>
-            <Text style={styles.checkF}>{item.frecuente? "F  ": ""}</Text>
-            <Text style={styles.check}>{item.seleccionados !== 0? `${item.seleccionados}  ✓` : ""}</Text> 
-            {/* <Text style={styles.check}>{item.seleccionados}</Text> */}
-           </View>
+        
+        <View style={styles.detailRow}>
+          <View style={styles.detailItem}>
+            <MaterialCommunityIcons name="percent" size={16} color="#7f8c8d" />
+            <Text style={styles.detailText}>IVA: {item?.iva}%</Text>
+          </View>
+          
+          <View style={styles.indicators}>
+            {item.frecuente && (
+              <View style={styles.frecuenteIndicator}>
+                <MaterialCommunityIcons name="star" size={16} color="#f39c12" />
+                <Text style={styles.frecuenteText}>F</Text>
+              </View>
+            )}
+            
+            {item.seleccionados !== 0 && (
+              <View style={styles.cantidadIndicator}>
+                <MaterialCommunityIcons name="check-circle" size={16} color="#27ae60" />
+                <Text style={styles.cantidadText}>{item.seleccionados}</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
-  )};
+  );
 
-  const RenderList = () => (
-      <FlatList 
-        data={articulosList} 
-        // keyExtractor={(item) => item.id} 
-        keyExtractor={(item, index) => item.id ? item.id : index.toString()} 
-        renderItem={renderItem}  
-        maxToRenderPerBatch={20} 
-      />
-  )
+  const renderEmptyState = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color="#30bced" />
+          <Text style={styles.emptyStateText}>Buscando artículos...</Text>
+        </View>
+      );
+    }
+    
+    if (articulosList.length === 0 && search.length > 0) {
+      return (
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons name="magnify" size={60} color="#95a5a6" />
+          <Text style={styles.emptyStateText}>No se encontraron artículos</Text>
+          <Text style={styles.emptyStateSubtext}>Intente con otro término de búsqueda</Text>
+        </View>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.viewTitle}> 
-        <Text style={styles.title}> Elegir articulos </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Seleccionar Artículos</Text>
+        <Text style={styles.subtitle}>Busque y seleccione productos</Text>
       </View>
-        <TouchableOpacity onPress={() => setBuscoXCodigo(!buscoXCodigo)}>
-          <Text style={styles.buscandox} > Buscando por {buscoXCodigo? "codigo":"Descripcion"} </Text> 
+      
+      <View style={styles.searchSection}>
+        <TouchableOpacity onPress={() => setBuscoXCodigo(!buscoXCodigo)} style={styles.searchTypeButton}>
+          <MaterialCommunityIcons 
+            name={buscoXCodigo ? "barcode" : "text-search"} 
+            size={20} 
+            color="#3498db" 
+          />
+          <Text style={styles.searchTypeText}>
+            Buscando por {buscoXCodigo ? "código" : "descripción"}
+          </Text>
         </TouchableOpacity>
-      <Searchbar
-        placeholder="Buscar artículo..."
-        value={search}
-        onChangeText={(value) => setSearch(value)}
-        onIconPress={(value) => setSearch(value)}
-      />
-      <View style={{ backgroundColor:"#c9eefa", flexDirection: 'row', alignItems:"center", justifyContent: "space-between", margin: 4, borderBottomColor: "grey", borderBottomWidth:2 }} >
-        <Text style={styles.subInfoText}> Resultados: {loading ? '...' : articulosList.length}    Lista: {listaDePrecios}</Text> 
-        {hasInternetAccess && (
-        <View style={[styles.barraFrecuentes, {alignItems: 'center'}]}>
-          <Text >Ver frecuentes</Text>
-          <Switch value={mostrarFrecuentes} onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)} />
-          
+        
+        <Searchbar
+          placeholder="Buscar artículo..."
+          value={search}
+          onChangeText={setSearch}
+          style={styles.searchbar}
+          iconColor="#3498db"
+        />
+      </View>
+      
+      <View style={styles.filtersSection}>
+        <View style={styles.resultsInfo}>
+          <MaterialCommunityIcons name="information" size={16} color="#7f8c8d" />
+          <Text style={styles.resultsText}>
+            {loading ? '...' : articulosList.length} resultados • Lista {listaDePrecios}
+          </Text>
         </View>
         
-      )}
+        {hasInternetAccess && (
+          <View style={styles.frecuentesToggle}>
+            <Text style={styles.frecuentesLabel}>Frecuentes</Text>
+            <Switch 
+              value={mostrarFrecuentes} 
+              onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)}
+              trackColor={{ false: "#bdc3c7", true: "#3498db" }}
+              thumbColor={mostrarFrecuentes ? "#ffffff" : "#f4f3f4"}
+            />
+          </View>
+        )}
       </View>
-      <View style={styles.itemsContainer} >
-          {loading ?  <ActivityIndicator size="large" color="#0000ff" /> : ((articulosList.length > 0)? <RenderList/> : "")}
+      
+      <View style={styles.content}>
+        {renderEmptyState() ? (
+          renderEmptyState()
+        ) : (
+          <FlatList 
+            data={articulosList} 
+            keyExtractor={(item, index) => item.id ? item.id : index.toString()} 
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            maxToRenderPerBatch={20} 
+          />
+        )}
       </View>
     </View>
   );
@@ -263,93 +258,176 @@ const Articulos = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 2,
-    backgroundColor: '#06181e',
+    backgroundColor: '#30bced',
   },
-  subInfoText: {
-    color:'black',
-    // border: 14,
-    // margin:14,
-    // backgroundColor: '#06181e',
-  },
-  viewTitle: {
-    alignItems: 'center', // Centrar horizontalmente
-    justifyContent: 'center', // Centrar verticalmente
-    marginVertical: 20, // Margen vertical
-    padding: 0,
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#0c2f3c',
   },
   title: {
-    marginTop: 20,
-    marginBottom: -10,
-    fontSize: 20, // Tamaño de fuente
-    fontWeight: 'bold', // Fuente en negrita
-    color: 'cyan', // Color de texto
-    letterSpacing: 2, // Espaciado entre letras
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 5,
   },
-  buscandox: {
-    marginLeft: 10,
-    marginBottom: 6,
-    fontSize: 10, // Tamaño de fuente
-    // fontWeight: 'bold', // Fuente en negrita
-    color: 'cyan', // Color de texto
-    letterSpacing: 2, // Espaciado entre letras
+  subtitle: {
+    fontSize: 14,
+    color: '#bdc3c7',
   },
-  check: {
-    fontSize: 16, // Tamaño del check
-    color: '#1229f7', // Color del check
-    fontWeight: "bold",
+  searchSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#ffffff',
   },
-  checkF: {
-    fontSize: 13, // Tamaño del check
-    color: '#4949f7', // Color del check
-    
+  searchTypeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingVertical: 8,
   },
-  articuloItem: {
-    flexDirection: 'column',
+  searchTypeText: {
+    fontSize: 14,
+    color: '#3498db',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  searchbar: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    elevation: 2,
+  },
+  filtersSection: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 0,
-    borderBottomWidth:1,
-    borderBottomColor: 'gray',
-    paddingVertical: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
   },
-  articuloItemLinea: {
-    flex: 1,
+  resultsInfo: {
     flexDirection: 'row',
-    marginRight: 10,
+    alignItems: 'center',
   },
-  articuloInfo: {
+  resultsText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginLeft: 5,
+  },
+  frecuentesToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  frecuentesLabel: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginRight: 8,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  listContainer: {
+    padding: 15,
+  },
+  articuloCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  articuloHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  articuloTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginLeft: 8,
     flex: 1,
   },
-  modalContainer: {
+  articuloDetails: {
+    marginLeft: 28,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginLeft: 5,
+  },
+  indicators: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  frecuenteIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff3cd',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  frecuenteText: {
+    fontSize: 12,
+    color: '#f39c12',
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  cantidadIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#d4edda',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  cantidadText: {
+    fontSize: 12,
+    color: '#27ae60',
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 40,
   },
-  itemsContainer: {
-    flex: 1,
-    padding: 2,
-    paddingTop: 20,
-    margin: 2,
-    marginTop: -22,
-    zIndex: -1,
-    backgroundColor: '#c9eefa',//background liviano
-    borderWidth: 2, // Agregar borde
-    borderColor: '#000', // Color del borde
-    borderRadius: 10, // Radio de las esquinas (para hacerlas redondeadas)
-    shadowColor: '#000', // Color de la sombra
-    shadowOffset: { width: 0, height: 2 }, // Offset de la sombra
-    shadowOpacity: 0.5, // Opacidad de la sombra
-    shadowRadius: 2, // Radio de la sombra
-    elevation: 50, // Elevación de la sombra (solo para Android)
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
   },
-  barraFrecuentes: {
-    flex: 1,
-    justifyContent:"flex-end",
-    alignContent:"center",
-    flexDirection: 'row',
-    // marginRight: 10,
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 
-export default Articulos ;
+export default Articulos;

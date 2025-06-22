@@ -189,22 +189,33 @@ const insertClientesFromAPI = (data) => {
           );
         });
       });
-    }, undefined, () => resolve({ clientesInsertados, clientesEliminados }), reject);
+    }, undefined, () => {
+      console.log(`Sincronización completada: ${clientesInsertados} clientes procesados, ${clientesEliminados} eliminados`);
+      resolve({ clientesInsertados, clientesEliminados });
+    }, reject);
   });
 };
 
 
-  const getClientes = () => {
-    return new Promise((resolve, reject) => {
-      console.log("traigo los clientes de la api");
-      db.transaction(tx => {
-        tx.executeSql('SELECT * FROM clientes', [], (_, { rows }) => {
-          resolve(rows._array);
-        }, (_, error) => {
+const getClientes = () => {
+  return new Promise((resolve, reject) => {
+    console.log("Obteniendo clientes de la base de datos local");
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM clientes', [], (_, { rows }) => {
+        const clientes = rows._array || [];
+        console.log(`Se obtuvieron ${clientes.length} clientes de la base de datos local`);
+        resolve(clientes);
+      }, (_, error) => {
+        console.error('Error al obtener clientes:', error);
+        if (error.message && error.message.includes('no such table')) {
+          console.log('La tabla clientes no existe. Se debe inicializar la base de datos primero.');
+          resolve([]); // Retornar array vacío en lugar de rechazar
+        } else {
           reject(error);
-        });
+        }
       });
     });
-  };
+  });
+};
   
-  export {insertClientesFromAPI, getClientes};
+export {insertClientesFromAPI, getClientes};
