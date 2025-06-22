@@ -137,57 +137,207 @@ const actualizarArticulos = async (logs, setLogs) => {
 const actualizarPreventas = async (preventasJSON, mensajes) => {
   console.log("Enviando preventa al servidor:", JSON.stringify(preventasJSON, null, 2));
   try {
-        const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
-        console.log("Respuesta del servidor:", response.status, response.data);
-        return response;
-    } catch (error) {
-        mensajes.hayErrores = true;
-        mensajes.mensaje = ('Error al enviar preventas:' + error);
-        console.error('Error al enviar preventas:', error);
+    const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
+    console.log("Respuesta del servidor:", response.status, response.data);
+    
+    // Preparar información del resultado exitoso
+    const resultadoEnvio = {
+      exitoso: true,
+      tipo: 'nuevo',
+      codigoServidor: response.status,
+      respuestaServidor: response.data,
+      mensaje: 'Preventa enviada correctamente'
+    };
+    
+    // Guardar como respaldo si el envío fue exitoso
+    try {
+      const { guardarPreventaEnviada } = await import('../src/utils/storageUtils.js');
+      await guardarPreventaEnviada(preventasJSON, resultadoEnvio);
+      console.log("Preventa guardada como respaldo exitosamente");
+    } catch (backupError) {
+      console.error('Error al guardar respaldo:', backupError);
+      // No fallamos por error de respaldo, solo lo registramos
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error al enviar preventas:', error);
+    
+    // Preparar información del resultado
+    let resultadoEnvio = {
+      exitoso: false,
+      tipo: 'error',
+      codigoServidor: error.response?.status || 'N/A',
+      respuestaServidor: error.response?.data || 'N/A',
+      mensaje: 'Error al enviar preventa'
+    };
+    
+    // Manejar específicamente el error de PRIMARY KEY duplicado
+    if (error.response && error.response.status === 500) {
+      const errorData = error.response.data;
+      if (errorData && errorData.details && errorData.details.includes("PRIMARY must be unique")) {
+        console.log("Preventa ya existe en el servidor, marcando como exitosa");
+        mensajes.hayErrores = false;
+        mensajes.mensaje = "Preventa ya fue enviada anteriormente";
         
-        if (error.response) {
-            console.error('Error del servidor:', error.response.status, error.response.data);
-            mensajes.mensaje = `Error del servidor: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
-        } else if (error.request) {
-            console.error('Error de red:', error.request);
-            mensajes.mensaje = 'Error de conexión al servidor';
-        } else {
-            console.error('Error:', error.message);
-            mensajes.mensaje = `Error: ${error.message}`;
+        // Actualizar información del resultado para duplicada
+        resultadoEnvio = {
+          exitoso: true,
+          tipo: 'duplicada',
+          codigoServidor: error.response.status,
+          respuestaServidor: error.response.data,
+          mensaje: 'Preventa ya existía en el servidor'
+        };
+        
+        // Guardar como respaldo aunque ya exista en el servidor
+        try {
+          const { guardarPreventaEnviada } = await import('../src/utils/storageUtils.js');
+          await guardarPreventaEnviada(preventasJSON, resultadoEnvio);
+          console.log("Preventa guardada como respaldo (ya existía en servidor)");
+        } catch (backupError) {
+          console.error('Error al guardar respaldo:', backupError);
         }
         
-        throw error;
+        return { status: 200, data: { message: "Preventa ya existía en servidor" } };
+      }
     }
+    
+    mensajes.hayErrores = true;
+    
+    if (error.response) {
+      console.error('Error del servidor:', error.response.status, error.response.data);
+      mensajes.mensaje = `Error del servidor: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
+    } else if (error.request) {
+      console.error('Error de red:', error.request);
+      mensajes.mensaje = 'Error de conexión al servidor';
+    } else {
+      console.error('Error:', error.message);
+      mensajes.mensaje = `Error: ${error.message}`;
+    }
+    
+    // Guardar respaldo con información del error
+    try {
+      const { guardarPreventaEnviada } = await import('../src/utils/storageUtils.js');
+      await guardarPreventaEnviada(preventasJSON, resultadoEnvio);
+      console.log("Preventa guardada como respaldo (con error)");
+    } catch (backupError) {
+      console.error('Error al guardar respaldo:', backupError);
+    }
+    
+    // No lanzamos la excepción, solo la registramos
+    return null;
+  }
 }
+
+// Verificar si una preventa ya existe en el servidor
+const verificarPreventaExistente = async (numeroPreventa) => {
+  try {
+    const endpoint = await configuracionEndPoint();
+    const response = await axios.get(`${endpoint}preventas/${numeroPreventa}`, {
+      timeout: 10000,
+      validateStatus: function (status) {
+        return status < 500; // Resuelve solo si el status es menor a 500
+      }
+    });
+    
+    // Si la respuesta es 200, la preventa existe
+    // Si es 404, no existe
+    return response.status === 200;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return false; // La preventa no existe
+    }
+    console.error('Error al verificar preventa existente:', error);
+    return false; // En caso de error, asumimos que no existe
+  }
+};
 
 //envia solo una preventa
 const sincronizarPreventa = async (preventaNumero, cliente) => {
-  // console.log("sincronizando preventa",preventaNumero, cliente);
-  let preventas = await preventasBDDToArray();
-  let preventaJSON= preventas.filter(e => e.DocumentoNumero == preventaNumero); 
-  
-  if (preventaJSON.length === 0) {
-    console.error("No se encontró la preventa", preventaNumero);
+  try {
+    console.log("Sincronizando preventa", preventaNumero, cliente);
+    
+    // Verificar si la preventa ya existe en el servidor
+    const yaExiste = await verificarPreventaExistente(preventaNumero);
+    if (yaExiste) {
+      console.log("Preventa ya existe en el servidor, marcando como exitosa");
+      
+      // Obtener la preventa para guardarla como respaldo
+      let preventas = await preventasBDDToArray();
+      let preventaJSON = preventas.filter(e => e.DocumentoNumero == preventaNumero);
+      
+      if (preventaJSON.length > 0) {
+        const preventa = preventaJSON[0];
+        
+        // Guardar como respaldo con información de duplicada
+        const resultadoEnvio = {
+          exitoso: true,
+          tipo: 'duplicada',
+          codigoServidor: 200,
+          respuestaServidor: { message: "Preventa ya existía en servidor" },
+          mensaje: 'Preventa ya existía en el servidor'
+        };
+        
+        try {
+          const { guardarPreventaEnviada } = await import('../src/utils/storageUtils.js');
+          await guardarPreventaEnviada(preventa, resultadoEnvio);
+          console.log("Preventa duplicada guardada como respaldo");
+        } catch (backupError) {
+          console.error('Error al guardar respaldo de preventa duplicada:', backupError);
+        }
+      }
+      
+      return true;
+    }
+    
+    let preventas = await preventasBDDToArray();
+    console.log("Preventas encontradas en BDD:", preventas.length);
+    
+    let preventaJSON = preventas.filter(e => e.DocumentoNumero == preventaNumero); 
+    console.log("Preventa filtrada:", preventaJSON.length);
+    
+    if (preventaJSON.length === 0) {
+      console.error("No se encontró la preventa", preventaNumero);
+      return false;
+    }
+    
+    const preventa = preventaJSON[0];
+    console.log("Enviando preventa:", {
+      numero: preventa.DocumentoNumero,
+      cliente: preventa.ClienteCodigo,
+      items: preventa.items?.length || 0,
+      importe: preventa.ImporteTotal
+    });
+    
+    // Validar la preventa antes de enviar
+    const { validarPreventaParaEnvio } = await import('../database/controllers/Preventa.Controller.js');
+    const errores = validarPreventaParaEnvio(preventa);
+    
+    if (errores.length > 0) {
+      console.error("Errores de validación:", errores);
+      return false;
+    }
+    
+    let mensajes = {
+      hayErrores: false,
+      mensaje: "No hay errores."
+    };    
+    
+    const resultado = await actualizarPreventas(preventa, mensajes);
+    console.log("Resultado de envío:", mensajes);
+    
+    if (resultado) {
+      console.log("Preventa enviada exitosamente al servidor");
+    } else {
+      console.log("Error al enviar preventa al servidor");
+    }
+    
+    return !mensajes.hayErrores;
+    
+  } catch (error) {
+    console.error('Error en sincronizarPreventa:', error);
     return false;
   }
-  
-  const preventa = preventaJSON[0];
-  console.log("enviando preventa", preventa);
-  
-  // Validar la preventa antes de enviar
-  const { validarPreventaParaEnvio } = await import('../database/controllers/Preventa.Controller.js');
-  const errores = validarPreventaParaEnvio(preventa);
-  
-  if (errores.length > 0) {
-    console.error("Errores de validación:", errores);
-    return false;
-  }
-  
-  let mensajes = {hayErrores: false,
-    mensaje: "No hay errores."};    
-    await actualizarPreventas(preventa, mensajes);
-  console.log("errores",mensajes);
-  return !mensajes.hayErrores
 };
 
 const enviarPreventas = async (logs, setLogs) => {
@@ -291,4 +441,4 @@ const enviarPreventas = async (logs, setLogs) => {
     }
   };  
 
-export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI, getInformeOnline, sincronizarPreventa, errorSincronizando};
+export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI, getInformeOnline, sincronizarPreventa, verificarPreventaExistente, errorSincronizando};

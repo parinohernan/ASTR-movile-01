@@ -11,6 +11,7 @@ import Articulos from './views/Articulos';
 import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
 import Usuarios from './views/Usuarios';
+import PreventasEnviadas from './views/PreventasEnviadas';
 import {AddArticulo} from './src/components/AddArticulo';
 import ListaPreventas from './src/components/ListaPreventas';
 // import About from './views/about';
@@ -29,7 +30,7 @@ const App = () => {
   const RenderLoginScreen = (props) => <LoginScreen {...props} rootUser={rootUser}/>;
   const RenderHomeScreen = (props) => <Home />;
   const RenderListaPreventasScreen = (props) => <ListaPreventas />;
-  const RenderSincronizarScreen = (props) => <Sincronizar />;
+  const RenderSincronizarScreen = (props) => <Sincronizar {...props} />;
   const RenderConfigurarScreen = (props) => <Configurar />;
   const RenderArticulosScreen = (props) => <Articulos {...props} />;
   const RenderAddArticuloScreen = (props) => <AddArticulo {...props} />;
@@ -40,6 +41,7 @@ const App = () => {
   const RenderPreventaScreen = (props) => <Preventa {...props} clienteSeleccionado={clienteSeleccionado} setPreventaSeleccionada={setPreventaSeleccionada} />;
   const RenderEditPreventaScreen = (props) => <EditPreventa {...props} clienteSeleccionado={clienteSeleccionado} setPreventaSeleccionada={setPreventaSeleccionada} />;
   const RenderUserMenuPPal = (props) => <UserMenuPPal {...props}/>;
+  const RenderPreventasEnviadasScreen = (props) => <PreventasEnviadas {...props} />;
 
   return (
     <NavigationContainer>
@@ -59,6 +61,7 @@ const App = () => {
         <Stack.Screen name="Preventa" component={RenderPreventaScreen} />
         <Stack.Screen name="EditPreventa" component={RenderEditPreventaScreen} />
         <Stack.Screen name="UserMenuPPal" component={RenderUserMenuPPal} />
+        <Stack.Screen name="PreventasEnviadas" component={RenderPreventasEnviadasScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

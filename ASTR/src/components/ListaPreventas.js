@@ -121,17 +121,36 @@ const renderItem = ({ item }) => (
 
         break;
       case 'Sincronizar':
-        clientes = await getClientes();
-        objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
-        preventaNumero = selectedItem.numero;
-        observacion = selectedItem.observacion;
-        setModalVisible(false);
-        
-        if ( await sincronizarPreventa(preventaNumero, objCliente) ){
-          borrarPreventaYSusItems(selectedItem.numero);
-          cargarPreventas();
-        } else {
-          Alert.alert('Error de sincronización, comuníquese con soporte.');
+        try {
+          console.log("Iniciando sincronización de preventa:", selectedItem.numero);
+          clientes = await getClientes();
+          objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
+          preventaNumero = selectedItem.numero;
+          observacion = selectedItem.observacion;
+          setModalVisible(false);
+          
+          console.log("Datos preparados para sincronización:", {
+            preventaNumero,
+            cliente: objCliente,
+            observacion
+          });
+          
+          const resultado = await sincronizarPreventa(preventaNumero, objCliente);
+          console.log("Resultado de sincronización:", resultado);
+          
+          if (resultado) {
+            // Si la sincronización fue exitosa, borrar la preventa local
+            console.log("Sincronización exitosa, borrando preventa local");
+            await borrarPreventaYSusItems(selectedItem.numero);
+            cargarPreventas();
+            Alert.alert('Éxito', 'Preventa procesada correctamente');
+          } else {
+            console.log("Sincronización falló");
+            Alert.alert('Error', 'Error de sincronización, comuníquese con soporte.');
+          }
+        } catch (error) {
+          console.error('Error en sincronización:', error);
+          Alert.alert('Error', 'Error de sincronización, comuníquese con soporte.');
         }
         break;
 

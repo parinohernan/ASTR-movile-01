@@ -166,7 +166,7 @@ const asyncPreventasBDDToArray = async() => {
         db.transaction((tx) => {
             try {
                 tx.executeSql(
-                    'SELECT preventaCabeza.cantidadItems, preventaCabeza.vendedor, preventaCabeza.observacion, preventaCabeza.fecha, preventaCabeza.id as DocumentoNumero, clientes.id as ClienteCodigo, preventaCabeza.importetotal as ImporteTotal FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
+                    'SELECT preventaCabeza.cantidadItems, preventaCabeza.vendedor, preventaCabeza.observacion, preventaCabeza.fecha, preventaCabeza.id as DocumentoNumero, clientes.id as ClienteCodigo, clientes.descripcion as ClienteDescripcion, preventaCabeza.importetotal as ImporteTotal FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
                     [],
                     (_, result) => {
                         preventasArray = [];
@@ -179,6 +179,7 @@ const asyncPreventasBDDToArray = async() => {
                               Fecha: result.rows.item(i).fecha,
                               FechaHoraEnvio : result.rows.item(i).fecha,
                               ClienteCodigo:result.rows.item(i).ClienteCodigo,
+                              ClienteDescripcion:result.rows.item(i).ClienteDescripcion,
                               VendedorCodigo: vendedorCodigo,
                               ImporteTotal: result.rows.item(i).ImporteTotal,
                               Cant_items: result.rows.item(i).cantidadItems,

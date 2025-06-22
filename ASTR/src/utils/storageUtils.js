@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../database/database';
 
 const STORAGE_KEY = '@MyApp:PreventaData';
+const PREVENTAS_ENVIADAS_KEY = '@MyApp:PreventasEnviadas';
+const MAX_PREVENTAS_ENVIADAS = 50;
 
 // Guardar una preventa en AsyncStorage
 const guardarPreventaEnStorage = async (preventa) => {
@@ -131,4 +133,107 @@ const eliminarItemEnPreventaEnStorage = async (uniqueId) => {
   }
 }
 
-export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal, eliminarItemEnPreventaEnStorage };
+// Guardar preventa enviada como respaldo
+const guardarPreventaEnviada = async (preventa, resultadoEnvio = null) => {
+  try {
+    const preventasEnviadas = await obtenerPreventasEnviadas();
+    
+    // Determinar el estado basado en el resultado
+    let estado = 'enviada';
+    let detallesEnvio = {
+      exitoso: true,
+      tipo: 'nuevo',
+      mensaje: 'Preventa enviada correctamente',
+      timestamp: new Date().toISOString()
+    };
+    
+    // Si hay resultado del envío, usar esa información
+    if (resultadoEnvio) {
+      if (resultadoEnvio.duplicada) {
+        estado = 'duplicada';
+        detallesEnvio = {
+          exitoso: true,
+          tipo: 'duplicada',
+          mensaje: 'Preventa ya existía en el servidor',
+          timestamp: new Date().toISOString(),
+          codigoServidor: resultadoEnvio.codigoServidor || 'N/A',
+          respuestaServidor: resultadoEnvio.respuestaServidor || 'N/A'
+        };
+      } else if (resultadoEnvio.error) {
+        estado = 'error';
+        detallesEnvio = {
+          exitoso: false,
+          tipo: 'error',
+          mensaje: resultadoEnvio.mensaje || 'Error al enviar preventa',
+          timestamp: new Date().toISOString(),
+          codigoServidor: resultadoEnvio.codigoServidor || 'N/A',
+          respuestaServidor: resultadoEnvio.respuestaServidor || 'N/A'
+        };
+      } else {
+        // Envío exitoso
+        detallesEnvio = {
+          exitoso: true,
+          tipo: 'nuevo',
+          mensaje: 'Preventa enviada correctamente',
+          timestamp: new Date().toISOString(),
+          codigoServidor: resultadoEnvio.codigoServidor || 'N/A',
+          respuestaServidor: resultadoEnvio.respuestaServidor || 'N/A'
+        };
+      }
+    }
+    
+    // Agregar timestamp y estado de envío
+    const preventaConMetadata = {
+      ...preventa,
+      timestamp: new Date().toISOString(),
+      estado: estado,
+      id: Date.now().toString(),
+      resultadoEnvio: detallesEnvio
+    };
+    
+    // Agregar al inicio del array
+    preventasEnviadas.unshift(preventaConMetadata);
+    
+    // Mantener solo los últimos MAX_PREVENTAS_ENVIADAS
+    if (preventasEnviadas.length > MAX_PREVENTAS_ENVIADAS) {
+      preventasEnviadas.splice(MAX_PREVENTAS_ENVIADAS);
+    }
+    
+    await AsyncStorage.setItem(PREVENTAS_ENVIADAS_KEY, JSON.stringify(preventasEnviadas));
+    console.log(`Preventa guardada como respaldo (${estado})`);
+  } catch (error) {
+    console.error('Error al guardar preventa enviada:', error);
+  }
+};
+
+// Obtener preventas enviadas
+const obtenerPreventasEnviadas = async () => {
+  try {
+    const preventasString = await AsyncStorage.getItem(PREVENTAS_ENVIADAS_KEY);
+    if (preventasString !== null && preventasString !== undefined) {
+      return JSON.parse(preventasString);
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error al obtener preventas enviadas:', error);
+    return [];
+  }
+};
+
+// Limpiar preventas enviadas
+const limpiarPreventasEnviadas = async () => {
+  try {
+    await AsyncStorage.removeItem(PREVENTAS_ENVIADAS_KEY);
+    console.log('Preventas enviadas eliminadas');
+  } catch (error) {
+    console.error('Error al limpiar preventas enviadas:', error);
+  }
+};
+
+// Exportar preventa como texto
+const exportarPreventaComoTexto = (preventa) => {
+  return JSON.stringify(preventa, null, 2);
+};
+
+export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal, eliminarItemEnPreventaEnStorage, guardarPreventaEnviada, obtenerPreventasEnviadas, limpiarPreventasEnviadas, exportarPreventaComoTexto };

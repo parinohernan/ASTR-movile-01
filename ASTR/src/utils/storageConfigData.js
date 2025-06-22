@@ -63,6 +63,11 @@ async function nextPreventa() {
     return conf.siguientePreventa
   }
 
+async function obtenerNextPreventa() {
+    let conf= await getConfiguracionDelStorage();
+    return conf.siguientePreventa
+  }
+
 async function mas1NexPreventa() {
     let conf = await getConfiguracionDelStorage();
     let numero = +conf.siguientePreventa + 1;
@@ -113,6 +118,33 @@ const obtenerEndpointActual = async () => {
   }
 };
 
-export { getConfiguracionDelStorage, guardarConfiguracionEnStorage, nextPreventa,
-  configuracionCantidadMaximaArticulos, mas1NexPreventa, configuracionVendedor, configuracionSucursal, configuracionEndPoint, 
-  limpiarConfiguracionDelStorage, establecerConfiguracionPrueba, obtenerEndpointActual };
+// Generar un nuevo número de preventa único
+const generarNuevoNumeroPreventa = async () => {
+  try {
+    const numeroActual = await obtenerNextPreventa();
+    const timestamp = Date.now();
+    const numeroUnico = `${numeroActual}_${timestamp}`;
+    console.log("Nuevo número de preventa generado:", numeroUnico);
+    return numeroUnico;
+  } catch (error) {
+    console.error('Error al generar nuevo número de preventa:', error);
+    // Fallback: usar timestamp como número
+    return Date.now().toString();
+  }
+};
+
+export { 
+  getConfiguracionDelStorage, 
+  guardarConfiguracionEnStorage, 
+  nextPreventa,
+  obtenerNextPreventa, 
+  mas1NexPreventa, 
+  configuracionEndPoint, 
+  configuracionVendedor, 
+  configuracionSucursal, 
+  configuracionCantidadMaximaArticulos,
+  limpiarConfiguracionDelStorage,
+  establecerConfiguracionPrueba,
+  obtenerEndpointActual,
+  generarNuevoNumeroPreventa 
+};
