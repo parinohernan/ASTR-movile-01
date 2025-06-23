@@ -203,7 +203,6 @@ const getClientes = () => {
     db.transaction(tx => {
       tx.executeSql('SELECT * FROM clientes', [], (_, { rows }) => {
         const clientes = rows._array || [];
-        console.log(`Se obtuvieron ${clientes.length} clientes de la base de datos local`);
         resolve(clientes);
       }, (_, error) => {
         console.error('Error al obtener clientes:', error);

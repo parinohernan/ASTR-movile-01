@@ -64,33 +64,33 @@ const Articulos = ({ route }) => {
       }
       return (costoIva * (1 + ganancia /100));
     }
-
-    let filteredArticulosBDD = [];
-    if (mostrarFrecuentes) {
-      filteredArticulosBDD = await getArticulosFrecuentes(articulosFrecuentes);
+      
+      let filteredArticulosBDD = [];
+      if (mostrarFrecuentes) {
+        filteredArticulosBDD = await getArticulosFrecuentes(articulosFrecuentes);
     } else {
-      if (buscoXCodigo) {
-        filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
+        if (buscoXCodigo) {
+          filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
       } else {
-        filteredArticulosBDD = await getArticulosFiltrados(search);
+          filteredArticulosBDD = await getArticulosFiltrados(search);
+        }
       }
-    }
     
-    let filteredArticulos = await Promise.all(
-      filteredArticulosBDD.map(async (element) => {
-        const cantidad = await cantidadCargado(element.id);
-        const descuento = await descuentoCargado(element.id);
-        const frecuente = articulosFrecuentes?.includes(element.id);
-        const precio = await obtenerPrecio(element);
+      let filteredArticulos = await Promise.all(
+        filteredArticulosBDD.map(async (element) => {
+          const cantidad = await cantidadCargado(element.id);
+          const descuento = await descuentoCargado(element.id);
+          const frecuente = articulosFrecuentes?.includes(element.id);
+          const precio = await obtenerPrecio(element);
         
-        element.seleccionados = cantidad;
-        element.descuento = descuento;
-        element.frecuente = frecuente;
-        element.precio = precio;
+          element.seleccionados = cantidad;
+          element.descuento = descuento;
+          element.frecuente = frecuente;
+          element.precio = precio;
         
-        return element;
-      })
-    )
+          return element;
+        })
+      )
     
     return filteredArticulos.sort((a, b) => {
       if (a.descripcion.toLowerCase() < b.descripcion.toLowerCase()) return -1;
@@ -98,16 +98,16 @@ const Articulos = ({ route }) => {
       return 0;
     });
   }
-
+  
   const openModal = async (articulo) => {
     try {
-      let cantidad = await configuracionCantidadMaximaArticulos();
-      const carrito = await obtenerPreventaDeStorage();
-    
-      if (carrito.length >= cantidad) {
-        Alert.alert(
+    let cantidad = await configuracionCantidadMaximaArticulos();
+    const carrito = await obtenerPreventaDeStorage();
+  
+    if (carrito.length >= cantidad) {
+      Alert.alert(
           "Límite alcanzado",
-          `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
+        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
           [{ text: "Aceptar", style: "cancel" }]
         );
       } else {
@@ -159,7 +159,7 @@ const Articulos = ({ route }) => {
                 <Text style={styles.cantidadText}>{item.seleccionados}</Text>
               </View>
             )}
-          </View>
+           </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -207,9 +207,9 @@ const Articulos = ({ route }) => {
           </Text>
         </TouchableOpacity>
         
-        <Searchbar
-          placeholder="Buscar artículo..."
-          value={search}
+      <Searchbar
+        placeholder="Buscar artículo..."
+        value={search}
           onChangeText={setSearch}
           style={styles.searchbar}
           iconColor="#3498db"
@@ -234,7 +234,7 @@ const Articulos = ({ route }) => {
               thumbColor={mostrarFrecuentes ? "#ffffff" : "#f4f3f4"}
             />
           </View>
-        )}
+      )}
       </View>
       
       <View style={styles.content}>

@@ -100,7 +100,7 @@ const UserMenuPPal = ({ route }) => {
 
   const handleOptionPress = (option) => {
     console.log(`Seleccionaste: ${option.name}`);
-    navigation.navigate(option.route, {});
+    navigation.navigate(option.route, { user });
   };
 
   const getConnectionStatusText = () => {

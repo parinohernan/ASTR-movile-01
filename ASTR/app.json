@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ASTR",
+    "name": "osvi 314",
     "slug": "ASTR",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.hernanpa.ASTR"
+      "package": "com.hernanpa.osvi314"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +31,7 @@
       "eas": {
         "projectId": "cb45e6f4-dabf-4373-84f1-b8e4637f41f8"
       }
-    }
+    },
+    "owner": "hernanpa"
   }
 }

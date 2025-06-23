@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Switch, Modal } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
@@ -7,13 +7,16 @@ import { nextPreventa } from '../src/utils/storageConfigData';
 import { Searchbar } from 'react-native-paper';
 import checkServerHandler from '../src/utils/checkServerHandler';
 
-const Clientes = () => {
+const Clientes = ({ route }) => {
   const [search, setSearch] = useState('');
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const { user } = route.params || {};
+  const [showOnlyMyClients, setShowOnlyMyClients] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,12 +36,20 @@ const Clientes = () => {
     fetchData();
   }, []);
 
-  const filteredClientes = clientes.filter(
-    (cliente) =>
-      typeof cliente.id === 'string' &&
-      (cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-      cliente.id.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredClientes = clientes
+    .filter(cliente => {
+      if (showOnlyMyClients && user) {
+        return String(cliente.codigoVendedor) === String(user.id);
+      }
+      return true;
+    })
+    .filter(
+      (cliente) =>
+        search.length === 0 ||
+        (typeof cliente.id === 'string' &&
+        (cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
+        cliente.id.toLowerCase().includes(search.toLowerCase())))
+    );
 
   const handleClienteInfoClick = async (cliente) => {
     setIsButtonDisabled(true);
@@ -162,9 +173,52 @@ const Clientes = () => {
 
   return (
     <View style={styles.container}>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPressOut={() => setModalVisible(false)}
+        >
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Opciones de Filtro</Text>
+            
+            {user && (
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Mostrar solo mis clientes</Text>
+                <Switch
+                  value={showOnlyMyClients}
+                  onValueChange={setShowOnlyMyClients}
+                  trackColor={{ false: "#bdc3c7", true: "#3498db" }}
+                  thumbColor={showOnlyMyClients ? "#ffffff" : "#f4f3f4"}
+                />
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(!modalVisible)}
+            >
+              <Text style={styles.closeButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <View style={styles.header}>
-        <Text style={styles.title}>Seleccionar Cliente</Text>
-        <Text style={styles.subtitle}>Elige un cliente para crear una preventa</Text>
+        <View>
+          <Text style={styles.title}>Seleccionar Cliente</Text>
+          <Text style={styles.subtitle}>Elige un cliente para crear una preventa</Text>
+        </View>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.headerIcon}>
+          <MaterialCommunityIcons name="filter-variant" size={26} color="#ffffff" />
+        </TouchableOpacity>
       </View>
       
       <View style={styles.searchContainer}>
@@ -208,10 +262,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#30bced',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: '#0c2f3c',
+  },
+  headerIcon: {
+    padding: 5,
   },
   title: {
     fontSize: 24,
@@ -232,6 +292,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     borderRadius: 10,
     elevation: 2,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   content: {
     flex: 1,
@@ -343,6 +405,58 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#2c3e50',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  switchLabel: {
+    fontSize: 16,
+    color: '#2c3e50',
+  },
+  closeButton: {
+    backgroundColor: '#3498db',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    elevation: 2,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 16,
   },
 });
 
