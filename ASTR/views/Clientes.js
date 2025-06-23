@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Switch, Modal } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
-import { nextPreventa } from '../src/utils/storageConfigData';
+import { nextPreventa, getConfiguracionDelStorage } from '../src/utils/storageConfigData';
 import { Searchbar } from 'react-native-paper';
 import checkServerHandler from '../src/utils/checkServerHandler';
 
@@ -18,23 +18,33 @@ const Clientes = ({ route }) => {
   const [showOnlyMyClients, setShowOnlyMyClients] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const clientesFromDB = await getClientes();
-        setClientes(clientesFromDB);
-        console.log(`Se cargaron ${clientesFromDB.length} clientes`);
-      } catch (error) {
-        console.error('Error al obtener clientes: ', error);
-        setError('Error al cargar los clientes. Verifique la sincronización.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchInitialData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          // Cargar la configuración para saber el estado inicial del filtro
+          const config = await getConfiguracionDelStorage();
+          setShowOnlyMyClients(config?.filtrarClientesPorVendedor ?? true);
+
+          // Cargar los clientes
+          const clientesFromDB = await getClientes();
+          setClientes(clientesFromDB);
+          console.log(`Se cargaron ${clientesFromDB.length} clientes`);
+
+        } catch (error) {
+          console.error('Error al obtener datos iniciales: ', error);
+          setError('Error al cargar la configuración o los clientes.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchInitialData();
+    }, [])
+  );
 
   const filteredClientes = clientes
     .filter(cliente => {

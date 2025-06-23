@@ -441,4 +441,19 @@ const enviarPreventas = async (logs, setLogs) => {
     }
   };  
 
+export const actualizarSoloVendedores = async (logs, setLogs) => {
+    console.log("Actualizando solo vendedores...");
+    logs = handleLogs(logs, "Iniciando actualización de vendedores...", setLogs);
+    
+    try {
+        await actualizarVendedores(logs, setLogs);
+        logs = handleLogs(logs, "✅ Actualización de vendedores completada exitosamente", setLogs);
+        return { success: true, message: "Vendedores actualizados correctamente" };
+    } catch (error) {
+        console.error('Error en actualizarSoloVendedores:', error);
+        logs = handleLogs(logs, `❌ Error al actualizar vendedores: ${error.message}`, setLogs);
+        return { success: false, message: error.message };
+    }
+};
+
 export { actualizarAPP, actualizarVendedores, actualizarClientes, initDatabase, enviarPreventas, getArticulosFrecuentesDesdeAPI, getInformeOnline, sincronizarPreventa, verificarPreventaExistente, errorSincronizando};
