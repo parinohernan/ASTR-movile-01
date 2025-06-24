@@ -13,7 +13,7 @@ import { AddArticulo } from '../src/components/AddArticulo';
 import { getArticuloPorCodigo } from '../database/controllers/Articulos.Controller';
 import { borrarPreventaYSusItems } from '../database/controllers/Preventa.Controller';
 
-// import { Fontisto } from '@expo/vector-icons';
+// import { Fontisto } from '@expo/vector-icons'; 
 
 const Preventa = (props) => {
   useFocusEffect(
@@ -96,7 +96,7 @@ const Preventa = (props) => {
   
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
-    console.log("prv166 ",carritoData);
+    // console.log("prv166 ",carritoData);
     if (carritoData.length != 0) {
       setCarrito(carritoData.map(item => {
         let precioLista = 0;

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert, Modal } from 'react-native';
 import { Searchbar } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getArticulosFiltrados, getArticulosFiltradosXCodigo, getArticulosFrecuentes } from '../database/controllers/Articulos.Controller';
-import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado } from '../src/components/AddArticulo';
+import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado, AddArticulo } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
 import { obtenerPreventaDeStorage } from '../src/utils/storageUtils';
@@ -24,6 +24,9 @@ const Articulos = ({ route }) => {
   const [loading, setLoading] = useState(false);
   const [buscoXCodigo, setBuscoXCodigo]= useState(false);
   var buscoDesde = 2;
+  const flatListRef = useRef(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,23 +102,20 @@ const Articulos = ({ route }) => {
     });
   }
   
-  const openModal = async (articulo) => {
-    try {
-    let cantidad = await configuracionCantidadMaximaArticulos();
-    const carrito = await obtenerPreventaDeStorage();
+  const openModal = (articulo) => {
+    setArticuloSeleccionado(articulo);
+    setModalVisible(true);
+  };
   
-    if (carrito.length >= cantidad) {
-      Alert.alert(
-          "Límite alcanzado",
-        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
-          [{ text: "Aceptar", style: "cancel" }]
-        );
-      } else {
-        navigation.navigate('AddArticulo', { articulo });
-      }
-    } catch (error) {
-      console.error("Error al abrir modal:", error);
-      Alert.alert("Error", "No se pudo procesar el artículo");
+  const closeModal = (articuloActualizado) => {
+    setModalVisible(false);
+    setArticuloSeleccionado(null);
+    if (articuloActualizado && articuloActualizado.id) {
+      setArticulosList(prevList => prevList.map(item =>
+        item.id === articuloActualizado.id
+          ? { ...item, seleccionados: articuloActualizado.cantidad, descuento: articuloActualizado.descuento }
+          : item
+      ));
     }
   };
   
@@ -242,6 +242,7 @@ const Articulos = ({ route }) => {
           renderEmptyState()
         ) : (
           <FlatList 
+            ref={flatListRef}
             data={articulosList} 
             keyExtractor={(item, index) => item.id ? item.id : index.toString()} 
             renderItem={renderItem}
@@ -251,6 +252,19 @@ const Articulos = ({ route }) => {
           />
         )}
       </View>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        onRequestClose={closeModal}
+        presentationStyle="fullScreen"
+      >
+        {articuloSeleccionado && (
+          <AddArticulo
+            route={{ params: { articulo: articuloSeleccionado, preventaNumero: route.params.numeroPreventa, cliente: route.params.cliente, cantItems: articulosList.length } }}
+            navigationOverride={closeModal}
+          />
+        )}
+      </Modal>
     </View>
   );
 };

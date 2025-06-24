@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet} from 'react-native';
-import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage, limpiarPreventaDeStorage} from "../utils/storageUtils";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage, limpiarPreventaDeStorage } from "../utils/storageUtils";
+import { configuracionCantidadMaximaArticulos } from "../utils/storageConfigData";
 import { useNavigation } from '@react-navigation/native';
 // import { Keyboard } from 'react-native-keyboard-aware-scroll-view';
 
@@ -47,7 +48,7 @@ const descuentoCargado= async (codigo) => {
   return 0;
 }
 
-const AddArticulo = ({route}) => {
+const AddArticulo = ({route, navigationOverride}) => {
   const {params} = route;
   const {articulo, preventaNumero, cliente, cantItems} = params;
   console.log("paarametros",params);
@@ -63,6 +64,33 @@ const AddArticulo = ({route}) => {
   const [verAgregar, setVerAgregar] = useState (false);
   const navigation = useNavigation();
   const cantidadInputRef = useRef(null);
+
+  useEffect(() => {
+    const validarLimite = async () => {
+      const cantidadMaxima = await configuracionCantidadMaximaArticulos();
+      const carrito = await obtenerPreventaDeStorage();
+      if (carrito.length >= cantidadMaxima) {
+        Alert.alert(
+          "Límite alcanzado",
+          `Se ha superado la cantidad máxima de ${cantidadMaxima} artículos permitidos.`,
+          [
+            {
+              text: "Aceptar",
+              onPress: () => {
+                if (navigationOverride) {
+                  navigationOverride();
+                } else {
+                  navigation.goBack();
+                }
+              },
+              style: "cancel"
+            }
+          ]
+        );
+      }
+    };
+    validarLimite();
+  }, []);
 
   const articuloConDetalles = {
     ...articulo,
@@ -90,15 +118,22 @@ const AddArticulo = ({route}) => {
     const preventa = await obtenerPreventaDeStorage();
     preventa.push(articuloConDetalles);
     guardarPreventaEnStorage(preventa);
-    navigation.goBack();
+    if (navigationOverride) {
+      navigationOverride(articuloConDetalles);
+    } else {
+      navigation.goBack();
+    }
   }
   
   const eliminar1PreventaStorage = async () =>{
-    // eliminar item de la preventa de sorage actual
-     console.log("elimina solo uno",articuloConDetalles);
-     await eliminarItemEnPreventaEnStorage(articuloConDetalles.uniqueId);
-     navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente: cliente});
-     return
+    console.log("elimina solo uno",articuloConDetalles);
+    await eliminarItemEnPreventaEnStorage(articuloConDetalles.uniqueId);
+    if (navigationOverride) {
+      navigationOverride();
+    } else {
+      navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente: cliente});
+    }
+    return
   }
 
   const handleSave = async () => {
@@ -109,11 +144,13 @@ const AddArticulo = ({route}) => {
       return;
     } 
     if (cantidad == 0) {
-      navigation.goBack();
+      if (navigationOverride) {
+        navigationOverride();
+      } else {
+        navigation.goBack();
+      }
       return;
     }
-    
-    // Siempre agregar como nuevo item (permitir productos repetidos)
     await agregarItemPreventaStorage();
     return;
   };
@@ -189,7 +226,11 @@ const AddArticulo = ({route}) => {
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    if (navigationOverride) {
+      navigationOverride();
+    } else {
+      navigation.goBack();
+    }
   };
 //   const eliminar1PreventaStorage = async () =>{
 //     // eliminar item de la preventa de sorage actual

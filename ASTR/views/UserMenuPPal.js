@@ -199,7 +199,7 @@ const UserMenuPPal = ({ route }) => {
                     style={styles.menuIcon}
                   />
                   <Text style={styles.menuItemTitle}>{option.name}</Text>
-                  <Text style={styles.menuItemDescription}>{option.description}</Text>
+                  {/* <Text style={styles.menuItemDescription}>{option.description}</Text> */}
                 </View>
               </TouchableOpacity>
             ))}
