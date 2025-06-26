@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native';
 import { guardarPreventaEnStorage, obtenerPreventaDeStorage, eliminarItemEnPreventaEnStorage, limpiarPreventaDeStorage } from "../utils/storageUtils";
 import { configuracionCantidadMaximaArticulos } from "../utils/storageConfigData";
 import { useNavigation } from '@react-navigation/native';
@@ -7,44 +7,74 @@ import { useNavigation } from '@react-navigation/native';
 
 const cantidadYDescuentoCargados= async (codigo) => {  
   const preventaActual = await obtenerPreventaDeStorage();
+  let cantidadTotal = 0;
+  let descuentos = [];
+  
   for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id === codigo) {
       console.log("encontre ",preventaActual[i]);
+      // Sumar cantidad
+      cantidadTotal += parseFloat(preventaActual[i].cantidad || 0);
+      
+      // Recolectar descuentos
       const descuento = preventaActual[i].descuento;
-      return {
-        cantidad: preventaActual[i].seleccionados,
-        descuento: descuento !== null && descuento !== undefined ? descuento : 0
+      if (descuento !== null && descuento !== undefined) {
+        descuentos.push(parseFloat(descuento));
       }
     }
   }
-  return 0;
+  
+  // Calcular descuento promedio
+  let descuentoPromedio = 0;
+  if (descuentos.length > 0) {
+    descuentoPromedio = descuentos.reduce((sum, desc) => sum + desc, 0) / descuentos.length;
+    descuentoPromedio = Math.round(descuentoPromedio * 100) / 100; // Redondear a 2 decimales
+  }
+  
+  return {
+    cantidad: cantidadTotal,
+    descuento: descuentoPromedio
+  };
 }
 const cantidadCargado= async (codigo) =>{  //articulo.id
   // console.log("la cantidad en la preventa ::", codigo);
   const preventaActual = await obtenerPreventaDeStorage();
   // console.log("preventa actual",preventaActual);
+  let cantidadTotal = 0;
+  
   for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id == codigo) {
-      // console.log("EEEEEEEEste ya esta ",codigo, " cantidad: ",preventaActual[i].cantidad);
-      return preventaActual[i].cantidad;
+      // Sumar todas las cantidades del mismo artículo
+      cantidadTotal += parseFloat(preventaActual[i].cantidad || 0);
     }
-    
   }
-  // console.log("NO estaba cargado el codigo ",codigo, " cantidad: ",0);
-  return 0;
+  
+  // console.log("cantidad total para codigo ",codigo, " cantidad: ",cantidadTotal);
+  return cantidadTotal;
 }
 
 const descuentoCargado= async (codigo) => {  
   // console.log("la cantidad en la preventa ::", codigo);
   const preventaActual = await obtenerPreventaDeStorage();
   // console.log("preventa actual",preventaActual);
+  let descuentos = [];
+  
   for (let i = 0; i < preventaActual?.length; i++) {
     if (preventaActual[i].id == codigo) {
       // Asegurar que el descuento sea un número válido
       const descuento = preventaActual[i].descuento;
-      return descuento !== null && descuento !== undefined ? descuento : 0;
+      if (descuento !== null && descuento !== undefined) {
+        descuentos.push(parseFloat(descuento));
+      }
     }
   }
+  
+  // Si hay múltiples líneas, calcular el descuento promedio
+  if (descuentos.length > 0) {
+    const descuentoPromedio = descuentos.reduce((sum, desc) => sum + desc, 0) / descuentos.length;
+    return Math.round(descuentoPromedio * 100) / 100; // Redondear a 2 decimales
+  }
+  
   return 0;
 }
 
@@ -62,6 +92,8 @@ const AddArticulo = ({route, navigationOverride}) => {
   const [precioTotal, setPrecioTotal] = useState( 0 );
   const [precioUnitario, setPrecioUnitario] = useState (articulo.precio);
   const [verAgregar, setVerAgregar] = useState (false);
+  const [articuloYaCargado, setArticuloYaCargado] = useState(false);
+  const [modificarLinea, setModificarLinea] = useState(true); // Por defecto modificar
   const navigation = useNavigation();
   const cantidadInputRef = useRef(null);
 
@@ -91,6 +123,14 @@ const AddArticulo = ({route, navigationOverride}) => {
     };
     validarLimite();
   }, []);
+
+  useEffect(() => {
+    const verificarSiEstaCargado = async () => {
+      const estaCargadoResult = await estaCargado(articulo.id);
+      setArticuloYaCargado(estaCargadoResult);
+    };
+    verificarSiEstaCargado();
+  }, [articulo.id]);
 
   const articuloConDetalles = {
     ...articulo,
@@ -151,7 +191,14 @@ const AddArticulo = ({route, navigationOverride}) => {
       }
       return;
     }
-    await agregarItemPreventaStorage();
+
+    // Si el artículo ya está cargado y el usuario quiere modificar la línea existente
+    if (articuloYaCargado && modificarLinea) {
+      await modificarItemPreventaStorage();
+    } else {
+      // Si no está cargado o el usuario quiere agregar nueva línea
+      await agregarItemPreventaStorage();
+    }
     return;
   };
 
@@ -242,7 +289,16 @@ const AddArticulo = ({route, navigationOverride}) => {
 
   const modificarItemPreventaStorage = async () => {
     console.log("modificarItemPreventaStorage");
-    await eliminarItemEnPreventaEnStorage (articulo.id);
+    // Buscar el artículo existente en la preventa y eliminarlo
+    const preventa = await obtenerPreventaDeStorage();
+    const articuloExistente = preventa.find(item => item.id === articulo.id);
+    
+    if (articuloExistente) {
+      // Eliminar el artículo existente usando su uniqueId
+      await eliminarItemEnPreventaEnStorage(articuloExistente.uniqueId);
+    }
+    
+    // Agregar el artículo modificado
     await agregarItemPreventaStorage();
   }
 
@@ -258,6 +314,20 @@ const AddArticulo = ({route, navigationOverride}) => {
       <Text style={styles.articuloInfo}>Codigo {articulo ? articulo.id : ''}</Text>
       <Text style={styles.articuloInfo}>{articulo ? articulo.descripcion : ''}</Text>
       <Text style={styles.articuloInfo}> $ {articulo ? precioUnitario.toFixed(2) : ''}</Text>
+      
+      {/* Switch para elegir entre modificar o agregar nueva línea */}
+      {articuloYaCargado && (
+        <View style={styles.switchContainer}>
+          <Text style={styles.switchLabel}>Modificar línea existente</Text>
+          <Switch
+            value={modificarLinea}
+            onValueChange={setModificarLinea}
+            trackColor={{ false: '#767577', true: '#AA21E6' }}
+            thumbColor={modificarLinea ? '#f4f3f4' : '#f4f3f4'}
+          />
+        </View>
+      )}
+
       <Text style={styles.label}>Cantidad:</Text>
       
       <TextInput
@@ -292,7 +362,9 @@ const AddArticulo = ({route, navigationOverride}) => {
         style={[styles.saveButton, !verAgregar && styles.disabledButton]}
         onPress={handleSave}
         disabled={!verAgregar}>
-          <Text style={styles.saveButtonText}>Agregar</Text>
+          <Text style={styles.saveButtonText}>
+            {articuloYaCargado && modificarLinea ? 'Modificar' : 'Agregar'}
+          </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
@@ -310,6 +382,20 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 20,
     backgroundColor: '#06181e',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#1a2a2e',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  switchLabel: {
+    color: 'white',
+    fontSize: 16,
+    flex: 1,
   },
   saveButton: {
     backgroundColor: '#AA21E6',

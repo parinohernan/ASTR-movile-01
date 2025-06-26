@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Switch, Alert, Modal } from 'react-native';
+import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { Searchbar } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getArticulosFiltrados, getArticulosFiltradosXCodigo, getArticulosFrecuentes } from '../database/controllers/Articulos.Controller';
 import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado, AddArticulo } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
-import { obtenerPreventaDeStorage } from '../src/utils/storageUtils';
+import { obtenerPreventaDeStorage, obtenerArticulosFrecuentesCombinados, agregarArticuloFrecuente, obtenerArticulosFrecuentesClienteOrdenados, obtenerArticulosFrecuentesGlobalesOrdenados } from '../src/utils/storageUtils';
 
 const Articulos = ({ route }) => {
-  const [mostrarFrecuentes, setMostrasFrecuentes] = useState(false);
+  const [filtroActivo, setFiltroActivo] = useState('todos'); // 'todos', 'cliente', 'globales'
   const isFocused = useIsFocused();
   const navigation = useNavigation();
   const { params } = route;
@@ -40,16 +40,16 @@ const Articulos = ({ route }) => {
       }
     };
     
-    if (mostrarFrecuentes) {
+    // Cargar datos cuando:
+    // 1. Se cambia el filtro (siempre)
+    // 2. Se busca en modo "todos" (solo si hay texto)
+    if (filtroActivo !== 'todos' || search.length > buscoDesde) {
       fetchData();
-    } else {
-      if (search.length > buscoDesde) {
-        fetchData();
-      } else {
-        setArticulosList([]);
-      }
+    } else if (filtroActivo === 'todos' && search.length === 0) {
+      // En modo "todos" sin búsqueda, mostrar lista vacía
+      setArticulosList([]);
     }
-  }, [search, isFocused, mostrarFrecuentes]);
+  }, [search, isFocused, filtroActivo]);
   
   const buscarAdaptarFiltrar = async (search) =>{
     const obtenerPrecio = async (articulo)=>{
@@ -69,12 +69,61 @@ const Articulos = ({ route }) => {
     }
       
       let filteredArticulosBDD = [];
-      if (mostrarFrecuentes) {
-        filteredArticulosBDD = await getArticulosFrecuentes(articulosFrecuentes);
-    } else {
+      if (filtroActivo === 'cliente') {
+        // Usar artículos frecuentes del cliente
+        const articulosFrecuentesCliente = await obtenerArticulosFrecuentesClienteOrdenados(cliente?.id);
+        if (articulosFrecuentesCliente.length > 0) {
+          const codigosFrecuentes = articulosFrecuentesCliente.map(art => art.id);
+          // Obtener todos los artículos frecuentes del cliente
+          let todosArticulosCliente = await getArticulosFrecuentes(codigosFrecuentes);
+          
+          // Si hay búsqueda, filtrar por código o descripción
+          if (search.length > 0) {
+            if (buscoXCodigo) {
+              todosArticulosCliente = todosArticulosCliente.filter(art => 
+                art.id.toLowerCase().includes(search.toLowerCase())
+              );
+            } else {
+              todosArticulosCliente = todosArticulosCliente.filter(art => 
+                art.descripcion.toLowerCase().includes(search.toLowerCase())
+              );
+            }
+          }
+          
+          filteredArticulosBDD = todosArticulosCliente;
+        } else {
+          filteredArticulosBDD = [];
+        }
+      } else if (filtroActivo === 'globales') {
+        // Usar artículos frecuentes globales
+        const articulosFrecuentesGlobales = await obtenerArticulosFrecuentesGlobalesOrdenados();
+        if (articulosFrecuentesGlobales.length > 0) {
+          const codigosFrecuentes = articulosFrecuentesGlobales.map(art => art.id);
+          // Obtener todos los artículos frecuentes globales
+          let todosArticulosGlobales = await getArticulosFrecuentes(codigosFrecuentes);
+          
+          // Si hay búsqueda, filtrar por código o descripción
+          if (search.length > 0) {
+            if (buscoXCodigo) {
+              todosArticulosGlobales = todosArticulosGlobales.filter(art => 
+                art.id.toLowerCase().includes(search.toLowerCase())
+              );
+            } else {
+              todosArticulosGlobales = todosArticulosGlobales.filter(art => 
+                art.descripcion.toLowerCase().includes(search.toLowerCase())
+              );
+            }
+          }
+          
+          filteredArticulosBDD = todosArticulosGlobales;
+        } else {
+          filteredArticulosBDD = [];
+        }
+      } else {
+        // Filtro 'todos' - búsqueda normal
         if (buscoXCodigo) {
           filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
-      } else {
+        } else {
           filteredArticulosBDD = await getArticulosFiltrados(search);
         }
       }
@@ -107,22 +156,42 @@ const Articulos = ({ route }) => {
     setModalVisible(true);
   };
   
-  const closeModal = (articuloActualizado) => {
+  const closeModal = async (articuloActualizado) => {
     setModalVisible(false);
-    setArticuloSeleccionado(null);
-    if (articuloActualizado && articuloActualizado.id) {
+    
+    // Siempre recargar los datos del artículo que se estaba editando
+    if (articuloSeleccionado && articuloSeleccionado.id) {
+      // Recargar los datos del artículo específico desde el storage
+      const cantidadActualizada = await cantidadCargado(articuloSeleccionado.id);
+      const descuentoActualizado = await descuentoCargado(articuloSeleccionado.id);
+      
       setArticulosList(prevList => prevList.map(item =>
-        item.id === articuloActualizado.id
-          ? { ...item, seleccionados: articuloActualizado.cantidad, descuento: articuloActualizado.descuento }
+        item.id === articuloSeleccionado.id
+          ? { 
+              ...item, 
+              seleccionados: cantidadActualizada, 
+              descuento: descuentoActualizado 
+            }
           : item
       ));
+      
+      // Si se agregó el artículo a la preventa (cantidad > 0), agregarlo a frecuentes
+      if (cantidadActualizada > 0) {
+        // Usar el cliente que se pasa como parámetro a la pantalla
+        const clienteId = route.params?.cliente || null;
+        console.log('Agregando artículo frecuente para cliente:', clienteId);
+        console.log('Artículo a agregar:', articuloSeleccionado);
+        
+        await agregarArticuloFrecuente(clienteId, articuloSeleccionado);
+      }
     }
+    
+    setArticuloSeleccionado(null);
   };
   
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => openModal(item)} style={styles.articuloCard}>
       <View style={styles.articuloHeader}>
-        <MaterialCommunityIcons name="package-variant" size={20} color="#3498db" />
         <Text style={styles.articuloTitle}>{item.id} - {item.descripcion}</Text>
       </View>
       
@@ -136,13 +205,6 @@ const Articulos = ({ route }) => {
           <View style={styles.detailItem}>
             <MaterialCommunityIcons name="currency-usd" size={16} color="#27ae60" />
             <Text style={styles.detailText}>${item?.precio?.toFixed(2)}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <View style={styles.detailItem}>
-            <MaterialCommunityIcons name="percent" size={16} color="#7f8c8d" />
-            <Text style={styles.detailText}>IVA: {item?.iva}%</Text>
           </View>
           
           <View style={styles.indicators}>
@@ -159,7 +221,7 @@ const Articulos = ({ route }) => {
                 <Text style={styles.cantidadText}>{item.seleccionados}</Text>
               </View>
             )}
-           </View>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -175,14 +237,68 @@ const Articulos = ({ route }) => {
       );
     }
     
-    if (articulosList.length === 0 && search.length > 0) {
-      return (
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="magnify" size={60} color="#95a5a6" />
-          <Text style={styles.emptyStateText}>No se encontraron artículos</Text>
-          <Text style={styles.emptyStateSubtext}>Intente con otro término de búsqueda</Text>
-        </View>
-      );
+    if (articulosList.length === 0) {
+      if (filtroActivo === 'cliente') {
+        if (search.length > 0) {
+          return (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="magnify" size={60} color="#f39c12" />
+              <Text style={styles.emptyStateText}>No se encontraron artículos frecuentes del cliente</Text>
+              <Text style={styles.emptyStateSubtext}>
+                No hay artículos que coincidan con "{search}" en los frecuentes del cliente
+              </Text>
+            </View>
+          );
+        } else {
+          return (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="account-star-outline" size={60} color="#f39c12" />
+              <Text style={styles.emptyStateText}>No hay artículos frecuentes del cliente</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Este cliente aún no tiene artículos frecuentes registrados
+              </Text>
+            </View>
+          );
+        }
+      } else if (filtroActivo === 'globales') {
+        if (search.length > 0) {
+          return (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="magnify" size={60} color="#e74c3c" />
+              <Text style={styles.emptyStateText}>No se encontraron artículos frecuentes globales</Text>
+              <Text style={styles.emptyStateSubtext}>
+                No hay artículos que coincidan con "{search}" en los frecuentes globales
+              </Text>
+            </View>
+          );
+        } else {
+          return (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="star-outline" size={60} color="#e74c3c" />
+              <Text style={styles.emptyStateText}>No hay artículos frecuentes globales</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Aún no se han registrado artículos frecuentes globales
+              </Text>
+            </View>
+          );
+        }
+      } else if (search.length > 0) {
+        return (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="magnify" size={60} color="#95a5a6" />
+            <Text style={styles.emptyStateText}>No se encontraron artículos</Text>
+            <Text style={styles.emptyStateSubtext}>Intente con otro término de búsqueda</Text>
+          </View>
+        );
+      } else {
+        return (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="package-variant-outline" size={60} color="#95a5a6" />
+            <Text style={styles.emptyStateText}>Busque artículos</Text>
+            <Text style={styles.emptyStateSubtext}>Escriba un código o descripción para buscar artículos</Text>
+          </View>
+        );
+      }
     }
     
     return null;
@@ -192,50 +308,144 @@ const Articulos = ({ route }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Seleccionar Artículos</Text>
-        <Text style={styles.subtitle}>Busque y seleccione productos</Text>
       </View>
       
+      {hasInternetAccess && (
+        <View style={styles.filtrosContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.filtroButton,
+              filtroActivo === 'todos' && styles.filtroButtonActivo
+            ]}
+            onPress={() => setFiltroActivo('todos')}
+          >
+            <MaterialCommunityIcons 
+              name="package-variant" 
+              size={16} 
+              color={filtroActivo === 'todos' ? "#ffffff" : "#3498db"} 
+            />
+            <Text style={[
+              styles.filtroButtonText,
+              filtroActivo === 'todos' && styles.filtroButtonTextActivo
+            ]}>
+              Todos
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.filtroButton,
+              filtroActivo === 'cliente' && styles.filtroButtonActivo
+            ]}
+            onPress={() => setFiltroActivo('cliente')}
+          >
+            <MaterialCommunityIcons 
+              name="account-star" 
+              size={16} 
+              color={filtroActivo === 'cliente' ? "#ffffff" : "#f39c12"} 
+            />
+            <Text style={[
+              styles.filtroButtonText,
+              filtroActivo === 'cliente' && styles.filtroButtonTextActivo
+            ]}>
+              Cliente
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.filtroButton,
+              filtroActivo === 'globales' && styles.filtroButtonActivo
+            ]}
+            onPress={() => setFiltroActivo('globales')}
+          >
+            <MaterialCommunityIcons 
+              name="star" 
+              size={16} 
+              color={filtroActivo === 'globales' ? "#ffffff" : "#e74c3c"} 
+            />
+            <Text style={[
+              styles.filtroButtonText,
+              filtroActivo === 'globales' && styles.filtroButtonTextActivo
+            ]}>
+              Globales
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.searchTypeButton,
+              !buscoXCodigo && styles.searchTypeButtonActivo
+            ]}
+            onPress={() => setBuscoXCodigo(false)}
+          >
+            <MaterialCommunityIcons 
+              name="text-search" 
+              size={16} 
+              color={!buscoXCodigo ? "#ffffff" : "#3498db"} 
+            />
+            <Text style={[
+              styles.searchTypeButtonText,
+              !buscoXCodigo && styles.searchTypeButtonTextActivo
+            ]}>
+              Desc
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.searchTypeButton,
+              buscoXCodigo && styles.searchTypeButtonActivo
+            ]}
+            onPress={() => setBuscoXCodigo(true)}
+          >
+            <MaterialCommunityIcons 
+              name="barcode" 
+              size={16} 
+              color={buscoXCodigo ? "#ffffff" : "#3498db"} 
+            />
+            <Text style={[
+              styles.searchTypeButtonText,
+              buscoXCodigo && styles.searchTypeButtonTextActivo
+            ]}>
+              Cód
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      
       <View style={styles.searchSection}>
-        <TouchableOpacity onPress={() => setBuscoXCodigo(!buscoXCodigo)} style={styles.searchTypeButton}>
-          <MaterialCommunityIcons 
-            name={buscoXCodigo ? "barcode" : "text-search"} 
-            size={20} 
-            color="#3498db" 
-          />
-          <Text style={styles.searchTypeText}>
-            Buscando por {buscoXCodigo ? "código" : "descripción"}
-          </Text>
-        </TouchableOpacity>
-        
-      <Searchbar
-        placeholder="Buscar artículo..."
-        value={search}
+        <Searchbar
+          placeholder={
+            filtroActivo === 'todos' 
+              ? `Buscar artículo por ${buscoXCodigo ? 'código' : 'descripción'}...` 
+              : filtroActivo === 'cliente'
+                ? `Filtrar frecuentes del cliente por ${buscoXCodigo ? 'código' : 'descripción'}...`
+                : `Filtrar frecuentes globales por ${buscoXCodigo ? 'código' : 'descripción'}...`
+          }
+          value={search}
           onChangeText={setSearch}
           style={styles.searchbar}
           iconColor="#3498db"
         />
       </View>
       
-      <View style={styles.filtersSection}>
+      {/* <View style={styles.resultsSection}>
         <View style={styles.resultsInfo}>
           <MaterialCommunityIcons name="information" size={16} color="#7f8c8d" />
           <Text style={styles.resultsText}>
             {loading ? '...' : articulosList.length} resultados • Lista {listaDePrecios}
           </Text>
         </View>
-        
-        {hasInternetAccess && (
-          <View style={styles.frecuentesToggle}>
-            <Text style={styles.frecuentesLabel}>Frecuentes</Text>
-            <Switch 
-              value={mostrarFrecuentes} 
-              onValueChange={() => setMostrasFrecuentes(!mostrarFrecuentes)}
-              trackColor={{ false: "#bdc3c7", true: "#3498db" }}
-              thumbColor={mostrarFrecuentes ? "#ffffff" : "#f4f3f4"}
-            />
-          </View>
-      )}
-      </View>
+      
+        <TouchableOpacity 
+          style={styles.gestionarFrecuentesButton} 
+          onPress={() => navigation.navigate('GestionFrecuentes')}
+        >
+          <MaterialCommunityIcons name="star-settings" size={20} color="#f39c12" />
+          <Text style={styles.gestionarFrecuentesText}>Gestionar Frecuentes</Text>
+        </TouchableOpacity>
+      </View> */}
       
       <View style={styles.content}>
         {renderEmptyState() ? (
@@ -272,12 +482,12 @@ const Articulos = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#30bced',
+    backgroundColor: '#ffffff',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 2,
+    paddingTop: 2,
+    paddingBottom: 2,
     backgroundColor: '#0c2f3c',
   },
   title: {
@@ -286,33 +496,48 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 5,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#bdc3c7',
-  },
   searchSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#ffffff',
+    // paddingHorizontal: 10,
+    // paddingVertical: 10,
+    // borderBottomWidth: 2,
+    // borderBottomColor: '#ffffff',
   },
   searchTypeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingHorizontal: 8,
     paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#ecf0f1',
+    flex: 1,
+    marginHorizontal: 2,
+    justifyContent: 'center',
   },
-  searchTypeText: {
-    fontSize: 14,
-    color: '#3498db',
-    marginLeft: 8,
-    fontWeight: '500',
+  searchTypeButtonActivo: {
+    backgroundColor: '#3498db',
+    borderColor: '#3498db',
+  },
+  searchTypeButtonText: {
+    fontSize: 11,
+    color: '#7f8c8d',
+    fontWeight: '600',
+    marginLeft: 3,
+  },
+  searchTypeButtonTextActivo: {
+    color: '#ffffff',
   },
   searchbar: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#ffffff',
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#3498db',
+    marginHorizontal: 2,
+    marginVertical: 2,
     elevation: 2,
   },
-  filtersSection: {
+  resultsSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -331,53 +556,81 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     marginLeft: 5,
   },
-  frecuentesToggle: {
+  filtrosContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  frecuentesLabel: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginRight: 8,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  listContainer: {
-    padding: 15,
-  },
-  articuloCard: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    marginHorizontal: 2,
+    marginVertical: 2,
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  articuloHeader: {
+  filtroButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#ecf0f1',
+    flex: 1,
+    marginHorizontal: 2,
+    justifyContent: 'center',
+  },
+  filtroButtonActivo: {
+    backgroundColor: '#3498db',
+    borderColor: '#3498db',
+  },
+  filtroButtonText: {
+    fontSize: 11,
+    color: '#7f8c8d',
+    fontWeight: '600',
+    marginLeft: 3,
+  },
+  filtroButtonTextActivo: {
+    color: '#ffffff',
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  listContainer: {
+    padding: 8,
+  },
+  articuloCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  articuloHeader: {
+    marginBottom: 6,
   },
   articuloTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginLeft: 8,
-    flex: 1,
   },
   articuloDetails: {
-    marginLeft: 28,
+    marginLeft: 0,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   detailItem: {
     flexDirection: 'row',
@@ -441,6 +694,24 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  gestionarFrecuentesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    marginHorizontal: 20,
+    marginVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f39c12',
+  },
+  gestionarFrecuentesText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#f39c12',
+    marginLeft: 8,
   },
 });
 

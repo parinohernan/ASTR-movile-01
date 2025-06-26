@@ -3,7 +3,11 @@ import { db } from '../../database/database';
 
 const STORAGE_KEY = '@MyApp:PreventaData';
 const PREVENTAS_ENVIADAS_KEY = '@MyApp:PreventasEnviadas';
+const ARTICULOS_FRECUENTES_KEY = '@MyApp:ArticulosFrecuentes';
+const ARTICULOS_FRECUENTES_GLOBALES_KEY = '@MyApp:ArticulosFrecuentesGlobales';
 const MAX_PREVENTAS_ENVIADAS = 50;
+const MAX_ARTICULOS_FRECUENTES = 100;
+const MAX_ARTICULOS_FRECUENTES_POR_CLIENTE = 50;
 
 // Guardar una preventa en AsyncStorage
 const guardarPreventaEnStorage = async (preventa) => {
@@ -149,7 +153,7 @@ const guardarPreventaEnviada = async (preventa, resultadoEnvio = null) => {
     
     // Si hay resultado del envío, usar esa información
     if (resultadoEnvio) {
-      if (resultadoEnvio.duplicada) {
+      if (resultadoEnvio.tipo === 'duplicada') {
         estado = 'duplicada';
         detallesEnvio = {
           exitoso: true,
@@ -159,7 +163,7 @@ const guardarPreventaEnviada = async (preventa, resultadoEnvio = null) => {
           codigoServidor: resultadoEnvio.codigoServidor || 'N/A',
           respuestaServidor: resultadoEnvio.respuestaServidor || 'N/A'
         };
-      } else if (resultadoEnvio.error) {
+      } else if (resultadoEnvio.tipo === 'error') {
         estado = 'error';
         detallesEnvio = {
           exitoso: false,
@@ -236,4 +240,339 @@ const exportarPreventaComoTexto = (preventa) => {
   return JSON.stringify(preventa, null, 2);
 };
 
-export { guardarPreventaEnStorage, preventaDesdeBDD, obtenerPreventaDeStorage, limpiarPreventaDeStorage, calcularTotal, eliminarItemEnPreventaEnStorage, guardarPreventaEnviada, obtenerPreventasEnviadas, limpiarPreventasEnviadas, exportarPreventaComoTexto };
+// ===== FUNCIONES PARA ARTÍCULOS FRECUENTES =====
+
+// Obtener clave para artículos frecuentes de un cliente específico
+const obtenerClaveFrecuentesCliente = (clienteId) => {
+  return `${ARTICULOS_FRECUENTES_KEY}_${clienteId}`;
+};
+
+// Guardar artículos frecuentes de un cliente en AsyncStorage
+const guardarArticulosFrecuentesCliente = async (clienteId, articulosFrecuentes) => {
+  try {
+    const clave = obtenerClaveFrecuentesCliente(clienteId);
+    await AsyncStorage.setItem(clave, JSON.stringify(articulosFrecuentes));
+    console.log(`Artículos frecuentes del cliente ${clienteId} guardados exitosamente`);
+  } catch (error) {
+    console.error('Error al guardar artículos frecuentes del cliente:', error);
+  }
+};
+
+// Obtener artículos frecuentes de un cliente desde AsyncStorage
+const obtenerArticulosFrecuentesCliente = async (clienteId) => {
+  try {
+    const clave = obtenerClaveFrecuentesCliente(clienteId);
+    const articulosString = await AsyncStorage.getItem(clave);
+    if (articulosString !== null && articulosString !== undefined) {
+      return JSON.parse(articulosString);
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error al obtener artículos frecuentes del cliente:', error);
+    return [];
+  }
+};
+
+// Guardar artículos frecuentes globales en AsyncStorage
+const guardarArticulosFrecuentesGlobales = async (articulosFrecuentes) => {
+  try {
+    await AsyncStorage.setItem(ARTICULOS_FRECUENTES_GLOBALES_KEY, JSON.stringify(articulosFrecuentes));
+    console.log('Artículos frecuentes globales guardados exitosamente');
+  } catch (error) {
+    console.error('Error al guardar artículos frecuentes globales:', error);
+  }
+};
+
+// Obtener artículos frecuentes globales desde AsyncStorage
+const obtenerArticulosFrecuentesGlobales = async () => {
+  try {
+    const articulosString = await AsyncStorage.getItem(ARTICULOS_FRECUENTES_GLOBALES_KEY);
+    if (articulosString !== null && articulosString !== undefined) {
+      return JSON.parse(articulosString);
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error al obtener artículos frecuentes globales:', error);
+    return [];
+  }
+};
+
+// Agregar un artículo a la lista de frecuentes de un cliente
+const agregarArticuloFrecuenteCliente = async (clienteId, articulo) => {
+  try {
+    const articulosFrecuentes = await obtenerArticulosFrecuentesCliente(clienteId);
+    
+    // Verificar si el artículo ya existe
+    const existe = articulosFrecuentes.find(item => item.id === articulo.id);
+    if (existe) {
+      // Si existe, actualizar la frecuencia y último uso
+      existe.frecuencia = (existe.frecuencia || 0) + 1;
+      existe.ultimoUso = new Date().toISOString();
+    } else {
+      // Si no existe, agregarlo
+      const nuevoArticulo = {
+        ...articulo,
+        frecuencia: 1,
+        fechaAgregado: new Date().toISOString(),
+        ultimoUso: new Date().toISOString()
+      };
+      articulosFrecuentes.push(nuevoArticulo);
+    }
+    
+    // Ordenar por frecuencia (más frecuentes primero) y luego por último uso
+    articulosFrecuentes.sort((a, b) => {
+      if (b.frecuencia !== a.frecuencia) {
+        return b.frecuencia - a.frecuencia;
+      }
+      return new Date(b.ultimoUso) - new Date(a.ultimoUso);
+    });
+    
+    // Mantener solo los últimos MAX_ARTICULOS_FRECUENTES_POR_CLIENTE
+    if (articulosFrecuentes.length > MAX_ARTICULOS_FRECUENTES_POR_CLIENTE) {
+      articulosFrecuentes.splice(MAX_ARTICULOS_FRECUENTES_POR_CLIENTE);
+    }
+    
+    await guardarArticulosFrecuentesCliente(clienteId, articulosFrecuentes);
+    console.log(`Artículo frecuente agregado/actualizado para cliente ${clienteId}`);
+  } catch (error) {
+    console.error('Error al agregar artículo frecuente del cliente:', error);
+  }
+};
+
+// Agregar un artículo a la lista de frecuentes globales
+const agregarArticuloFrecuenteGlobal = async (articulo) => {
+  try {
+    const articulosFrecuentes = await obtenerArticulosFrecuentesGlobales();
+    
+    // Verificar si el artículo ya existe
+    const existe = articulosFrecuentes.find(item => item.id === articulo.id);
+    if (existe) {
+      // Si existe, actualizar la frecuencia y último uso
+      existe.frecuencia = (existe.frecuencia || 0) + 1;
+      existe.ultimoUso = new Date().toISOString();
+    } else {
+      // Si no existe, agregarlo
+      const nuevoArticulo = {
+        ...articulo,
+        frecuencia: 1,
+        fechaAgregado: new Date().toISOString(),
+        ultimoUso: new Date().toISOString()
+      };
+      articulosFrecuentes.push(nuevoArticulo);
+    }
+    
+    // Ordenar por frecuencia (más frecuentes primero) y luego por último uso
+    articulosFrecuentes.sort((a, b) => {
+      if (b.frecuencia !== a.frecuencia) {
+        return b.frecuencia - a.frecuencia;
+      }
+      return new Date(b.ultimoUso) - new Date(a.ultimoUso);
+    });
+    
+    // Mantener solo los últimos MAX_ARTICULOS_FRECUENTES
+    if (articulosFrecuentes.length > MAX_ARTICULOS_FRECUENTES) {
+      articulosFrecuentes.splice(MAX_ARTICULOS_FRECUENTES);
+    }
+    
+    await guardarArticulosFrecuentesGlobales(articulosFrecuentes);
+    console.log('Artículo frecuente global agregado/actualizado');
+  } catch (error) {
+    console.error('Error al agregar artículo frecuente global:', error);
+  }
+};
+
+// Función combinada que agrega tanto a frecuentes del cliente como globales
+const agregarArticuloFrecuente = async (clienteId, articulo) => {
+  if (clienteId) {
+    await agregarArticuloFrecuenteCliente(clienteId, articulo);
+  }
+  await agregarArticuloFrecuenteGlobal(articulo);
+};
+
+// Obtener artículos frecuentes de un cliente ordenados por frecuencia
+const obtenerArticulosFrecuentesClienteOrdenados = async (clienteId) => {
+  try {
+    const articulosFrecuentes = await obtenerArticulosFrecuentesCliente(clienteId);
+    return articulosFrecuentes.sort((a, b) => {
+      if (b.frecuencia !== a.frecuencia) {
+        return b.frecuencia - a.frecuencia;
+      }
+      return new Date(b.ultimoUso) - new Date(a.ultimoUso);
+    });
+  } catch (error) {
+    console.error('Error al obtener artículos frecuentes del cliente ordenados:', error);
+    return [];
+  }
+};
+
+// Obtener artículos frecuentes globales ordenados por frecuencia
+const obtenerArticulosFrecuentesGlobalesOrdenados = async () => {
+  try {
+    const articulosFrecuentes = await obtenerArticulosFrecuentesGlobales();
+    return articulosFrecuentes.sort((a, b) => {
+      if (b.frecuencia !== a.frecuencia) {
+        return b.frecuencia - a.frecuencia;
+      }
+      return new Date(b.ultimoUso) - new Date(a.ultimoUso);
+    });
+  } catch (error) {
+    console.error('Error al obtener artículos frecuentes globales ordenados:', error);
+    return [];
+  }
+};
+
+// Obtener artículos frecuentes combinados (cliente + globales)
+const obtenerArticulosFrecuentesCombinados = async (clienteId) => {
+  try {
+    const [frecuentesCliente, frecuentesGlobales] = await Promise.all([
+      obtenerArticulosFrecuentesClienteOrdenados(clienteId),
+      obtenerArticulosFrecuentesGlobalesOrdenados()
+    ]);
+
+    // Combinar y eliminar duplicados, priorizando los del cliente
+    const combinados = [...frecuentesCliente];
+    const codigosCliente = frecuentesCliente.map(art => art.id);
+    
+    frecuentesGlobales.forEach(global => {
+      if (!codigosCliente.includes(global.id)) {
+        combinados.push({
+          ...global,
+          esGlobal: true // Marcar como global para diferenciar
+        });
+      }
+    });
+
+    // Ordenar por frecuencia
+    return combinados.sort((a, b) => {
+      if (b.frecuencia !== a.frecuencia) {
+        return b.frecuencia - a.frecuencia;
+      }
+      return new Date(b.ultimoUso) - new Date(a.ultimoUso);
+    });
+  } catch (error) {
+    console.error('Error al obtener artículos frecuentes combinados:', error);
+    return [];
+  }
+};
+
+// Limpiar artículos frecuentes de un cliente específico
+const limpiarArticulosFrecuentesCliente = async (clienteId) => {
+  try {
+    const clave = obtenerClaveFrecuentesCliente(clienteId);
+    await AsyncStorage.removeItem(clave);
+    console.log(`Artículos frecuentes del cliente ${clienteId} eliminados`);
+  } catch (error) {
+    console.error('Error al limpiar artículos frecuentes del cliente:', error);
+  }
+};
+
+// Limpiar artículos frecuentes globales
+const limpiarArticulosFrecuentesGlobales = async () => {
+  try {
+    await AsyncStorage.removeItem(ARTICULOS_FRECUENTES_GLOBALES_KEY);
+    console.log('Artículos frecuentes globales eliminados');
+  } catch (error) {
+    console.error('Error al limpiar artículos frecuentes globales:', error);
+  }
+};
+
+// Limpiar todos los artículos frecuentes (clientes + globales)
+const limpiarTodosArticulosFrecuentes = async () => {
+  try {
+    // Obtener todas las claves de AsyncStorage
+    const keys = await AsyncStorage.getAllKeys();
+    const clavesFrecuentes = keys.filter(key => 
+      key.startsWith(ARTICULOS_FRECUENTES_KEY) || 
+      key === ARTICULOS_FRECUENTES_GLOBALES_KEY
+    );
+    
+    await AsyncStorage.multiRemove(clavesFrecuentes);
+    console.log('Todos los artículos frecuentes eliminados');
+  } catch (error) {
+    console.error('Error al limpiar todos los artículos frecuentes:', error);
+  }
+};
+
+// Verificar si un artículo es frecuente para un cliente específico
+const esArticuloFrecuenteCliente = async (clienteId, codigoArticulo) => {
+  try {
+    const articulosFrecuentes = await obtenerArticulosFrecuentesCliente(clienteId);
+    return articulosFrecuentes.some(articulo => articulo.id === codigoArticulo);
+  } catch (error) {
+    console.error('Error al verificar si es artículo frecuente del cliente:', error);
+    return false;
+  }
+};
+
+// Verificar si un artículo es frecuente global
+const esArticuloFrecuenteGlobal = async (codigoArticulo) => {
+  try {
+    const articulosFrecuentes = await obtenerArticulosFrecuentesGlobales();
+    return articulosFrecuentes.some(articulo => articulo.id === codigoArticulo);
+  } catch (error) {
+    console.error('Error al verificar si es artículo frecuente global:', error);
+    return false;
+  }
+};
+
+// Obtener lista de todos los clientes que tienen artículos frecuentes
+const obtenerClientesConFrecuentes = async () => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const clavesFrecuentes = keys.filter(key => 
+      key.startsWith(ARTICULOS_FRECUENTES_KEY) && 
+      key !== ARTICULOS_FRECUENTES_GLOBALES_KEY
+    );
+    
+    const clientes = [];
+    for (const clave of clavesFrecuentes) {
+      const clienteId = clave.replace(ARTICULOS_FRECUENTES_KEY + '_', '');
+      const frecuentes = await obtenerArticulosFrecuentesCliente(clienteId);
+      if (frecuentes.length > 0) {
+        clientes.push({
+          id: clienteId,
+          cantidadFrecuentes: frecuentes.length
+        });
+      }
+    }
+    
+    return clientes;
+  } catch (error) {
+    console.error('Error al obtener clientes con frecuentes:', error);
+    return [];
+  }
+};
+
+export { 
+  guardarPreventaEnStorage, 
+  preventaDesdeBDD, 
+  obtenerPreventaDeStorage, 
+  limpiarPreventaDeStorage, 
+  calcularTotal, 
+  eliminarItemEnPreventaEnStorage, 
+  guardarPreventaEnviada, 
+  obtenerPreventasEnviadas, 
+  limpiarPreventasEnviadas, 
+  exportarPreventaComoTexto,
+  // Funciones para artículos frecuentes por cliente
+  guardarArticulosFrecuentesCliente,
+  obtenerArticulosFrecuentesCliente,
+  agregarArticuloFrecuenteCliente,
+  obtenerArticulosFrecuentesClienteOrdenados,
+  limpiarArticulosFrecuentesCliente,
+  esArticuloFrecuenteCliente,
+  // Funciones para artículos frecuentes globales
+  guardarArticulosFrecuentesGlobales,
+  obtenerArticulosFrecuentesGlobales,
+  agregarArticuloFrecuenteGlobal,
+  obtenerArticulosFrecuentesGlobalesOrdenados,
+  limpiarArticulosFrecuentesGlobales,
+  esArticuloFrecuenteGlobal,
+  // Funciones combinadas
+  agregarArticuloFrecuente,
+  obtenerArticulosFrecuentesCombinados,
+  limpiarTodosArticulosFrecuentes,
+  obtenerClientesConFrecuentes
+};

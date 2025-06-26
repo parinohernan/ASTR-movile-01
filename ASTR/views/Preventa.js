@@ -12,6 +12,7 @@ import axios from 'axios';
 import { AddArticulo } from '../src/components/AddArticulo';
 import { getArticuloPorCodigo } from '../database/controllers/Articulos.Controller';
 import { borrarPreventaYSusItems } from '../database/controllers/Preventa.Controller';
+import { obtenerArticulosFrecuentesOrdenados, obtenerArticulosFrecuentesCombinados, obtenerArticulosFrecuentesClienteOrdenados, obtenerArticulosFrecuentesGlobalesOrdenados } from '../src/utils/storageUtils';
 
 // import { Fontisto } from '@expo/vector-icons'; 
 
@@ -239,14 +240,39 @@ const Preventa = (props) => {
   };
 
   const traerFrecuentes = async() => {
-    // Aquí puedes implementar la lógica para guardar la nota en tu aplicación
     setEstoyBuscandoFrecuentes(true);
-    if (hasInternetAccess) {
-      setArticulosFrecuentes(await getArticulosFrecuentesDesdeAPI(cliente.id));
-    } else {
-      console.log('buscando frecuentes:');
+    try {
+      // Debug: Verificar que el cliente se esté recibiendo correctamente
+      console.log('Cliente recibido en Preventa:', cliente);
+      console.log('Cliente ID:', cliente?.id);
+      console.log('Cliente descripción:', cliente?.descripcion);
+      
+      // Usar artículos frecuentes combinados (cliente + globales)
+      const clienteId = cliente?.id || null;
+      console.log('Cliente ID para frecuentes:', clienteId);
+      
+      // Debug simple: verificar frecuentes del cliente
+      if (clienteId) {
+        console.log('=== DEBUG FRECUENTES ===');
+        const frecuentesCliente = await obtenerArticulosFrecuentesClienteOrdenados(clienteId);
+        const frecuentesGlobales = await obtenerArticulosFrecuentesGlobalesOrdenados();
+        console.log('Frecuentes del cliente:', frecuentesCliente.length);
+        console.log('Frecuentes globales:', frecuentesGlobales.length);
+        console.log('=== FIN DEBUG ===');
+      }
+      
+      const articulosFrecuentesLocales = await obtenerArticulosFrecuentesCombinados(clienteId);
+      console.log('Artículos frecuentes obtenidos:', articulosFrecuentesLocales);
+      
+      const codigosFrecuentes = articulosFrecuentesLocales.map(art => art.id);
+      setArticulosFrecuentes(codigosFrecuentes);
+      console.log(`Artículos frecuentes combinados cargados para cliente ${clienteId}:`, codigosFrecuentes.length);
+    } catch (error) {
+      console.error('Error al cargar artículos frecuentes combinados:', error);
+      setArticulosFrecuentes([]);
+    } finally {
+      setEstoyBuscandoFrecuentes(false);
     }
-    setEstoyBuscandoFrecuentes(false);
   };
 
   const abrirArticulos = async () => {
@@ -266,8 +292,12 @@ const Preventa = (props) => {
         ]
       );
     } else {
+      // Debug: Verificar que el cliente se esté pasando correctamente
+      console.log('Abriendo Artículos con cliente:', cliente);
+      console.log('Cliente ID a pasar:', cliente.id);
+      
       // console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
-      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: cliente.id, listaDePrecio: cliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
+      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: cliente, listaDePrecio: cliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
     }
   };
 
@@ -367,7 +397,7 @@ const Preventa = (props) => {
             color="#f39c12" 
           />
           <Text style={styles.frecuentesText}>
-            Frecuentes: {articulosFrecuentes.length}
+            Frecuentes Locales: {articulosFrecuentes.length}
           </Text>
         </TouchableOpacity>
         

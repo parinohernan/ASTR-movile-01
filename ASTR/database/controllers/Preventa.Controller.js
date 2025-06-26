@@ -90,9 +90,32 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
 const validarPreventaParaEnvio = (preventa) => {
     const errores = [];
     
+    // Validar estructura básica
+    if (!preventa) {
+        errores.push("La preventa es null o undefined");
+        return errores;
+    }
+    
     if (!preventa.items || preventa.items.length === 0) {
         errores.push("La preventa no tiene items");
         return errores;
+    }
+    
+    // Validar campos obligatorios de la preventa
+    if (!preventa.DocumentoNumero) {
+        errores.push("Falta número de documento");
+    }
+    
+    if (!preventa.ClienteCodigo) {
+        errores.push("Falta código de cliente");
+    }
+    
+    if (!preventa.VendedorCodigo) {
+        errores.push("Falta código de vendedor");
+    }
+    
+    if (preventa.ImporteTotal === null || preventa.ImporteTotal === undefined || preventa.ImporteTotal < 0) {
+        errores.push("Importe total inválido");
     }
     
     // Validar cada item
@@ -100,14 +123,27 @@ const validarPreventaParaEnvio = (preventa) => {
         if (!item.CodigoArticulo) {
             errores.push(`Item ${index + 1}: Falta código de artículo`);
         }
-        if (item.Cantidad <= 0) {
+        
+        if (item.Cantidad === null || item.Cantidad === undefined || item.Cantidad <= 0) {
             errores.push(`Item ${index + 1}: Cantidad debe ser mayor a 0`);
         }
-        if (item.PrecioUnitario < 0) {
+        
+        if (item.PrecioUnitario === null || item.PrecioUnitario === undefined || item.PrecioUnitario < 0) {
             errores.push(`Item ${index + 1}: Precio unitario no puede ser negativo`);
         }
-        if (item.PorcentajeBonificacion < 0 || item.PorcentajeBonificacion > 100) {
+        
+        if (item.PorcentajeBonificacion === null || item.PorcentajeBonificacion === undefined || 
+            item.PorcentajeBonificacion < 0 || item.PorcentajeBonificacion > 100) {
             errores.push(`Item ${index + 1}: Porcentaje de bonificación debe estar entre 0 y 100`);
+        }
+        
+        if (!item.iva || item.iva < 0) {
+            errores.push(`Item ${index + 1}: IVA inválido`);
+        }
+        
+        // Validar que si el descuento es 100%, el precio unitario sea 0
+        if (item.PorcentajeBonificacion === 100 && item.PrecioUnitario !== 0) {
+            errores.push(`Item ${index + 1}: Si el descuento es 100%, el precio unitario debe ser 0`);
         }
     });
     

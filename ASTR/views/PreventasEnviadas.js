@@ -54,6 +54,39 @@ const PreventasEnviadas = () => {
     return `$${parseFloat(importe || 0).toFixed(2)}`;
   };
 
+  // Función para determinar el estado real de la preventa
+  const obtenerEstadoReal = (preventa) => {
+    // Si no hay resultado de envío, mostrar como enviada (comportamiento por defecto)
+    if (!preventa.resultadoEnvio) {
+      return { estado: 'enviada', texto: 'Enviada', icono: 'check-circle', color: '#27ae60' };
+    }
+
+    const { codigoServidor, tipo, exitoso } = preventa.resultadoEnvio;
+    
+    // Si el código del servidor es 201, es exitoso
+    if (codigoServidor === 201) {
+      return { estado: 'enviada', texto: 'Enviada', icono: 'check-circle', color: '#27ae60' };
+    }
+    
+    // Si el código es 500 pero es duplicada, mostrar como duplicada
+    if (codigoServidor === 500 && tipo === 'duplicada') {
+      return { estado: 'duplicada', texto: 'Duplicada', icono: 'alert-circle', color: '#f39c12' };
+    }
+    
+    // Si no es exitoso, mostrar como error
+    if (!exitoso) {
+      return { estado: 'error', texto: 'Error', icono: 'close-circle', color: '#e74c3c' };
+    }
+    
+    // Si es exitoso pero no es código 201, mostrar como dudosa
+    if (exitoso && codigoServidor !== 201) {
+      return { estado: 'dudosa', texto: 'Dudosa', icono: 'help-circle', color: '#9b59b6' };
+    }
+    
+    // Por defecto, mostrar como enviada
+    return { estado: 'enviada', texto: 'Enviada', icono: 'check-circle', color: '#27ae60' };
+  };
+
   const verPreventa = (preventa) => {
     setSelectedPreventa(preventa);
     setModalVisible(true);
@@ -96,82 +129,78 @@ const PreventasEnviadas = () => {
     );
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.preventaCard} onPress={() => verPreventa(item)}>
-      <View style={styles.preventaHeader}>
-        <View style={styles.preventaInfo}>
-          <Text style={styles.preventaNumero}>Preventa {item.DocumentoNumero}</Text>
-          <Text style={styles.preventaCliente}>
-            Cliente: {item.ClienteCodigo}
-            {item.ClienteDescripcion && (
-              <Text style={styles.clienteDescripcion}> - {item.ClienteDescripcion}</Text>
-            )}
-          </Text>
-        </View>
-        <View style={styles.preventaActions}>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => compartirPreventa(item)}
-          >
-            <MaterialCommunityIcons name="share" size={20} color="#3498db" />
-          </TouchableOpacity>
-        </View>
-      </View>
-      
-      <View style={styles.preventaDetails}>
-        <Text style={styles.preventaFecha}>{formatearFecha(item.timestamp)}</Text>
-        <Text style={styles.preventaImporte}>Total: {formatearImporte(item.ImporteTotal)}</Text>
-        <Text style={styles.preventaItems}>{item.items?.length || 0} artículos</Text>
-      </View>
-      
-      <View style={[
-        styles.estadoEnviada, 
-        item.estado === 'duplicada' && styles.estadoDuplicada,
-        item.estado === 'error' && styles.estadoError
-      ]}>
-        <MaterialCommunityIcons 
-          name={
-            item.estado === 'enviada' ? "check-circle" : 
-            item.estado === 'duplicada' ? "alert-circle" : 
-            "close-circle"
-          } 
-          size={16} 
-          color={
-            item.estado === 'enviada' ? "#27ae60" : 
-            item.estado === 'duplicada' ? "#f39c12" : 
-            "#e74c3c"
-          } 
-        />
-        <Text style={[
-          styles.estadoTexto,
-          item.estado === 'duplicada' && styles.estadoTextoDuplicada,
-          item.estado === 'error' && styles.estadoTextoError
-        ]}>
-          {item.estado === 'enviada' ? 'Enviada' : 
-           item.estado === 'duplicada' ? 'Duplicada' : 
-           'Error'}
-        </Text>
-      </View>
-      
-      {item.resultadoEnvio && (
-        <View style={styles.resultadoInfo}>
-          <Text style={styles.resultadoTipo}>
-            Tipo: {item.resultadoEnvio.tipo === 'nuevo' ? 'Nueva' : 
-                   item.resultadoEnvio.tipo === 'duplicada' ? 'Duplicada' : 
-                   'Error'}
-          </Text>
-          <Text style={styles.resultadoMensaje}>
-            {item.resultadoEnvio.mensaje}
-          </Text>
-          {item.resultadoEnvio.codigoServidor && item.resultadoEnvio.codigoServidor !== 'N/A' && (
-            <Text style={styles.resultadoCodigo}>
-              Código: {item.resultadoEnvio.codigoServidor}
+  const renderItem = ({ item }) => {
+    const estadoReal = obtenerEstadoReal(item);
+    
+    return (
+      <TouchableOpacity style={styles.preventaCard} onPress={() => verPreventa(item)}>
+        <View style={styles.preventaHeader}>
+          <View style={styles.preventaInfo}>
+            <Text style={styles.preventaNumero}>Preventa {item.DocumentoNumero}</Text>
+            <Text style={styles.preventaCliente}>
+              Cliente: {item.ClienteCodigo}
+              {item.ClienteDescripcion && (
+                <Text style={styles.clienteDescripcion}> - {item.ClienteDescripcion}</Text>
+              )}
             </Text>
-          )}
+          </View>
+          <View style={styles.preventaActions}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => compartirPreventa(item)}
+            >
+              <MaterialCommunityIcons name="share" size={20} color="#3498db" />
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+        
+        <View style={styles.preventaDetails}>
+          <Text style={styles.preventaFecha}>{formatearFecha(item.timestamp)}</Text>
+          <Text style={styles.preventaImporte}>Total: {formatearImporte(item.ImporteTotal)}</Text>
+          <Text style={styles.preventaItems}>{item.items?.length || 0} artículos</Text>
+        </View>
+        
+        <View style={[
+          styles.estadoEnviada, 
+          estadoReal.estado === 'duplicada' && styles.estadoDuplicada,
+          estadoReal.estado === 'error' && styles.estadoError,
+          estadoReal.estado === 'dudosa' && styles.estadoDudosa
+        ]}>
+          <MaterialCommunityIcons 
+            name={estadoReal.icono}
+            size={16} 
+            color={estadoReal.color}
+          />
+          <Text style={[
+            styles.estadoTexto,
+            estadoReal.estado === 'duplicada' && styles.estadoTextoDuplicada,
+            estadoReal.estado === 'error' && styles.estadoTextoError,
+            estadoReal.estado === 'dudosa' && styles.estadoTextoDudosa
+          ]}>
+            {estadoReal.texto}
+          </Text>
+        </View>
+        
+        {item.resultadoEnvio && (
+          <View style={styles.resultadoInfo}>
+            <Text style={styles.resultadoTipo}>
+              Tipo: {item.resultadoEnvio.tipo === 'nuevo' ? 'Nueva' : 
+                     item.resultadoEnvio.tipo === 'duplicada' ? 'Duplicada' : 
+                     'Error'}
+            </Text>
+            <Text style={styles.resultadoMensaje}>
+              {item.resultadoEnvio.mensaje}
+            </Text>
+            {item.resultadoEnvio.codigoServidor && item.resultadoEnvio.codigoServidor !== 'N/A' && (
+              <Text style={styles.resultadoCodigo}>
+                Código: {item.resultadoEnvio.codigoServidor}
+              </Text>
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -577,6 +606,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7f8c8d',
     fontStyle: 'italic',
+  },
+  estadoDudosa: {
+    backgroundColor: '#f3e5f5',
+  },
+  estadoTextoDudosa: {
+    color: '#9b59b6',
   },
 });
 

@@ -27,6 +27,13 @@ const Home = ({ user }) => {
       route: 'Sincronizar'
     },
     {
+      name: 'Artículos Frecuentes',
+      icon: 'star-settings',
+      description: 'Gestionar artículos frecuentes por cliente',
+      color: '#f39c12',
+      route: 'GestionFrecuentes'
+    },
+    {
       name: 'Configuración',
       icon: 'cog',
       description: 'Configurar parámetros del sistema',

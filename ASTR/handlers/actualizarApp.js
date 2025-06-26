@@ -175,7 +175,18 @@ const actualizarPreventas = async (preventasJSON, mensajes) => {
     // Manejar específicamente el error de PRIMARY KEY duplicado
     if (error.response && error.response.status === 500) {
       const errorData = error.response.data;
-      if (errorData && errorData.details && errorData.details.includes("PRIMARY must be unique")) {
+      
+      // Verificar si es específicamente un error de clave primaria duplicada
+      // El servidor puede devolver el error en diferentes formatos
+      const isPrimaryKeyError = 
+        (errorData && errorData.details && 
+         (errorData.details.includes("PRIMARY must be unique") || 
+          (Array.isArray(errorData.details) && errorData.details.some(detail => detail.includes("PRIMARY must be unique"))))) ||
+        (errorData && errorData.error === "Validation error" && 
+         errorData.details && Array.isArray(errorData.details) && 
+         errorData.details.some(detail => detail.includes("PRIMARY must be unique")));
+      
+      if (isPrimaryKeyError) {
         console.log("Preventa ya existe en el servidor, marcando como exitosa");
         mensajes.hayErrores = false;
         mensajes.mensaje = "Preventa ya fue enviada anteriormente";
@@ -199,6 +210,22 @@ const actualizarPreventas = async (preventasJSON, mensajes) => {
         }
         
         return { status: 200, data: { message: "Preventa ya existía en servidor" } };
+      } else {
+        // Es un error 500 pero no de clave primaria duplicada
+        console.error('Error 500 del servidor (no es preventa duplicada):', errorData);
+        mensajes.hayErrores = true;
+        mensajes.mensaje = `Error del servidor 500: ${JSON.stringify(errorData)}`;
+        
+        // Guardar como respaldo con información del error
+        try {
+          const { guardarPreventaEnviada } = await import('../src/utils/storageUtils.js');
+          await guardarPreventaEnviada(preventasJSON, resultadoEnvio);
+          console.log("Preventa guardada como respaldo (error 500 del servidor)");
+        } catch (backupError) {
+          console.error('Error al guardar respaldo:', backupError);
+        }
+        
+        return null;
       }
     }
     
@@ -342,39 +369,46 @@ const sincronizarPreventa = async (preventaNumero, cliente) => {
 
 const enviarPreventas = async (logs, setLogs) => {
     let preventas = [];
-    // let logs = [];
-    let mensajes = {hayErrores: false,
-                    mensaje: "No hay errores."};    
+    let mensajes = {hayErrores: false, mensaje: "No hay errores."};    
+    let preventasConError = []; // Array para trackear preventas que fallaron
+    
     try {
       // Buscar en BDD local y transformarla en un ARRAY de JSON
       preventas = await preventasBDDToArray();
       console.log("enviando preventas ",preventas);
+      
       // Enviarlas por post
       for (let i = 0; i < preventas.length; i++) {
         try {
-          await actualizarPreventas(preventas[i], mensajes);
+          const resultado = await actualizarPreventas(preventas[i], mensajes);
           console.log(`enviando preventa ${i + 1}.`,preventas[i]);
           logs = handleLogs(logs,(`enviando preventa ${i + 1}.`) , setLogs);
+          
+          // Si la preventa falló con error 500 (no duplicada), la agregamos a la lista de errores
+          if (!resultado && mensajes.hayErrores) {
+            preventasConError.push(preventas[i].DocumentoNumero);
+            logs = handleLogs(logs, (`⚠️ Preventa ${preventas[i].DocumentoNumero} falló con error del servidor`), setLogs);
+          }
+          
         } catch (error) {
           logs = handleLogs(logs, (`Error al enviar la preventa ${i + 1}: ${error}`),setLogs);
           console.error('Error al enviar la preventa', i + 1);
+          preventasConError.push(preventas[i].DocumentoNumero);
         }
       }
        
-      // Borrarlas de la aplicación solo si no tuvimos errores
-      if (!mensajes.hayErrores) {
+      // Borrarlas de la aplicación solo si no tuvimos errores críticos
+      if (!mensajes.hayErrores || preventasConError.length === 0) {
           await borrarContenidoPreventasEnBDD();
-          logs = handleLogs(logs, ("Preventas borradas correctamente"),setLogs);
-        
-      }else{
-          logs = handleLogs(logs, ("no se borraron las preventas, pueden Haber errores"),setLogs);
-          console.error('no se borraron las preventas porque hay errores ')
+          logs = handleLogs(logs, ("✅ Preventas borradas correctamente"),setLogs);
+      } else {
+          logs = handleLogs(logs, (`⚠️ No se borraron las preventas. Errores en: ${preventasConError.join(', ')}`),setLogs);
+          console.error('no se borraron las preventas porque hay errores en:', preventasConError);
       }
     } catch (error) {
-      logs = handleLogs(logs, (`Error al enviar o borrar preventas: ${error}`),setLogs);
+      logs = handleLogs(logs, (`❌ Error al enviar o borrar preventas: ${error}`),setLogs);
       console.error('Error al enviar o borrar preventas: ', error);
     }
-  
   };
 
   const errorSincronizando = (logs, setLogs) =>{

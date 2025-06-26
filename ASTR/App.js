@@ -7,6 +7,8 @@ import Clientes from './views/Clientes';
 import Preventa from './views/Preventa';
 import EditPreventa from './views/EditPreventa';
 import Articulos from './views/Articulos';
+import ArticulosFrecuentes from './views/ArticulosFrecuentes';
+import GestionFrecuentes from './views/GestionFrecuentes';
 // import Informes from './views/Informes';
 import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
@@ -33,6 +35,8 @@ const App = () => {
   const RenderSincronizarScreen = (props) => <Sincronizar {...props} />;
   const RenderConfigurarScreen = (props) => <Configurar />;
   const RenderArticulosScreen = (props) => <Articulos {...props} />;
+  const RenderArticulosFrecuentesScreen = (props) => <ArticulosFrecuentes {...props} />;
+  const RenderGestionFrecuentesScreen = (props) => <GestionFrecuentes {...props} />;
   const RenderAddArticuloScreen = (props) => <AddArticulo {...props} />;
   // const RenderAbout = (props) => <About />;
   const RenderUsuariosScreen = (props) => <Usuarios />;
@@ -54,6 +58,8 @@ const App = () => {
         <Stack.Screen name="Sincronizar" component={RenderSincronizarScreen} />
         <Stack.Screen name="Configuracion" component={RenderConfigurarScreen} />
         <Stack.Screen name="Articulos" component={RenderArticulosScreen} />
+        <Stack.Screen name="ArticulosFrecuentes" component={RenderArticulosFrecuentesScreen} />
+        <Stack.Screen name="GestionFrecuentes" component={RenderGestionFrecuentesScreen} />
         <Stack.Screen name="AddArticulo" component={RenderAddArticuloScreen} />
         <Stack.Screen name="Usuarios" component={RenderUsuariosScreen} />
         <Stack.Screen name="Clientes" component={RenderClientesScreen} />

@@ -7,8 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 
 
 function Articulo ({ item }) {
-
-    (
+  return (
     <TouchableOpacity onPress={() => openModal(item)}>
       <View style={styles.articuloItem}>
         <Text style={styles.articuloInfo}>{item.id}</Text>
@@ -18,7 +17,8 @@ function Articulo ({ item }) {
           Precio: ${item.precio.toFixed(2)}
         </Text>
       </View>
-    </TouchableOpacity>)
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
