@@ -103,17 +103,17 @@ const Home = ({ user }) => {
                 {empresa} - {producto} v{version}
               </Text>
             </View>
-          </View>
+      </View>
 
           {/* Menú de opciones */}
           <View style={styles.menuContainer}>
             <Text style={styles.menuTitle}>Opciones de Administración</Text>
             <View style={styles.menuGrid}>
-              {menuOptions.map((option, index) => (
-                <TouchableOpacity
-                  key={index}
+      {menuOptions.map((option, index) => (
+        <TouchableOpacity
+          key={index}
                   style={[styles.menuItem, { backgroundColor: option.color }]}
-                  onPress={() => handleOptionPress(option)}
+          onPress={() => handleOptionPress(option)}
                   activeOpacity={0.8}
                 >
                   <View style={styles.menuItemContent}>
@@ -126,8 +126,8 @@ const Home = ({ user }) => {
                     {/* <Text style={styles.menuItemTitle}>{option.name}</Text> */}
                     <Text style={styles.menuItemDescription}>{option.description}</Text>
                   </View>
-                </TouchableOpacity>
-              ))}
+        </TouchableOpacity>
+      ))}
             </View>
           </View>
 
@@ -142,23 +142,23 @@ const Home = ({ user }) => {
               <View style={styles.contactItem}>
                 <MaterialCommunityIcons name="email" size={20} color="#D44638" />
                 <Text style={styles.contactText}>{mail}</Text>
-              </View>
+          </View>
               
               <View style={styles.contactItem}>
                 <MaterialCommunityIcons name="whatsapp" size={20} color="#075E54" />
                 <Text style={styles.contactText}>{whatsapp}</Text>
-              </View>
-            </View>
+          </View>
+        </View>
             
             <View style={styles.developerInfo}>
-              <Image
-                source={require('../assets/hpdev.png')}
+        <Image
+          source={require('../assets/hpdev.png')}
                 style={styles.developerLogo}
                 resizeMode="contain"
-              />
+          />
               <Text style={styles.developerText}>Desarrollado por HP Dev</Text>
             </View>
-          </View>
+      </View>
         </Animated.View>
       </ScrollView>
     </View>

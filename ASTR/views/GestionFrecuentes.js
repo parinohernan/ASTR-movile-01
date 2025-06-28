@@ -11,7 +11,8 @@ import {
   ScrollView,
   TextInput,
   Share,
-  Clipboard
+  Clipboard,
+  Platform
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +26,8 @@ import {
 } from '../src/utils/storageUtils';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 
 // Utilidad para limpiar claves mal guardadas
 const limpiarFrecuentesMalos = async () => {
@@ -42,6 +45,15 @@ const limpiarFrecuentesMalos = async () => {
   }
 };
 
+const getDownloadDir = () => {
+  if (Platform.OS === 'android') {
+    return '/storage/emulated/0/Download/';
+  } else {
+    // En iOS solo se puede usar documentDirectory
+    return FileSystem.documentDirectory;
+  }
+};
+
 const GestionFrecuentes = () => {
   const navigation = useNavigation();
   const [resumen, setResumen] = useState(null);
@@ -51,6 +63,7 @@ const GestionFrecuentes = () => {
   const [textoImportacion, setTextoImportacion] = useState('');
   const [exportando, setExportando] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [nombreArchivo, setNombreArchivo] = useState('frecuentes.json');
   
   // Nuevos estados para ordenamiento y filtros
   const [ordenamiento, setOrdenamiento] = useState('frecuencia'); // 'frecuencia', 'descripcion', 'proveedor', 'rubro'
@@ -188,65 +201,40 @@ const GestionFrecuentes = () => {
     setArticulosFiltrados(articulosFiltrados);
   };
 
-  const exportarFrecuentes = async () => {
+  const exportarFrecuentesAArchivo = async () => {
     try {
       setExportando(true);
       const textoExportacion = await exportarFrecuentesComoTexto();
-      
-      // Intentar compartir el archivo
-      try {
-        await Share.share({
-          message: textoExportacion,
-          title: 'Frecuentes ASTR - ' + new Date().toLocaleDateString()
-        });
-      } catch (shareError) {
-        // Si no se puede compartir, copiar al portapapeles
-        await Clipboard.setString(textoExportacion);
-        Alert.alert(
-          'Exportación Completada', 
-          'Los datos han sido copiados al portapapeles. Puedes pegarlos en un archivo de texto.'
-        );
-      }
+      let nombre = nombreArchivo.trim();
+      if (!nombre.endsWith('.json')) nombre += '.json';
+      const downloadDir = getDownloadDir();
+      const fileUri = downloadDir + nombre;
+      await FileSystem.writeAsStringAsync(fileUri, textoExportacion, { encoding: FileSystem.EncodingType.UTF8 });
+      Alert.alert('Exportación exitosa', `Archivo guardado en:\n${fileUri}`);
+      setModalVisible(false);
     } catch (error) {
-      console.error('Error al exportar:', error);
-      Alert.alert('Error', 'No se pudieron exportar los frecuentes');
+      Alert.alert('Error', 'No se pudieron exportar los frecuentes: ' + error);
     } finally {
       setExportando(false);
     }
   };
 
-  const importarFrecuentes = async () => {
-    if (!textoImportacion.trim()) {
-      Alert.alert('Error', 'Por favor ingresa el texto de importación');
-      return;
+  const importarFrecuentesDesdeArchivo = async () => {
+    try {
+      setImportando(true);
+      const res = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true });
+      if (res.type === 'success') {
+        const contenido = await FileSystem.readAsStringAsync(res.uri, { encoding: FileSystem.EncodingType.UTF8 });
+        await restaurarFrecuentesDesdeTexto(contenido);
+        await cargarResumen();
+        Alert.alert('Éxito', 'Frecuentes importados correctamente');
+      }
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudieron importar los frecuentes: ' + error);
+    } finally {
+      setImportando(false);
     }
-
-    Alert.alert(
-      'Confirmar Importación',
-      '¿Estás seguro de que quieres importar estos frecuentes? Esto sobrescribirá los datos actuales.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Importar', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setImportando(true);
-              const resultado = await restaurarFrecuentesDesdeTexto(textoImportacion);
-              setTextoImportacion('');
-              setModalVisible(false);
-              await cargarResumen();
-              Alert.alert('Éxito', resultado.mensaje);
-            } catch (error) {
-              console.error('Error al importar:', error);
-              Alert.alert('Error', 'No se pudieron importar los frecuentes. Verifica el formato del texto.');
-            } finally {
-              setImportando(false);
-            }
-          }
-        }
-      ]
-    );
   };
 
   const limpiarTodos = () => {
@@ -511,10 +499,7 @@ const GestionFrecuentes = () => {
           
           <TouchableOpacity 
             style={[styles.actionButton, styles.importButton]} 
-            onPress={() => {
-              setModalType('import');
-              setModalVisible(true);
-            }}
+            onPress={importarFrecuentesDesdeArchivo}
             disabled={importando}
           >
             <MaterialCommunityIcons name="import" size={20} color="#ffffff" />
@@ -606,11 +591,19 @@ const GestionFrecuentes = () => {
               {modalType === 'export' ? (
                 <View>
                   <Text style={styles.modalDescription}>
-                    Los datos se exportarán en formato JSON y se compartirán o copiarán al portapapeles.
+                    Ingresa el nombre del archivo para exportar (ej: frecuentes.json):
                   </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="frecuentes.json"
+                    value={nombreArchivo}
+                    onChangeText={setNombreArchivo}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
                   <TouchableOpacity 
                     style={[styles.modalButton, styles.exportButton]} 
-                    onPress={exportarFrecuentes}
+                    onPress={exportarFrecuentesAArchivo}
                     disabled={exportando}
                   >
                     <MaterialCommunityIcons name="export" size={20} color="#ffffff" />
@@ -619,32 +612,7 @@ const GestionFrecuentes = () => {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              ) : (
-                <View>
-                  <Text style={styles.modalDescription}>
-                    Pega aquí el texto JSON de la exportación anterior:
-                  </Text>
-                  <TextInput
-                    style={styles.textInput}
-                    multiline
-                    numberOfLines={10}
-                    placeholder="Pega el texto JSON aquí..."
-                    value={textoImportacion}
-                    onChangeText={setTextoImportacion}
-                    textAlignVertical="top"
-                  />
-                  <TouchableOpacity 
-                    style={[styles.modalButton, styles.importButton]} 
-                    onPress={importarFrecuentes}
-                    disabled={importando}
-                  >
-                    <MaterialCommunityIcons name="import" size={20} color="#ffffff" />
-                    <Text style={styles.modalButtonText}>
-                      {importando ? 'Importando...' : 'Importar Ahora'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              ) : null}
             </View>
           </View>
         </View>

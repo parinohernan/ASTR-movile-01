@@ -198,7 +198,7 @@ const initDatabase = async (logs, setLogs) => {
         migrateDatabase()
           .then(() => {
             console.log("Migración de base de datos completada");
-            resolve();
+        resolve();
           })
           .catch((error) => {
             console.error("Error en migración:", error);

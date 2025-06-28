@@ -142,7 +142,7 @@ const ClientesInfo = (props) => {
     );
 
   return (
-    <View style={styles.container}>
+  <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Información de Cuenta Corriente</Text>
         <Text style={styles.clienteName}>{cliente.descripcion}</Text>
@@ -254,23 +254,23 @@ const ClientesInfo = (props) => {
             <Text style={styles.loadingText}>Cargando documentos...</Text>
           </View>
         ) : (
-          <FlatList
-            data={informe}
+      <FlatList
+        data={informe}
             keyExtractor={(item, index) => `${item.DocumentoNumero}_${index}`}
-            renderItem={renderItem}
+        renderItem={renderItem}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={renderEmptyState}
-          />
+      />
         )}
       </View>
-    </View>
+  </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
     backgroundColor: '#f8f9fa',
   },
   header: {
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginTop: 5,
-  },
+    },
   saldoText: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -325,24 +325,24 @@ const styles = StyleSheet.create({
   frecuentesButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+      justifyContent: 'space-between',
     backgroundColor: '#fff3cd',
     padding: 15,
-    borderWidth: 1,
+      borderWidth: 1,
     borderColor: '#f39c12',
     borderRadius: 8,
     marginTop: 15,
-  },
+    },
   frecuentesButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
   frecuentesText: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#f39c12',
-    marginLeft: 8,
-  },
+      marginLeft: 8,
+    },
   frecuentesSection: {
     backgroundColor: '#ffffff',
     marginTop: 10,
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   documentoRecibo: {
     borderLeftWidth: 4,
     borderLeftColor: '#27ae60',
-  },
+    },
   documentoFactura: {
     borderLeftWidth: 4,
     borderLeftColor: '#3498db',
@@ -448,14 +448,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2c3e50',
-  },
+    },
   documentoDetalles: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   documentoTotal: {
-    fontSize: 16,
+      fontSize: 16,
     fontWeight: '600',
     color: '#2c3e50',
   },
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#f39c12',
     marginLeft: 2,
-  },
+    }, 
 });
 
-export default ClientesInfo; 
+export default ClientesInfo;

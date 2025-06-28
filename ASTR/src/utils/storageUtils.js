@@ -27,14 +27,20 @@ const guardarPreventaEnStorage = async (preventa) => {
   
 //trae una preventa de la BDD al localstorege
 const guardarPreventaEditando = async (preventa) => {
-  // console.log("transformar ",preventa);
-  // const preventaMapeada = [{"cantidad": 52, "descripcion": "PRESTOBARBA UlTRA GRIP",
-  // "descuento": 0, 
-  // "existencia": 1464, "frecuente": false, "id": "1127", "iva": 21, "lista1": 25, "lista2": 30, "lista3": 35, "lista4": 45, "lista5": 0, "precio": 889.35, "precioCosto": 588, "precioTotal": 46246.200000000004, "seleccionados": 0, "unidadVenta": "u"}, {"cantidad": 10, "descripcion": "BARRITA CHOC LECHE FELFORT 30 X 16", "descuento": 0, "existencia": 0, "frecuente": false, "id": "1495", "iva": 21, "lista1": 25, "lista2": 30, "lista3": 35, "lista4": 45, "lista5": 0, "precio": 9506.01956338601, "precioCosto": 6284.97161215604, "precioTotal": 95060.20000000001, 
-  // "seleccionados": 0, "unidadVenta": "u"}];
-  const preventaMapeada = preventa;
+  console.log("Guardando preventa editando:", preventa.length, "items");
+  
+  // Procesar cada item para asegurar que tenga todos los campos necesarios
+  const preventaMapeada = preventa.map(item => ({
+    ...item,
+    // Asegurar que descuento y precioLista estén presentes
+    descuento: item.descuento || 0,
+    precioLista: item.precioLista || 0,
+    // Asegurar que uniqueId esté presente
+    uniqueId: item.uniqueId || `${item.id}_${Date.now()}_${Math.random()}`
+  }));
+  
+  console.log("Preventa mapeada:", preventaMapeada);
   guardarPreventaEnStorage(preventaMapeada);
- 
 };
 
 // Obtener la preventa almacenada en AsyncStorage
@@ -64,15 +70,17 @@ const preventaDesdeBDD = async (numeroPreventa) => {/*busca la prevenda en BDD s
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
-          // 'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.iva AS iva, articulos.precio AS precio, preventaItem.cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioFinal FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?',
-          'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.iva AS iva, articulos.lista1 AS lista1, articulos.lista2 AS lista2, articulos.lista3 AS lista3, articulos.lista4 AS lista4, articulos.lista5 AS lista5, articulos.precioCosto AS precioCosto,  articulos.existencia AS existencia, preventaItem.cantidad AS cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioTotal FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?', 
+          'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.iva AS iva, articulos.lista1 AS lista1, articulos.lista2 AS lista2, articulos.lista3 AS lista3, articulos.lista4 AS lista4, articulos.lista5 AS lista5, articulos.precioCosto AS precioCosto, articulos.existencia AS existencia, preventaItem.cantidad AS cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioTotal, preventaItem.porcentajeBonificacion AS descuento, preventaItem.precioLista AS precioLista FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?', 
           [numeroPreventa],
           (_, result) => {
             const preventaItemsBDD = [];
             for (let i = 0; i < result.rows.length; i++) {
-              preventaItemsBDD.push(result.rows.item(i));
+              const item = result.rows.item(i);
+              // Agregar uniqueId para mantener consistencia
+              item.uniqueId = `${item.id}_${Date.now()}_${Math.random()}`;
+              preventaItemsBDD.push(item);
             }
-            // console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
+            console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
             guardarPreventaEditando(preventaItemsBDD);
             resolve(preventaItemsBDD);
           },

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { configuracionEndPoint } from './storageConfigData';
 
 const checkServerHandler = async () => {
-  try {
+    try {
     const endpoint = await configuracionEndPoint();
     console.log('Verificando conectividad con:', endpoint);
     
@@ -14,9 +14,9 @@ const checkServerHandler = async () => {
     });
     
     console.log('✅ Servidor accesible - Status:', response.status);
-    return true;
+      return true;
     
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Error de conectividad:', error.message);
     
     if (error.code === 'ECONNREFUSED') {
@@ -33,8 +33,8 @@ const checkServerHandler = async () => {
       console.error('No se recibió respuesta del servidor');
     }
     
-    return false;
-  }
-};
+      return false;
+    }
+  };
 
 export default checkServerHandler;

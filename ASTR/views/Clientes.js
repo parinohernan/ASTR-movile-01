@@ -21,7 +21,7 @@ const Clientes = ({ route }) => {
   useFocusEffect(
     React.useCallback(() => {
       const fetchInitialData = async () => {
-        try {
+      try {
           setLoading(true);
           setError(null);
 
@@ -30,17 +30,17 @@ const Clientes = ({ route }) => {
           setShowOnlyMyClients(config?.filtrarClientesPorVendedor ?? true);
 
           // Cargar los clientes
-          const clientesFromDB = await getClientes();
-          setClientes(clientesFromDB);
+        const clientesFromDB = await getClientes();
+        setClientes(clientesFromDB);
           console.log(`Se cargaron ${clientesFromDB.length} clientes`);
 
-        } catch (error) {
+      } catch (error) {
           console.error('Error al obtener datos iniciales: ', error);
           setError('Error al cargar la configuración o los clientes.');
         } finally {
           setLoading(false);
-        }
-      };
+      }
+    };
       
       fetchInitialData();
     }, [])
@@ -59,14 +59,14 @@ const Clientes = ({ route }) => {
         (typeof cliente.id === 'string' &&
         (cliente.descripcion.toLowerCase().includes(search.toLowerCase()) ||
         cliente.id.toLowerCase().includes(search.toLowerCase())))
-    );
+  );
 
   const handleClienteInfoClick = async (cliente) => {
     setIsButtonDisabled(true);
     try {
-      const hayInternet = await checkServerHandler();
-      if (hayInternet) {
-        navigation.navigate('ClientesInfo', {cliente});
+    const hayInternet = await checkServerHandler();
+    if (hayInternet) {
+      navigation.navigate('ClientesInfo', {cliente});
       } else {
         Alert.alert(
           "Sin conexión",
@@ -78,15 +78,15 @@ const Clientes = ({ route }) => {
       console.error("Error al verificar conexión:", error);
       Alert.alert("Error", "No se pudo verificar la conexión al servidor.");
     } finally {
-      setIsButtonDisabled(false);
+    setIsButtonDisabled(false);
     }
   };
 
   const handleClientClick = async (cliente) => {
     try {
-      let preventaNumero = await nextPreventa(); 
+    let preventaNumero = await nextPreventa(); 
       let edit = false;
-      navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+    navigation.navigate('Preventa', { preventaNumero, cliente, edit });
     } catch (error) {
       console.error("Error al crear preventa:", error);
       Alert.alert("Error", "No se pudo crear la preventa.");
@@ -232,13 +232,13 @@ const Clientes = ({ route }) => {
       </View>
       
       <View style={styles.searchContainer}>
-        <Searchbar
+      <Searchbar
           placeholder="Buscar por nombre o código..."
           onChangeText={setSearch}
-          value={search}
+        value={search}
           style={styles.searchbar}
           iconColor="#3498db"
-        />
+      />
       </View>
 
       <View style={styles.content}>
@@ -251,10 +251,10 @@ const Clientes = ({ route }) => {
                 {filteredClientes.length} cliente{filteredClientes.length !== 1 ? 's' : ''} encontrado{filteredClientes.length !== 1 ? 's' : ''}
               </Text>
             </View>
-            
-            <FlatList 
-              data={filteredClientes}
-              keyExtractor={(item) => `${item.id}-${item.descripcion}`}
+    
+      <FlatList 
+        data={filteredClientes}
+        keyExtractor={(item) => `${item.id}-${item.descripcion}`}
               renderItem={renderClienteItem}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContainer}
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'row', 
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,

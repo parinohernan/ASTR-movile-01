@@ -90,10 +90,13 @@ const AddArticulo = ({route, navigationOverride}) => {
     return (articulo.precio * porcentage * cantidad)
   };
   const [precioTotal, setPrecioTotal] = useState( 0 );
-  const [precioUnitario, setPrecioUnitario] = useState (articulo.precio);
+  // Preservar el precioLista original si existe
+  const [precioUnitario, setPrecioUnitario] = useState (articulo.precioLista || articulo.precio);
   const [verAgregar, setVerAgregar] = useState (false);
   const [articuloYaCargado, setArticuloYaCargado] = useState(false);
   const [modificarLinea, setModificarLinea] = useState(true); // Por defecto modificar
+  const [esEdicion, setEsEdicion] = useState(articulo.editandoItem || false);
+  const [uniqueIdOriginal, setUniqueIdOriginal] = useState(articulo.uniqueIdOriginal || null);
   const navigation = useNavigation();
   const cantidadInputRef = useRef(null);
 
@@ -137,6 +140,8 @@ const AddArticulo = ({route, navigationOverride}) => {
     cantidad: parseFloat(cantidad),
     descuento: parseInt(descuento || 0),
     precioTotal: parseFloat(precioTotal),
+    // Preservar el precioLista original si existe
+    precioLista: articulo.precioLista || precioUnitario,
     uniqueId: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único para permitir productos repetidos
   };
 
@@ -161,19 +166,19 @@ const AddArticulo = ({route, navigationOverride}) => {
     if (navigationOverride) {
       navigationOverride(articuloConDetalles);
     } else {
-      navigation.goBack();
+    navigation.goBack();
     }
   }
   
   const eliminar1PreventaStorage = async () =>{
-    console.log("elimina solo uno",articuloConDetalles);
+     console.log("elimina solo uno",articuloConDetalles);
     await eliminarItemEnPreventaEnStorage(articuloConDetalles.uniqueId);
     if (navigationOverride) {
       navigationOverride();
     } else {
       navigation.navigate('Preventa',{preventaNumero: preventaNumero, cliente: cliente});
     }
-    return
+     return
   }
 
   const handleSave = async () => {
@@ -187,7 +192,7 @@ const AddArticulo = ({route, navigationOverride}) => {
       if (navigationOverride) {
         navigationOverride();
       } else {
-        navigation.goBack();
+      navigation.goBack();
       }
       return;
     }
@@ -197,7 +202,7 @@ const AddArticulo = ({route, navigationOverride}) => {
       await modificarItemPreventaStorage();
     } else {
       // Si no está cargado o el usuario quiere agregar nueva línea
-      await agregarItemPreventaStorage();
+    await agregarItemPreventaStorage();
     }
     return;
   };
@@ -273,6 +278,10 @@ const AddArticulo = ({route, navigationOverride}) => {
   };
 
   const handleCancel = () => {
+    // Si es una edición, simplemente regresar sin hacer cambios
+    // El item original se mantiene intacto
+    console.log("Cancelando edición - item original se mantiene");
+    
     if (navigationOverride) {
       navigationOverride();
     } else {
@@ -289,13 +298,19 @@ const AddArticulo = ({route, navigationOverride}) => {
 
   const modificarItemPreventaStorage = async () => {
     console.log("modificarItemPreventaStorage");
-    // Buscar el artículo existente en la preventa y eliminarlo
-    const preventa = await obtenerPreventaDeStorage();
-    const articuloExistente = preventa.find(item => item.id === articulo.id);
     
-    if (articuloExistente) {
-      // Eliminar el artículo existente usando su uniqueId
-      await eliminarItemEnPreventaEnStorage(articuloExistente.uniqueId);
+    // Si es una edición (viene de EditPreventa), eliminar el item original
+    if (esEdicion && uniqueIdOriginal) {
+      await eliminarItemEnPreventaEnStorage(uniqueIdOriginal);
+    } else {
+      // Buscar el artículo existente en la preventa y eliminarlo
+      const preventa = await obtenerPreventaDeStorage();
+      const articuloExistente = preventa.find(item => item.id === articulo.id);
+      
+      if (articuloExistente) {
+        // Eliminar el artículo existente usando su uniqueId
+        await eliminarItemEnPreventaEnStorage(articuloExistente.uniqueId);
+      }
     }
     
     // Agregar el artículo modificado
@@ -363,7 +378,7 @@ const AddArticulo = ({route, navigationOverride}) => {
         onPress={handleSave}
         disabled={!verAgregar}>
           <Text style={styles.saveButtonText}>
-            {articuloYaCargado && modificarLinea ? 'Modificar' : 'Agregar'}
+            {esEdicion ? 'Actualizar' : (articuloYaCargado && modificarLinea ? 'Modificar' : 'Agregar')}
           </Text>
       </TouchableOpacity>
 

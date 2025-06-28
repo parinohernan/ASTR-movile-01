@@ -27,11 +27,11 @@ const actualizarVendedores = async (logs, setLogs) => {
         });
         
         logs = handleLogs(logs, "Conexión exitosa al servidor de vendedores", setLogs);
-        const data = response.data;
+      const data = response.data;
         logs = handleLogs(logs, `Se obtuvieron ${data.length} vendedores del servidor`, setLogs);
-        
-        // Inserta los usuarios desde la API a la base de datos
-        await insertUsuariosFromAPI(data, logs, setLogs);
+      
+      // Inserta los usuarios desde la API a la base de datos
+      await insertUsuariosFromAPI(data, logs, setLogs);
         logs = handleLogs(logs, "Sincronización de vendedores completada", setLogs);
         
     } catch (error) {
@@ -57,7 +57,7 @@ const actualizarVendedores = async (logs, setLogs) => {
         
         logs = handleLogs(logs, `Error al sincronizar vendedores: ${mensajeError}`, setLogs);
     }
-};
+  };
 
 const actualizarClientes = async (logs, setLogs) => {
     console.log("Trayendo Clientes...");
@@ -73,14 +73,14 @@ const actualizarClientes = async (logs, setLogs) => {
         });
         
         logs = handleLogs(logs, "Conexión exitosa al servidor", setLogs);
-        const data = response.data;
+    const data = response.data;
         logs = handleLogs(logs, `Se obtuvieron ${data.length} clientes del servidor`, setLogs);
         
-        // Inserta los clientes desde la API a la base de datos
+    // Inserta los clientes desde la API a la base de datos
         const resultado = await insertClientesFromAPI(data);
         logs = handleLogs(logs, `Sincronización de clientes completada: ${resultado.clientesInsertados} procesados, ${resultado.clientesEliminados} eliminados`, setLogs);
         
-    } catch (error) {
+} catch (error) {
         console.error('Error en actualizarClientes:', error);
         
         let mensajeError = 'Error desconocido';
@@ -102,7 +102,7 @@ const actualizarClientes = async (logs, setLogs) => {
         }
         
         logs = handleLogs(logs, `Error al sincronizar clientes: ${mensajeError}`, setLogs);
-    }
+}
 };
 
 const actualizarArticulos = async (logs, setLogs) => {
@@ -137,7 +137,7 @@ const actualizarArticulos = async (logs, setLogs) => {
 const actualizarPreventas = async (preventasJSON, mensajes) => {
   console.log("Enviando preventa al servidor:", JSON.stringify(preventasJSON, null, 2));
   try {
-    const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
+        const response = await axios.post(await configuracionEndPoint() + 'preventas', preventasJSON);
     console.log("Respuesta del servidor:", response.status, response.data);
     
     // Preparar información del resultado exitoso
@@ -160,7 +160,7 @@ const actualizarPreventas = async (preventasJSON, mensajes) => {
     }
     
     return response;
-  } catch (error) {
+    } catch (error) {
     console.error('Error al enviar preventas:', error);
     
     // Preparar información del resultado
@@ -282,12 +282,12 @@ const verificarPreventaExistente = async (numeroPreventa) => {
 //envia solo una preventa
 const sincronizarPreventa = async (preventaNumero, cliente) => {
   try {
-    console.log("Sincronizando preventa", preventaNumero, cliente);
+    console.log("🔄 Sincronizando preventa", preventaNumero, cliente);
     
     // Verificar si la preventa ya existe en el servidor
     const yaExiste = await verificarPreventaExistente(preventaNumero);
     if (yaExiste) {
-      console.log("Preventa ya existe en el servidor, marcando como exitosa");
+      console.log("✅ Preventa ya existe en el servidor, marcando como exitosa");
       
       // Obtener la preventa para guardarla como respaldo
       let preventas = await preventasBDDToArray();
@@ -308,28 +308,33 @@ const sincronizarPreventa = async (preventaNumero, cliente) => {
         try {
           const { guardarPreventaEnviada } = await import('../src/utils/storageUtils.js');
           await guardarPreventaEnviada(preventa, resultadoEnvio);
-          console.log("Preventa duplicada guardada como respaldo");
+          console.log("✅ Preventa duplicada guardada como respaldo");
         } catch (backupError) {
-          console.error('Error al guardar respaldo de preventa duplicada:', backupError);
+          console.error('❌ Error al guardar respaldo de preventa duplicada:', backupError);
         }
       }
       
       return true;
     }
     
+    // Limpiar artículos inválidos antes de sincronizar
+    console.log("🧹 Limpiando artículos inválidos de la preventa...");
+    const { limpiarArticulosInvalidos } = await import('../database/controllers/Preventa.Controller.js');
+    await limpiarArticulosInvalidos(preventaNumero);
+    
     let preventas = await preventasBDDToArray();
-    console.log("Preventas encontradas en BDD:", preventas.length);
+    console.log("📊 Preventas encontradas en BDD:", preventas.length);
     
     let preventaJSON = preventas.filter(e => e.DocumentoNumero == preventaNumero); 
-    console.log("Preventa filtrada:", preventaJSON.length);
+    console.log("🎯 Preventa filtrada:", preventaJSON.length);
     
     if (preventaJSON.length === 0) {
-      console.error("No se encontró la preventa", preventaNumero);
+      console.error("❌ No se encontró la preventa", preventaNumero);
       return false;
     }
     
     const preventa = preventaJSON[0];
-    console.log("Enviando preventa:", {
+    console.log("📤 Enviando preventa:", {
       numero: preventa.DocumentoNumero,
       cliente: preventa.ClienteCodigo,
       items: preventa.items?.length || 0,
@@ -341,7 +346,7 @@ const sincronizarPreventa = async (preventaNumero, cliente) => {
     const errores = validarPreventaParaEnvio(preventa);
     
     if (errores.length > 0) {
-      console.error("Errores de validación:", errores);
+      console.error("❌ Errores de validación:", errores);
       return false;
     }
     
@@ -351,18 +356,18 @@ const sincronizarPreventa = async (preventaNumero, cliente) => {
     };    
     
     const resultado = await actualizarPreventas(preventa, mensajes);
-    console.log("Resultado de envío:", mensajes);
+    console.log("📡 Resultado de envío:", mensajes);
     
     if (resultado) {
-      console.log("Preventa enviada exitosamente al servidor");
+      console.log("✅ Preventa enviada exitosamente al servidor");
     } else {
-      console.log("Error al enviar preventa al servidor");
+      console.log("❌ Error al enviar preventa al servidor");
     }
     
     return !mensajes.hayErrores;
     
   } catch (error) {
-    console.error('Error en sincronizarPreventa:', error);
+    console.error('❌ Error en sincronizarPreventa:', error);
     return false;
   }
 };

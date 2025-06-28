@@ -59,30 +59,30 @@ const Usuarios = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.titulo}>
+  <View style={styles.container}>
+    <View style={styles.titulo}>
         <Text style={styles.tituloText}>ASTR</Text>
-        <Text style={styles.subtituloText}>Listado de vendedores</Text>
-      </View>
+      <Text style={styles.subtituloText}>Listado de vendedores</Text>
+    </View>
       
       {renderEmptyState() ? (
         renderEmptyState()
       ) : (
         <>
           <Text style={styles.description}>Estos son los vendedores registrados:</Text>
-          <FlatList
-            data={usuarios}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({ item }) => (
+      <FlatList
+        data={usuarios}
+        keyExtractor={item => item.id.toString()}
+        renderItem={({ item }) => (
               <View style={styles.usuarioItem}>
                 <Text style={styles.usuarioCodigo}>Código: {item.id}</Text>
                 <Text style={styles.usuarioNombre}>{item.descripcion}</Text>
               </View>
-            )}
-          />
+        )}
+      />
         </>
       )}
-    </View>
+  </View>
   );
 };
 const styles = StyleSheet.create({
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7f8c8d',
     textAlign: 'center',
-  },
+  }, 
 })
 export default Usuarios;
 

@@ -44,10 +44,10 @@ const Articulos = ({ route }) => {
     // 1. Se cambia el filtro (siempre)
     // 2. Se busca en modo "todos" (solo si hay texto)
     if (filtroActivo !== 'todos' || search.length > buscoDesde) {
-      fetchData();
+        fetchData();
     } else if (filtroActivo === 'todos' && search.length === 0) {
       // En modo "todos" sin búsqueda, mostrar lista vacía
-      setArticulosList([]);
+        setArticulosList([]);
     }
   }, [search, isFocused, filtroActivo]);
   
@@ -104,7 +104,7 @@ const Articulos = ({ route }) => {
           
           // Si hay búsqueda, filtrar por código o descripción
           if (search.length > 0) {
-            if (buscoXCodigo) {
+        if (buscoXCodigo) {
               todosArticulosGlobales = todosArticulosGlobales.filter(art => 
                 art.id.toLowerCase().includes(search.toLowerCase())
               );
@@ -219,9 +219,9 @@ const Articulos = ({ route }) => {
               <View style={styles.cantidadIndicator}>
                 <MaterialCommunityIcons name="check-circle" size={16} color="#27ae60" />
                 <Text style={styles.cantidadText}>{item.seleccionados}</Text>
-              </View>
+        </View>
             )}
-          </View>
+           </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -370,7 +370,7 @@ const Articulos = ({ route }) => {
             ]}>
               Globales
             </Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
           
           <TouchableOpacity 
             style={[

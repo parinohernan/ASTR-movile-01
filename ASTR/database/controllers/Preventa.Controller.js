@@ -120,8 +120,8 @@ const validarPreventaParaEnvio = (preventa) => {
     
     // Validar cada item
     preventa.items.forEach((item, index) => {
-        if (!item.CodigoArticulo) {
-            errores.push(`Item ${index + 1}: Falta código de artículo`);
+        if (!item.CodigoArticulo || item.CodigoArticulo === "000NaN" || item.CodigoArticulo.trim() === "") {
+            errores.push(`Item ${index + 1}: Código de artículo inválido`);
         }
         
         if (item.Cantidad === null || item.Cantidad === undefined || item.Cantidad <= 0) {
@@ -137,7 +137,7 @@ const validarPreventaParaEnvio = (preventa) => {
             errores.push(`Item ${index + 1}: Porcentaje de bonificación debe estar entre 0 y 100`);
         }
         
-        if (!item.iva || item.iva < 0) {
+        if (item.iva === null || item.iva === undefined || item.iva < 0) {
             errores.push(`Item ${index + 1}: IVA inválido`);
         }
         
@@ -330,4 +330,58 @@ const borrarPreventaYSusItems = async (numeroPreventa) => {
     });
 };
 
-export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD, borrarPreventaYSusItems, validarPreventaParaEnvio}
+// Función para limpiar artículos inválidos de una preventa
+const limpiarArticulosInvalidos = async (numeroPreventa) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            try {
+                // Eliminar artículos con códigos inválidos
+                tx.executeSql(
+                    'DELETE FROM preventaItem WHERE idPreventa = ? AND (articulo = "000NaN" OR articulo IS NULL OR articulo = "")',
+                    [numeroPreventa],
+                    (_, result) => {
+                        console.log(`Artículos inválidos eliminados de preventa ${numeroPreventa}:`, result.rowsAffected);
+                        
+                        // Recalcular el importe total y cantidad de items
+                        tx.executeSql(
+                            'SELECT COUNT(*) as cantidadItems, SUM(importe) as importeTotal FROM preventaItem WHERE idPreventa = ?',
+                            [numeroPreventa],
+                            (_, result) => {
+                                const row = result.rows.item(0);
+                                const cantidadItems = row.cantidadItems || 0;
+                                const importeTotal = row.importeTotal || 0;
+                                
+                                // Actualizar la cabeza de la preventa
+                                tx.executeSql(
+                                    'UPDATE preventaCabeza SET cantidadItems = ?, importetotal = ? WHERE id = ?',
+                                    [cantidadItems, importeTotal, numeroPreventa],
+                                    (_, result) => {
+                                        console.log(`Preventa ${numeroPreventa} actualizada: ${cantidadItems} items, $${importeTotal}`);
+                                        resolve({ cantidadItems, importeTotal });
+                                    },
+                                    (_, error) => {
+                                        console.error('Error al actualizar preventa:', error);
+                                        reject(error);
+                                    }
+                                );
+                            },
+                            (_, error) => {
+                                console.error('Error al recalcular preventa:', error);
+                                reject(error);
+                            }
+                        );
+                    },
+                    (_, error) => {
+                        console.error('Error al eliminar artículos inválidos:', error);
+                        reject(error);
+                    }
+                );
+            } catch (error) {
+                console.error('Excepción al limpiar artículos inválidos:', error);
+                reject(error);
+            }
+        });
+    });
+};
+
+export { syncPreventas, grabarPreventaEnBDD, preventasBDDToArray, borrarContenidoPreventasEnBDD, borrarPreventaYSusItems, validarPreventaParaEnvio, limpiarArticulosInvalidos}
