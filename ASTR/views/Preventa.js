@@ -308,55 +308,54 @@ const Preventa = (props) => {
 
   // Renderiza cada elemento del array reducido
   const renderItem = ({ item }) => {
-    // console.log("prv152 intem ", item);
     return (
-    <TouchableOpacity /*style= {{ borderWidth: 1,}}*/ onPress={() => handleItem(item)}>
-      <View style={styles.itemHeader}>
-        <Text style={{fontWeight: "bold", fontSize: 16}}>{`${item.descripcion} `}</Text>
-        <Text style={styles.itemCode}>Código: {item.id}</Text>
+      <TouchableOpacity style={styles.itemCard} onPress={() => handleItem(item)}>
+        {/* Primera línea: Nombre y código + editar */}
+        <View style={styles.itemHeader}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Text style={styles.itemTitle}>{item.descripcion}</Text>
+            <Text style={styles.itemCode}>  |  {item.id}</Text>
+          </View>
+          <TouchableOpacity style={styles.editButton} onPress={() => handleItem(item)}>
+            <MaterialCommunityIcons name="pencil" size={20} color="#3498db" />
+          </TouchableOpacity>
+        </View>
+        {/* Segunda línea: Solo valores */}
+        <View style={styles.itemDataRow}>
+          <View style={styles.dataColumn}>
+            <Text style={styles.dataValue}>{item.cantidad}</Text>
+          </View>
+          <View style={styles.dataColumn}>
+            <Text style={styles.dataValue}>${(item.precioLista || 0).toFixed(2)}</Text>
+          </View>
+          <View style={styles.dataColumn}>
+            <Text style={styles.dataValue}>{item.descuento || 0}%</Text>
+          </View>
+          <View style={styles.dataColumn}>
+            <Text style={styles.dataValueTotal}>${(item.precio || 0).toFixed(2)}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderHeader = () => (
+    <View style={styles.headerRow}>
+      <View style={styles.headerColumn}>
+        <Text style={styles.headerText}>Cantidad</Text>
       </View>
-      <View style= {{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',}}>
-        
-        <View style= {{ width: "20%",
-                        // borderWidth: 1 ,
-                        borderRightWidth:1,
-                        flexDirection: 'row', // Hijos en columna vertical
-                        alignItems: 'center', // Alinear hijos a la izquierda
-                      }}>
-          <Text >Cantidad: {item.cantidad}</Text>                
-        </View>
-        <View style= {{ borderWidth: 0 , width: "22%", borderRightWidth:1,
-                        flexDirection: 'column', // Hijos en columna vertical
-                        alignItems: 'flex-start', // Alinear hijos a la izquierda
-                      }}>
-          <Text>Lista {cliente?.listaPrecio || 'N/A'}: $ {String((item.precioLista || 0).toFixed(2))}  </Text>              
-                       
-        </View>
-        <View style= {{ borderWidth: 0 , width: "22%", borderRightWidth:1,
-                        flexDirection: 'column', // Hijos en columna vertical
-                        alignItems: 'flex-start', // Alinear hijos a la izquierda
-                      }}>
-          <Text>Descuento: { String(item.descuento || 0)} % </Text>              
-                       
-        </View>
-        <View style= {{ borderWidth: 0 , width: "22%",
-                        flexDirection: 'column', // Hijos en columna vertical
-                        alignItems: 'flex-start', // Alinear hijos a la izquierda
-                      }}>
-                        
-          <Text>Total: {`$ ${String((item.precio || 0).toFixed(2))}`}</Text>               
-        </View>
-        <View style= {{ borderWidth: 0 , width: "10%", marginBottom: 4, marginTop: 4, // aca sacaremos todos los margin despues de probar el scrol
-                        flexDirection: 'column', // Hijos en columna vertical
-                        alignItems: 'flex-start', // Alinear hijos a la izquierda
-                      }}>
-          {/* <Text>Editar</Text> */}
-          <MaterialCommunityIcons name="pencil" size={30} color="#9203F9" />            
-        </View>
+      <View style={styles.headerColumn}>
+        <Text style={styles.headerText}>Lista</Text>
       </View>
-      <View style={{ borderBottomColor: 'black', borderBottomWidth: 1, margin:2, marginBottom: 4 }} />
-    </TouchableOpacity>
-  )};
+      <View style={styles.headerColumn}>
+        <Text style={styles.headerText}>Descuento</Text>
+      </View>
+      <View style={styles.headerColumn}>
+        <Text style={styles.headerText}>Total</Text>
+      </View>
+    </View>
+  );
+
   const BarraIcons = () =>{
     return (
       <View style={styles.iconBar}>
@@ -390,7 +389,7 @@ const Preventa = (props) => {
           <Text style={styles.clienteName}>{cliente?.descripcion}</Text>
         </View>
         
-        <TouchableOpacity onPress={traerFrecuentes} style={styles.frecuentesButton}>
+        {/* <TouchableOpacity onPress={traerFrecuentes} style={styles.frecuentesButton}>
           <MaterialCommunityIcons 
             name={estoyBuscandoFrecuentes ? "loading" : "star"} 
             size={20} 
@@ -399,7 +398,7 @@ const Preventa = (props) => {
           <Text style={styles.frecuentesText}>
             Frecuentes Locales: {articulosFrecuentes.length}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         
         <View style={styles.cabezaData}>
           <View style={styles.cabezaSubdata}>
@@ -463,12 +462,15 @@ const Preventa = (props) => {
                 <Text style={styles.emptyStateSubtext}>Toca "Agregar" para comenzar</Text>
               </View>
             ) : (
-              <FlatList
-                data={carrito}
-                keyExtractor={(item) => item.uniqueId || item.id || Math.random().toString()}
-                renderItem={renderItem}
-                showsVerticalScrollIndicator={false}
-              />
+              <>
+                {renderHeader()}
+                <FlatList
+                  data={carrito}
+                  keyExtractor={(item) => item.uniqueId || item.id || Math.random().toString()}
+                  renderItem={renderItem}
+                  showsVerticalScrollIndicator={false}
+                />
+              </>
             )}
           </View>
         </View> 
@@ -531,7 +533,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: 10,
     backgroundColor: '#0c2f3c',
   },
   title: {
@@ -541,10 +543,10 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   cabezaContainer: {
-    padding: 20,
+    padding: 10,
     backgroundColor: '#ffffff',
-    margin: 15,
-    borderRadius: 12,
+    margin: 10,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -554,7 +556,7 @@ const styles = StyleSheet.create({
   clienteInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   clienteName: {
     fontSize: 18,
@@ -562,16 +564,16 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     marginLeft: 10,
   },
-  frecuentesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  frecuentesText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginLeft: 5,
-  },
+  // frecuentesButton: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   marginBottom: 15,
+  // },
+  // frecuentesText: {
+  //   fontSize: 14,
+  //   color: '#7f8c8d',
+  //   marginLeft: 5,
+  // },
   cabezaData: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -591,7 +593,7 @@ const styles = StyleSheet.create({
   itemsContainer: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-    margin: 15,
+    margin: 10,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -602,8 +604,8 @@ const styles = StyleSheet.create({
   itemCard: {
     backgroundColor: '#ffffff',
     borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
+    padding: 2,
+    marginBottom: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -614,56 +616,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 2,
+    marginTop: 2,
   },
   itemTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginLeft: 8,
     flex: 1,
   },
-  itemDetails: {
-    marginBottom: 10,
+  itemCode: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+    // marginBottom: 12,
   },
-  detailRow: {
+  itemDataRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  detailItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    paddingTop: 2,
+    
+    borderTopWidth: 1,
+    borderTopColor: '#ecf0f1',
   },
-  detailText: {
+  dataColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dataValue: {
     fontSize: 14,
-    color: '#7f8c8d',
-    marginLeft: 5,
-  },
-  editIndicator: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: 'bold',
     color: '#2c3e50',
-    marginTop: 20,
-    marginBottom: 10,
+    fontWeight: '600',
     textAlign: 'center',
   },
-  emptyStateSubtext: {
+  dataValueTotal: {
     fontSize: 14,
-    color: '#7f8c8d',
+    color: '#27ae60',
+    fontWeight: 'bold',
     textAlign: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    marginBottom: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ecf0f1',
+  },
+  headerColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 12,
+    color: '#2c3e50',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  editButton: {
+    padding: 5,
   },
   iconBar: {
     flexDirection: 'row',
@@ -728,10 +744,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  itemCode: {
-    fontSize: 12,
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
     color: '#7f8c8d',
-    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
 

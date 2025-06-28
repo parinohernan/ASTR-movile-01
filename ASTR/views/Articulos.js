@@ -178,10 +178,10 @@ const Articulos = ({ route }) => {
       // Si se agregó el artículo a la preventa (cantidad > 0), agregarlo a frecuentes
       if (cantidadActualizada > 0) {
         // Usar el cliente que se pasa como parámetro a la pantalla
-        const clienteId = route.params?.cliente || null;
+        let clienteParam = route.params?.cliente || null;
+        let clienteId = (typeof clienteParam === 'object' && clienteParam !== null) ? clienteParam.id : clienteParam;
         console.log('Agregando artículo frecuente para cliente:', clienteId);
         console.log('Artículo a agregar:', articuloSeleccionado);
-        
         await agregarArticuloFrecuente(clienteId, articuloSeleccionado);
       }
     }

@@ -545,6 +545,124 @@ const obtenerClientesConFrecuentes = async () => {
   }
 };
 
+// Exportar todos los artículos frecuentes como texto plano
+const exportarFrecuentesComoTexto = async () => {
+  try {
+    // Obtener frecuentes globales
+    const frecuentesGlobales = await obtenerArticulosFrecuentesGlobales();
+    
+    // Obtener todos los clientes con frecuentes
+    const clientesConFrecuentes = await obtenerClientesConFrecuentes();
+    
+    // Obtener frecuentes de cada cliente
+    const frecuentesPorCliente = await Promise.all(
+      clientesConFrecuentes.map(async (cliente) => {
+        const frecuentes = await obtenerArticulosFrecuentesCliente(cliente.id);
+        return {
+          clienteId: cliente.id,
+          frecuentes: frecuentes
+        };
+      })
+    );
+    
+    // Crear objeto de exportación
+    const datosExportacion = {
+      fechaExportacion: new Date().toISOString(),
+      version: '1.0',
+      frecuentesGlobales: frecuentesGlobales,
+      frecuentesPorCliente: frecuentesPorCliente,
+      resumen: {
+        totalGlobales: frecuentesGlobales.length,
+        totalClientes: clientesConFrecuentes.length,
+        totalArticulos: frecuentesGlobales.length + 
+          frecuentesPorCliente.reduce((total, cliente) => total + cliente.frecuentes.length, 0)
+      }
+    };
+    
+    return JSON.stringify(datosExportacion, null, 2);
+  } catch (error) {
+    console.error('Error al exportar frecuentes:', error);
+    throw error;
+  }
+};
+
+// Restaurar artículos frecuentes desde texto plano
+const restaurarFrecuentesDesdeTexto = async (textoJson) => {
+  try {
+    const datos = JSON.parse(textoJson);
+    
+    // Validar estructura básica
+    if (!datos.frecuentesGlobales || !datos.frecuentesPorCliente) {
+      throw new Error('Formato de datos inválido');
+    }
+    
+    // Restaurar frecuentes globales
+    if (datos.frecuentesGlobales.length > 0) {
+      await guardarArticulosFrecuentesGlobales(datos.frecuentesGlobales);
+    }
+    
+    // Restaurar frecuentes por cliente
+    for (const clienteData of datos.frecuentesPorCliente) {
+      if (clienteData.frecuentes && clienteData.frecuentes.length > 0) {
+        await guardarArticulosFrecuentesCliente(clienteData.clienteId, clienteData.frecuentes);
+      }
+    }
+    
+    console.log('Frecuentes restaurados exitosamente');
+    return {
+      exitoso: true,
+      mensaje: 'Frecuentes restaurados correctamente',
+      resumen: datos.resumen
+    };
+  } catch (error) {
+    console.error('Error al restaurar frecuentes:', error);
+    throw error;
+  }
+};
+
+// Obtener resumen de estadísticas de frecuentes
+const obtenerResumenFrecuentes = async () => {
+  try {
+    const frecuentesGlobales = await obtenerArticulosFrecuentesGlobales();
+    const clientesConFrecuentes = await obtenerClientesConFrecuentes();
+    
+    // Calcular total de artículos por cliente
+    let totalArticulosClientes = 0;
+    for (const cliente of clientesConFrecuentes) {
+      totalArticulosClientes += cliente.cantidadFrecuentes;
+    }
+    
+    return {
+      globales: {
+        cantidad: frecuentesGlobales.length,
+        topArticulos: frecuentesGlobales.slice(0, 5).map(art => ({
+          id: art.id,
+          descripcion: art.descripcion || 'Sin descripción',
+          frecuencia: art.frecuencia
+        }))
+      },
+      clientes: {
+        cantidad: clientesConFrecuentes.length,
+        totalArticulos: totalArticulosClientes,
+        topClientes: clientesConFrecuentes
+          .sort((a, b) => b.cantidadFrecuentes - a.cantidadFrecuentes)
+          .slice(0, 5)
+      },
+      total: {
+        articulos: frecuentesGlobales.length + totalArticulosClientes,
+        clientes: clientesConFrecuentes.length
+      }
+    };
+  } catch (error) {
+    console.error('Error al obtener resumen de frecuentes:', error);
+    return {
+      globales: { cantidad: 0, topArticulos: [] },
+      clientes: { cantidad: 0, totalArticulos: 0, topClientes: [] },
+      total: { articulos: 0, clientes: 0 }
+    };
+  }
+};
+
 export { 
   guardarPreventaEnStorage, 
   preventaDesdeBDD, 
@@ -574,5 +692,9 @@ export {
   agregarArticuloFrecuente,
   obtenerArticulosFrecuentesCombinados,
   limpiarTodosArticulosFrecuentes,
-  obtenerClientesConFrecuentes
+  obtenerClientesConFrecuentes,
+  // Funciones de exportación e importación
+  exportarFrecuentesComoTexto,
+  restaurarFrecuentesDesdeTexto,
+  obtenerResumenFrecuentes
 };
