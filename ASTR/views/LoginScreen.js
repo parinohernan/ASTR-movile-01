@@ -8,7 +8,7 @@ import {
   insertUsuariosPrueba,
 } from "../database/controllers/Usuarios.controler";
 import { initDatabase } from "../database/database";
-import { version, empresa, producto } from "../src/cconstantes/constantes";
+import { version, empresa, producto } from "../src/constantes/constantes";
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -84,6 +84,16 @@ const LoginScreen = () => {
   };
 
   const handleIngresar = async () => {
+    console.log("🚀 === INICIO DE LOGIN ===");
+    console.log("📝 Datos del formulario:", {
+      vendedor: form.vendedor,
+      password: form.password,
+      vendedorType: typeof form.vendedor,
+      passwordType: typeof form.password,
+      vendedorLength: form.vendedor.length,
+      passwordLength: form.password.length
+    });
+    
     if (loginAttempts >= 3) {
       Alert.alert(
         "Demasiados intentos",
@@ -104,9 +114,10 @@ const LoginScreen = () => {
     }
 
     // User access
+    console.log("🔍 Iniciando autenticación de usuario...");
     const vendedorData = isAuthorized();
     if (vendedorData) {
-      console.log("Vendedor autorizado: ", vendedorData);
+      console.log("✅ Vendedor autorizado: ", vendedorData);
       // Pequeño delay para asegurar que los datos se procesen
       setTimeout(() => {
         navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
@@ -115,6 +126,8 @@ const LoginScreen = () => {
     }
 
     // Failed login
+    console.log("❌ === LOGIN FALLIDO ===");
+    console.log("❌ Login fallido, incrementando intentos. Intentos actuales:", loginAttempts);
     setLoginAttempts(prev => prev + 1);
     setModalVisible(true);
   };

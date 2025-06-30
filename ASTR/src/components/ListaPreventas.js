@@ -5,7 +5,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Controller';
 import { getClientes } from '../../database/controllers/Clientes.Controller';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { empresa, producto } from '../cconstantes/constantes';
+import { empresa, producto } from '../constantes/constantes';
 import { sincronizarPreventa } from '../../handlers/actualizarApp';
 
 const ListaPreventas = () => {

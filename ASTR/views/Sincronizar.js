@@ -4,7 +4,7 @@ import { Button } from 'react-native-elements';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { actualizarAPP, errorSincronizando } from '../handlers/actualizarApp';
 import ConsoleComponent from '../src/components/ConsoleComponent';
-import { empresa, producto } from '../src/cconstantes/constantes';
+import { empresa, producto } from '../src/constantes/constantes';
 import checkServerHandler from '../src/utils/checkServerHandler';
 import { limpiarDatos } from '../database/database';
 

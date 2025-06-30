@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions, StatusBar, Animated } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { version, producto, empresa, whatsapp, mail } from '../src/cconstantes/constantes';
+import { version, producto, empresa, whatsapp, mail } from '../src/constantes/constantes';
 
 const { width, height } = Dimensions.get('window');
 
