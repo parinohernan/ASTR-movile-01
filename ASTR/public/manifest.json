@@ -1,0 +1,53 @@
+{
+  "name": "OSVI - Sistema de Preventas",
+  "short_name": "OSVI",
+  "description": "Sistema de Gestión de Preventas para vendedores",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#30bced",
+  "theme_color": "#30bced",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "es",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva Preventa",
+      "short_name": "Preventa",
+      "description": "Crear una nueva preventa",
+      "url": "/preventa",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Informes",
+      "short_name": "Informes",
+      "description": "Ver informes de preventas",
+      "url": "/informes",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+} 

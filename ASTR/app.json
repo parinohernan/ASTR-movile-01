@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "osvi 314",
-    "slug": "ASTR",
+    "name": "OSVI - Sistema de Preventas",
+    "slug": "osvi-preventas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
@@ -12,18 +12,29 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "platforms": ["ios", "android", "web"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.osvi.preventas"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.hernanpa.osvi314"
+      "package": "com.osvi.preventas"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "webpack",
+      "favicon": "./assets/favicon.png",
+      "themeColor": "#30bced",
+      "backgroundColor": "#30bced",
+      "meta": {
+        "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+        "apple-mobile-web-app-capable": "yes",
+        "apple-mobile-web-app-status-bar-style": "default",
+        "apple-mobile-web-app-title": "OSVI"
+      }
     },
     "extra": {
       "eas": {

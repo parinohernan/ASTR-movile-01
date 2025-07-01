@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { Platform } from 'react-native';
 import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
 import Clientes from './views/Clientes';
@@ -25,6 +26,49 @@ const Stack = createStackNavigator();
 const App = () => {
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [preventaSeleccionada, setPreventaSeleccionada] = useState(null);
+  
+  // Registrar Service Worker para web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('✅ Service Worker registrado exitosamente:', registration.scope);
+            })
+            .catch((registrationError) => {
+              console.log('❌ Error al registrar Service Worker:', registrationError);
+            });
+        });
+      }
+      
+      // Agregar meta tags para PWA
+      const metaTags = [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'OSVI' },
+        { name: 'theme-color', content: '#30bced' },
+        { name: 'description', content: 'Sistema de Gestión de Preventas para vendedores' }
+      ];
+      
+      metaTags.forEach(tag => {
+        const meta = document.createElement('meta');
+        meta.name = tag.name;
+        meta.content = tag.content;
+        document.head.appendChild(meta);
+      });
+      
+      // Agregar link al manifest
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/manifest.json';
+      document.head.appendChild(manifestLink);
+      
+      console.log('🌐 Configuración PWA aplicada');
+    }
+  }, []);
+
   const rootUser = {
     user: "root",
     password: "root",
