@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, StyleSheet, Modal, StatusBar, Alert, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {
-  getUsuarios,
-  insertUsuariosPrueba,
-} from "../database/controllers/Usuarios.controler";
-import { initDatabase } from "../database/database";
+import { initDatabase, getData, insertData } from "../database/database";
 import { version, empresa, producto } from "../src/constantes/constantes";
 
-const LoginScreen = () => {
+const LoginScreen = ({ rootUser }) => {
   const navigation = useNavigation();
 
   const [form, setForm] = useState({
@@ -25,12 +20,45 @@ const LoginScreen = () => {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Función para obtener usuarios
+  const getUsuarios = async () => {
+    try {
+      const result = await getData('SELECT * FROM usuarios');
+      console.log('Usuarios obtenidos:', result);
+      return result || [];
+    } catch (error) {
+      console.error('Error al obtener usuarios:', error);
+      return [];
+    }
+  };
+
+  // Función para insertar usuarios de prueba
+  const insertUsuariosPrueba = async () => {
+    try {
+      const usuariosPrueba = [
+        { id: '001', descripcion: 'Vendedor 1', clave: '123' },
+        { id: '002', descripcion: 'Vendedor 2', clave: '456' },
+        { id: '003', descripcion: 'Vendedor 3', clave: '789' }
+      ];
+
+      for (const usuario of usuariosPrueba) {
+        await insertData(
+          'INSERT OR REPLACE INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)',
+          [usuario.id, usuario.descripcion, usuario.clave]
+        );
+      }
+      console.log('Usuarios de prueba insertados correctamente');
+    } catch (error) {
+      console.error('Error al insertar usuarios de prueba:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         console.log("Iniciando carga de datos...");
         // Inicializar la base de datos primero
-        await initDatabase([], () => {});
+        await initDatabase();
 
         const usuariosFromDB = await getUsuarios();
 
@@ -200,100 +228,96 @@ const LoginScreen = () => {
                   style={styles.input}
                   placeholder="Contraseña"
                   placeholderTextColor="#95a5a6"
-                  secureTextEntry={!showPassword}
                   onChangeText={handlePassword}
                   value={form.password}
+                  secureTextEntry={!showPassword}
                   keyboardType="default"
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <MaterialCommunityIcons 
-                    name={showPassword ? "eye-off" : "eye"} 
-                    size={24} 
-                    color="#7f8c8d" 
+                  <MaterialCommunityIcons
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={24}
+                    color="#95a5a6"
                   />
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.buttonContainer}>
-              <Button
-                mode="contained"
-                onPress={handleIngresar}
-                disabled={!mostrar}
-                loading={false}
-                style={[
-                  styles.loginButton,
-                  !mostrar && styles.loginButtonDisabled
-                ]}
-                labelStyle={styles.loginButtonText}
-              >
-                {mostrar ? "Iniciar Sesión" : "Completa los campos"}
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => navigation.navigate("Home", { form: { vendedor: "root", password: "root" } })}
-                style={styles.configButton}
-                labelStyle={styles.configButtonText}
-              >
-                Configuración
-              </Button>
-            </View>
-
-            {loginAttempts > 0 && (
-              <Text style={styles.attemptsText}>
-                Intentos restantes: {3 - loginAttempts}
+            {/* Botón Ingresar */}
+            <TouchableOpacity
+              style={[
+                styles.loginButton,
+                mostrar ? styles.loginButtonActive : styles.loginButtonInactive
+              ]}
+              onPress={handleIngresar}
+              disabled={!mostrar}
+            >
+              <Text style={[
+                styles.loginButtonText,
+                mostrar ? styles.loginButtonTextActive : styles.loginButtonTextInactive
+              ]}>
+                Ingresar
               </Text>
-            )}
+            </TouchableOpacity>
+
+            {/* Botón Configuración */}
+            <TouchableOpacity
+              style={styles.configButton}
+              onPress={() => navigation.navigate("Home", { form: { vendedor: "root", password: "root" } })}
+            >
+              <Text style={styles.configButtonText}>Configuración</Text>
+            </TouchableOpacity>
+
+            {/* Información de versión */}
+            <View style={styles.versionContainer}>
+              <Text style={styles.versionText}>
+                {producto} v{version}
+              </Text>
+              <Text style={styles.companyText}>{empresa}</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* Footer fijo fuera del ScrollView */}
-      <View style={styles.footer}>
-        <Text style={styles.versionText}>
-          {empresa} - {producto} v{version}
-        </Text>
-      </View>
-
+      {/* Modal de error */}
       <Modal
-        visible={modalVisible}
         animationType="fade"
         transparent={true}
+        visible={modalVisible}
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <MaterialCommunityIcons 
-              name="alert-circle" 
-              size={60} 
-              color="#e74c3c" 
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={60}
+              color="#e74c3c"
               style={styles.modalIcon}
             />
             <Text style={styles.modalTitle}>Error de Autenticación</Text>
-            <Text style={styles.modalMessage}>
-              El código de vendedor o la contraseña son incorrectos.
+            <Text style={styles.modalText}>
+              Usuario o contraseña incorrectos. Intento {loginAttempts} de 3.
             </Text>
             <View style={styles.modalButtons}>
-              <Button
-                mode="contained"
+              <TouchableOpacity
+                style={styles.modalButton}
                 onPress={closeModal}
-                style={styles.modalButton}
               >
-                Intentar de nuevo
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={resetForm}
-                style={styles.modalButton}
-              >
-                Limpiar campos
-              </Button>
+                <Text style={styles.modalButtonText}>Aceptar</Text>
+              </TouchableOpacity>
+              {loginAttempts >= 3 && (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.resetButton]}
+                  onPress={resetForm}
+                >
+                  <Text style={styles.modalButtonText}>Reiniciar</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -305,7 +329,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#30bced",
+    backgroundColor: "#f8f9fa",
   },
   scrollContent: {
     flexGrow: 1,
@@ -316,112 +340,129 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 30,
-    paddingBottom: 80, // Espacio para el footer
+    paddingVertical: 20,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 50,
+    marginBottom: 40,
   },
   logo: {
     width: 120,
     height: 120,
-    borderRadius: 20,
+    resizeMode: "contain",
     marginBottom: 20,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: "#2c3e50",
+    textAlign: "center",
     marginBottom: 8,
   },
   subtitleText: {
     fontSize: 16,
-    color: "#ffffff",
-    opacity: 0.8,
+    color: "#7f8c8d",
+    textAlign: "center",
   },
   formContainer: {
     width: "100%",
-    maxWidth: 350,
+    maxWidth: 400,
   },
   inputContainer: {
     marginBottom: 20,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e1e8ed",
     paddingHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 50,
     fontSize: 16,
-    color: '#2c3e50',
-    paddingVertical: 0,
+    color: "#2c3e50",
+    paddingVertical: 8,
   },
   eyeIcon: {
-    padding: 5,
-  },
-  buttonContainer: {
-    marginTop: 30,
+    padding: 4,
   },
   loginButton: {
-    backgroundColor: "#3498db",
-    borderRadius: 10,
-    paddingVertical: 8,
-    marginBottom: 15,
+    borderRadius: 12,
+    paddingVertical: 15,
+    marginTop: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  loginButtonDisabled: {
+  loginButtonActive: {
+    backgroundColor: "#3498db",
+  },
+  loginButtonInactive: {
     backgroundColor: "#bdc3c7",
   },
   loginButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  loginButtonTextActive: {
+    color: "white",
+  },
+  loginButtonTextInactive: {
+    color: "#7f8c8d",
   },
   configButton: {
-    borderColor: "#ffffff",
-    borderWidth: 2,
-    borderRadius: 10,
-    paddingVertical: 8,
+    backgroundColor: "#95a5a6",
+    borderRadius: 12,
+    paddingVertical: 15,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   configButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  attemptsText: {
+    fontSize: 18,
+    fontWeight: "bold",
     textAlign: "center",
-    color: "#e74c3c",
-    fontSize: 14,
-    marginTop: 10,
+    color: "white",
   },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  versionContainer: {
     alignItems: "center",
-    paddingVertical: 20,
-    backgroundColor: "rgba(48, 188, 237, 0.9)",
+    marginTop: 30,
   },
   versionText: {
+    fontSize: 14,
+    color: "#95a5a6",
+    marginBottom: 4,
+  },
+  companyText: {
     fontSize: 12,
-    color: "#ffffff",
-    opacity: 0.7,
+    color: "#bdc3c7",
   },
   modalOverlay: {
     flex: 1,
@@ -430,16 +471,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 30,
     alignItems: "center",
-    marginHorizontal: 30,
+    marginHorizontal: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
   },
   modalIcon: {
     marginBottom: 20,
@@ -448,24 +492,35 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#2c3e50",
-    marginBottom: 10,
+    marginBottom: 15,
     textAlign: "center",
   },
-  modalMessage: {
+  modalText: {
     fontSize: 16,
     color: "#7f8c8d",
     textAlign: "center",
     marginBottom: 25,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   modalButtons: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
+    gap: 15,
   },
   modalButton: {
-    flex: 1,
-    marginHorizontal: 5,
+    backgroundColor: "#3498db",
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 100,
+  },
+  resetButton: {
+    backgroundColor: "#e74c3c",
+  },
+  modalButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 

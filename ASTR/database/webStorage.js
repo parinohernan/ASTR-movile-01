@@ -1,5 +1,141 @@
 // Sistema de almacenamiento web usando localStorage
 export class WebStorage {
+  constructor() {
+    this.initialized = false;
+  }
+
+  async init() {
+    try {
+      // Inicializar datos por defecto si no existen
+      if (!localStorage.getItem('usuarios')) {
+        localStorage.setItem('usuarios', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('preventas')) {
+        localStorage.setItem('preventas', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('clientes')) {
+        localStorage.setItem('clientes', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('articulos')) {
+        localStorage.setItem('articulos', JSON.stringify([]));
+      }
+      this.initialized = true;
+      console.log('✅ WebStorage inicializado');
+    } catch (error) {
+      console.error('❌ Error al inicializar WebStorage:', error);
+      throw error;
+    }
+  }
+
+  // Método para ejecutar consultas SQL (simulado para web)
+  async executeQuery(query, params = []) {
+    try {
+      console.log('🔍 Ejecutando query:', query, 'con params:', params);
+      
+      // Simular diferentes tipos de consultas
+      if (query.toLowerCase().includes('select')) {
+        return await this.getData(query, params);
+      } else if (query.toLowerCase().includes('insert')) {
+        return await this.insertData(query, params);
+      } else if (query.toLowerCase().includes('update')) {
+        return await this.updateData(query, params);
+      } else if (query.toLowerCase().includes('delete')) {
+        return await this.deleteData(query, params);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error en executeQuery:', error);
+      throw error;
+    }
+  }
+
+  // Método para obtener datos
+  async getData(query, params = []) {
+    try {
+      console.log('📖 getData:', query, params);
+      
+      // Parsear la consulta SQL para determinar qué tabla consultar
+      if (query.toLowerCase().includes('usuarios')) {
+        const data = localStorage.getItem('usuarios');
+        return data ? JSON.parse(data) : [];
+      } else if (query.toLowerCase().includes('preventas')) {
+        const data = localStorage.getItem('preventas');
+        return data ? JSON.parse(data) : [];
+      } else if (query.toLowerCase().includes('clientes')) {
+        const data = localStorage.getItem('clientes');
+        return data ? JSON.parse(data) : [];
+      } else if (query.toLowerCase().includes('articulos')) {
+        const data = localStorage.getItem('articulos');
+        return data ? JSON.parse(data) : [];
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ Error en getData:', error);
+      throw error;
+    }
+  }
+
+  // Método para insertar datos
+  async insertData(query, params = []) {
+    try {
+      console.log('➕ insertData:', query, params);
+      
+      // Parsear la consulta SQL para determinar qué tabla usar
+      if (query.toLowerCase().includes('usuarios')) {
+        const usuarios = await this.getData('SELECT * FROM usuarios');
+        const nuevoUsuario = {
+          id: params[0] || Date.now().toString(),
+          descripcion: params[1] || '',
+          clave: params[2] || ''
+        };
+        usuarios.push(nuevoUsuario);
+        localStorage.setItem('usuarios', JSON.stringify(usuarios));
+        return { insertId: nuevoUsuario.id };
+      } else if (query.toLowerCase().includes('preventas')) {
+        const preventas = await this.getData('SELECT * FROM preventas');
+        const nuevaPreventa = {
+          id: params[0] || Date.now().toString(),
+          // Agregar otros campos según los parámetros
+        };
+        preventas.push(nuevaPreventa);
+        localStorage.setItem('preventas', JSON.stringify(preventas));
+        return { insertId: nuevaPreventa.id };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error en insertData:', error);
+      throw error;
+    }
+  }
+
+  // Método para actualizar datos
+  async updateData(query, params = []) {
+    try {
+      console.log('🔄 updateData:', query, params);
+      // Implementar lógica de actualización según sea necesario
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error en updateData:', error);
+      throw error;
+    }
+  }
+
+  // Método para eliminar datos
+  async deleteData(query, params = []) {
+    try {
+      console.log('🗑️ deleteData:', query, params);
+      // Implementar lógica de eliminación según sea necesario
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error en deleteData:', error);
+      throw error;
+    }
+  }
+
+  // Métodos específicos para compatibilidad
   static async getUsuarios() {
     try {
       const data = localStorage.getItem('usuarios');

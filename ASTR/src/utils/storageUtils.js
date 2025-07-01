@@ -671,6 +671,41 @@ const obtenerResumenFrecuentes = async () => {
   }
 };
 
+// Función faltante: obtenerArticulosFrecuentesOrdenados
+const obtenerArticulosFrecuentesOrdenados = async () => {
+  try {
+    const frecuentesGlobales = await obtenerArticulosFrecuentesGlobales();
+    const clientesConFrecuentes = await obtenerClientesConFrecuentes();
+    
+    // Combinar todos los frecuentes
+    const todosLosFrecuentes = [
+      ...frecuentesGlobales.map(item => ({ ...item, tipo: 'global' })),
+      ...clientesConFrecuentes.flatMap(cliente => 
+        cliente.frecuentes.map(item => ({ ...item, tipo: 'cliente', clienteId: cliente.clienteId }))
+      )
+    ];
+    
+    // Ordenar por descripción
+    return todosLosFrecuentes.sort((a, b) => 
+      a.descripcion.localeCompare(b.descripcion)
+    );
+  } catch (error) {
+    console.error('Error al obtener artículos frecuentes ordenados:', error);
+    return [];
+  }
+};
+
+// Función faltante: limpiarArticulosFrecuentes
+const limpiarArticulosFrecuentes = async () => {
+  try {
+    await limpiarTodosArticulosFrecuentes();
+    console.log('Todos los artículos frecuentes han sido eliminados');
+  } catch (error) {
+    console.error('Error al limpiar artículos frecuentes:', error);
+    throw error;
+  }
+};
+
 export { 
   guardarPreventaEnStorage, 
   preventaDesdeBDD, 
@@ -704,5 +739,8 @@ export {
   // Funciones de exportación e importación
   exportarFrecuentesComoTexto,
   restaurarFrecuentesDesdeTexto,
-  obtenerResumenFrecuentes
+  obtenerResumenFrecuentes,
+  // Funciones faltantes agregadas
+  obtenerArticulosFrecuentesOrdenados,
+  limpiarArticulosFrecuentes
 };

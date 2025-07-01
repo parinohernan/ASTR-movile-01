@@ -1,388 +1,118 @@
-// database.js
-import * as SQLite from "expo-sqlite";
+// database.js - Solo para web
+import { WebStorage } from './webStorage.js';
 
-const db = SQLite.openDatabase("database.db");
+let webStorage = null;
 
 const handleLogs = (logs, mensaje, setLogs) => {
   console.log("handlelogs: ", mensaje);
-  setLogs([...logs, mensaje]);
+  if (setLogs) {
+    setLogs([...logs, mensaje]);
+  }
   return [...logs, mensaje];
 };
 
-// inicializa todos los campos de la vase de datos
-const initDatabase = async (logs, setLogs) => {
-  handleLogs(logs, "iniciando DB", setLogs);
-  if (!db) {
-    handleLogs(logs, "Error: La base de datos no está inicializada", setLogs);
-    console.log("Error: La base de datos no está inicializada");
-    return Promise.reject("La base de datos no está inicializada");
-  }
-
-  return new Promise((resolve, reject) => {
-    db.transaction(
-      (tx) => {
-        handleLogs(logs, "Transacción iniciada", setLogs);
-        console.log("Transacción iniciada");
-        
-        // Crea la tabla usuarios si no existe
-        tx.executeSql(
-          "CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT)",
-          [],
-          () => {
-            logs = handleLogs(
-              logs,
-              "Tabla usuarios creada exitosamente",
-              setLogs
-            );
-            console.log("Tabla usuarios creada/verificada exitosamente");
-          },
-          (_, error) => {
-            handleLogs(
-              logs,
-              "Error al crear la tabla usuarios" + error,
-              setLogs
-            );
-            console.error("Error al crear tabla usuarios:", error);
-            reject(error);
-          }
-        );
-
-        // Crea la tabla clientes si no existe
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS clientes (
-            id TEXT PRIMARY KEY, 
-            descripcion TEXT, 
-            cuit TEXT, 
-            calle TEXT, 
-            numero TEXT, 
-            piso TEXT, 
-            departamento TEXT, 
-            codigoPostal TEXT, 
-            localidad TEXT, 
-            telefono TEXT, 
-            mail TEXT, 
-            contactoComercial TEXT, 
-            categoriaIva TEXT, 
-            listaPrecio TEXT, 
-            importeDeuda REAL, 
-            codigoVendedor TEXT, 
-            actualizado TEXT, 
-            saldoNTCNoAplicado REAL, 
-            limiteCredito REAL
-          )`,
-          [],
-          () => {
-            logs = handleLogs(
-              logs,
-              "Tabla clientes creada exitosamente",
-              setLogs
-            );
-            console.log("Tabla clientes creada/verificada exitosamente");
-          },
-          (_, error) => {
-            handleLogs(
-              logs,
-              "Error al crear la tabla clientes" + error,
-              setLogs
-            );
-            console.error("Error al crear tabla clientes:", error);
-            reject(error);
-          }
-        );
-
-        // Crea la tabla articulos si no existe
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS articulos (
-            id TEXT PRIMARY KEY, 
-            descripcion TEXT, 
-            existencia INTEGER, 
-            precioCosto REAL, 
-            unidadVenta TEXT, 
-            iva REAL, 
-            lista1 REAL, 
-            lista2 REAL, 
-            lista3 REAL, 
-            lista4 REAL, 
-            lista5 REAL
-          )`,
-          [],
-          () => {
-            logs = handleLogs(
-              logs,
-              "Tabla articulos creada exitosamente",
-              setLogs
-            );
-            console.log("Tabla articulos creada/verificada exitosamente");
-          },
-          (_, error) => {
-            handleLogs(
-              logs,
-              "Error al crear la tabla articulos" + error,
-              setLogs
-            );
-            console.error("Error al crear tabla articulos:", error);
-            reject(error);
-          }
-        );
-
-        // Crea la tabla preventaCabeza si no existe
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS preventaCabeza (
-            id TEXT PRIMARY KEY, 
-            cliente TEXT, 
-            vendedor TEXT, 
-            observacion TEXT, 
-            fecha TEXT, 
-            cantidadItems INTEGER, 
-            importeTotal REAL
-          )`,
-          [],
-          () => {
-            logs = handleLogs(
-              logs,
-              "Tabla preventaCabeza creada exitosamente",
-              setLogs
-            );
-            console.log("Tabla preventaCabeza creada/verificada exitosamente");
-          },
-          (_, error) => {
-            handleLogs(
-              logs,
-              "Error al crear la tabla preventaCabeza" + error,
-              setLogs
-            );
-            console.error("Error al crear tabla preventaCabeza:", error);
-            reject(error);
-          }
-        );
-
-        // Crea la tabla preventaItem si no existe
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS preventaItem (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            idPreventa TEXT, 
-            articulo TEXT, 
-            cantidad INTEGER, 
-            importe REAL,
-            porcentajeBonificacion REAL,
-            precioLista REAL,
-            iva REAL
-          )`,
-          [],
-          () => {
-            logs = handleLogs(
-              logs,
-              "Tabla preventaItem creada exitosamente",
-              setLogs
-            );
-            console.log("Tabla preventaItem creada/verificada exitosamente");
-          },
-          (_, error) => {
-            handleLogs(
-              logs,
-              "Error al crear la tabla preventaItem" + error,
-              setLogs
-            );
-            console.error("Error al crear tabla preventaItem:", error);
-            reject(error);
-          }
-        );
-      },
-      (error) => {
-        console.error("Error en transacción de inicialización:", error);
-        reject(error);
-      },
-      () => {
-        console.log("Inicialización de base de datos completada");
-        // Ejecutar migración después de la inicialización
-        migrateDatabase()
-          .then(() => {
-            console.log("Migración de base de datos completada");
-        resolve();
-          })
-          .catch((error) => {
-            console.error("Error en migración:", error);
-            resolve(); // Resolver de todas formas para no bloquear la app
-          });
-      }
-    );
-  });
-};
-
-// En tu controlador de base de datos
-export const getTables = async () => {
-  initDatabase();
+// inicializa todos los campos de la base de datos
+const initDatabase = async (logs = [], setLogs = null) => {
+  handleLogs(logs, "iniciando DB web", setLogs);
+  
   try {
-    return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          'SELECT name FROM sqlite_master WHERE type="table";',
-          [],
-          (_, result) => {
-            // const tables = result.rows._array.map(row => row.name);
-            const tables = result.rows.raw().map((row) => row.name);
-            resolve(tables);
-          },
-          (_, error) => {
-            console.error("Error al ejecutar la consulta:", error);
-            reject(error);
-          }
-        );
-      });
-    });
+    console.log('🌐 Inicializando almacenamiento web...');
+    webStorage = new WebStorage();
+    await webStorage.init();
+    console.log('✅ Almacenamiento web inicializado');
+    return webStorage;
   } catch (error) {
-    console.error("Error al obtener la lista de tablas:", error);
+    console.error('❌ Error al inicializar base de datos:', error);
     throw error;
   }
 };
-// Limpia todas las tablas de la base de datos
-const limpiarDatos = async (logs, setLogs) => {
-  console.log("limpiar datos");
-  db.transaction((tx) => {
-    // Elimina la tabla usuarios si existe
-    tx.executeSql(
-      "DROP TABLE IF EXISTS usuarios",
-      [],
-      () =>
-        (logs = handleLogs(
-          logs,
-          "Tabla usuarios eliminada exitosamente",
-          setLogs
-        )),
-      (_, error) =>
-        handleLogs(
-          logs,
-          "Error al eliminar la tabla usuarios: " + error,
-          setLogs
-        )
-    );
 
-    // Elimina la tabla clientes si existe
-    tx.executeSql(
-      "DROP TABLE IF EXISTS clientes",
-      [],
-      () =>
-        (logs = handleLogs(
-          logs,
-          "Tabla clientes eliminada exitosamente",
-          setLogs
-        )),
-      (_, error) =>
-        (logs = handleLogs(
-          logs,
-          "Error al eliminar la tabla clientes: " + error,
-          setLogs
-        ))
-    );
-
-    // Elimina la tabla articulos si existe
-    tx.executeSql(
-      "DROP TABLE IF EXISTS articulos",
-      [],
-      () =>
-        (logs = handleLogs(
-          logs,
-          "Tabla articulos eliminada exitosamente",
-          setLogs
-        )),
-      (_, error) =>
-        (logs = handleLogs(
-          logs,
-          "Error al eliminar la tabla articulos: " + error,
-          setLogs
-        ))
-    );
-
-    // Elimina la tabla preventaCabeza si existe
-    tx.executeSql(
-      "DROP TABLE IF EXISTS preventaCabeza",
-      [],
-      () =>
-        (logs = handleLogs(
-          logs,
-          "Tabla preventaCabeza eliminada exitosamente",
-          setLogs
-        )),
-      (_, error) =>
-        (logs = handleLogs(
-          logs,
-          "Error al eliminar la tabla preventaCabeza: " + error,
-          setLogs
-        ))
-    );
-
-    // Elimina la tabla preventaItem si existe
-    tx.executeSql(
-      "DROP TABLE IF EXISTS preventaItem",
-      [],
-      () =>
-        (logs = handleLogs(
-          logs,
-          "Tabla preventaItem eliminada exitosamente",
-          setLogs
-        )),
-      (_, error) =>
-        (logs = handleLogs(
-          logs,
-          "Error al eliminar la tabla preventaItem: " + error,
-          setLogs
-        ))
-    );
-  });
+// Función helper para ejecutar consultas
+export const executeQuery = async (query, params = []) => {
+  try {
+    if (!webStorage) {
+      throw new Error('Base de datos no inicializada');
+    }
+    return await webStorage.executeQuery(query, params);
+  } catch (error) {
+    console.error('❌ Error en executeQuery:', error);
+    throw error;
+  }
 };
 
-// Función para migrar la base de datos y agregar nuevas columnas
-const migrateDatabase = async () => {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx) => {
-      // Agregar columna porcentajeBonificacion si no existe
-      tx.executeSql(
-        "PRAGMA table_info(preventaItem)",
-        [],
-        (_, result) => {
-          const columns = [];
-          for (let i = 0; i < result.rows.length; i++) {
-            columns.push(result.rows.item(i).name);
-          }
-          
-          if (!columns.includes('porcentajeBonificacion')) {
-            tx.executeSql(
-              "ALTER TABLE preventaItem ADD COLUMN porcentajeBonificacion REAL",
-              [],
-              () => console.log("Columna porcentajeBonificacion agregada"),
-              (_, error) => console.error("Error agregando porcentajeBonificacion:", error)
-            );
-          }
-          
-          if (!columns.includes('precioLista')) {
-            tx.executeSql(
-              "ALTER TABLE preventaItem ADD COLUMN precioLista REAL",
-              [],
-              () => console.log("Columna precioLista agregada"),
-              (_, error) => console.error("Error agregando precioLista:", error)
-            );
-          }
-          
-          if (!columns.includes('iva')) {
-            tx.executeSql(
-              "ALTER TABLE preventaItem ADD COLUMN iva REAL",
-              [],
-              () => console.log("Columna iva agregada"),
-              (_, error) => console.error("Error agregando iva:", error)
-            );
-          }
-        },
-        (_, error) => {
-          console.error("Error verificando estructura de tabla:", error);
-          reject(error);
-        }
-      );
-    }, reject, resolve);
-  });
+// Función helper para obtener datos
+export const getData = async (query, params = []) => {
+  try {
+    if (!webStorage) {
+      throw new Error('Base de datos no inicializada');
+    }
+    return await webStorage.getData(query, params);
+  } catch (error) {
+    console.error('❌ Error en getData:', error);
+    throw error;
+  }
+};
+
+// Función helper para insertar datos
+export const insertData = async (query, params = []) => {
+  try {
+    if (!webStorage) {
+      throw new Error('Base de datos no inicializada');
+    }
+    return await webStorage.insertData(query, params);
+  } catch (error) {
+    console.error('❌ Error en insertData:', error);
+    throw error;
+  }
+};
+
+// Función helper para actualizar datos
+export const updateData = async (query, params = []) => {
+  try {
+    if (!webStorage) {
+      throw new Error('Base de datos no inicializada');
+    }
+    return await webStorage.updateData(query, params);
+  } catch (error) {
+    console.error('❌ Error en updateData:', error);
+    throw error;
+  }
+};
+
+// Función helper para eliminar datos
+export const deleteData = async (query, params = []) => {
+  try {
+    if (!webStorage) {
+      throw new Error('Base de datos no inicializada');
+    }
+    return await webStorage.deleteData(query, params);
+  } catch (error) {
+    console.error('❌ Error en deleteData:', error);
+    throw error;
+  }
+};
+
+// Limpia todas las tablas de la base de datos
+const limpiarDatos = async (logs, setLogs) => {
+  console.log("limpiar datos web");
+  try {
+    if (!webStorage) {
+      throw new Error('Base de datos no inicializada');
+    }
+    
+    // Limpiar localStorage
+    localStorage.clear();
+    await webStorage.init(); // Reinicializar con datos vacíos
+    
+    handleLogs(logs, "Datos web limpiados exitosamente", setLogs);
+  } catch (error) {
+    handleLogs(logs, "Error al limpiar datos web: " + error, setLogs);
+    throw error;
+  }
 };
 
 export {
-  db,
+  webStorage,
   initDatabase,
-  limpiarDatos /*,, getClientes, insertArticulosFromAPI, getArticulos, getUsuarios, insertUsuariosFromAPI*/,
+  limpiarDatos,
 };
