@@ -5,7 +5,13 @@ import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controle
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
 import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
-import { configuracionEndPoint } from '../src/utils/storageConfigData';
+import { 
+  configuracionEndPoint, 
+  sincronizarDatosInteligente,
+  verificarEspacioDisponible,
+  CONFIG_PAGINACION,
+  getConfiguracionDelStorage
+} from '../src/utils/storageConfigData';
 
 const handleLogs = (logs, mensaje, setLogs) => {
   console.log("handleLogs actualizaAPP ",mensaje);
@@ -16,23 +22,56 @@ const handleLogs = (logs, mensaje, setLogs) => {
 const actualizarVendedores = async (logs, setLogs) => {
     console.log("Trayendo Vendedores...");
     try {
-        const endpoint = await configuracionEndPoint();
-        logs = handleLogs(logs, `Conectando a: ${endpoint}vendedores`, setLogs);
+        logs = handleLogs(logs, "🔄 Iniciando sincronización de vendedores...", setLogs);
         
-        const response = await axios.get(endpoint + 'vendedores', {
-            timeout: 30000, // 30 segundos de timeout
-            validateStatus: function (status) {
-                return status < 500; // Resuelve solo si el status es menor a 500
+        // Verificar si estamos en versión web
+        if (typeof window !== 'undefined' && window.localStorage) {
+            // Versión web - sincronización directa
+            logs = handleLogs(logs, "🌐 Usando sincronización web...", setLogs);
+            
+            // Obtener configuración
+            const config = await getConfiguracionDelStorage();
+            const endpoint = config.endPoint;
+            
+            if (!endpoint) {
+                throw new Error('Endpoint no configurado. Configure el servidor primero.');
             }
-        });
-        
-        logs = handleLogs(logs, "Conexión exitosa al servidor de vendedores", setLogs);
-      const data = response.data;
-        logs = handleLogs(logs, `Se obtuvieron ${data.length} vendedores del servidor`, setLogs);
-      
-      // Inserta los usuarios desde la API a la base de datos
-      await insertUsuariosFromAPI(data, logs, setLogs);
-        logs = handleLogs(logs, "Sincronización de vendedores completada", setLogs);
+            
+            const url = `${endpoint}vendedores`;
+            logs = handleLogs(logs, `📡 Conectando a: ${url}`, setLogs);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const vendedores = Array.isArray(data) ? data : (data.items || data.data || []);
+            
+            logs = handleLogs(logs, `📦 Datos recibidos: ${vendedores.length} vendedores`, setLogs);
+            
+            // Guardar en localStorage
+            localStorage.setItem('usuarios', JSON.stringify(vendedores));
+            logs = handleLogs(logs, `💾 Vendedores guardados en localStorage`, setLogs);
+            
+            logs = handleLogs(logs, `✅ Sincronización web de vendedores completada: ${vendedores.length} vendedores`, setLogs);
+            return vendedores.length;
+        } else {
+            // Versión móvil - usar sincronización inteligente
+            // Verificar espacio disponible
+            const espacio = await verificarEspacioDisponible();
+            logs = handleLogs(logs, `📊 Espacio disponible: ${(espacio.disponible / 1024 / 1024).toFixed(2)}MB`, setLogs);
+            
+            if (espacio.porcentajeUsado > 90) {
+                logs = handleLogs(logs, "⚠️ Espacio crítico detectado", setLogs);
+                return;
+            }
+            
+            // Usar sincronización inteligente para vendedores
+            const totalVendedores = await sincronizarDatosInteligente('vendedores', logs, setLogs);
+            logs = handleLogs(logs, `✅ Sincronización de vendedores completada: ${totalVendedores} vendedores`, setLogs);
+            return totalVendedores;
+        }
         
     } catch (error) {
         console.error('Error en actualizarVendedores:', error);
@@ -55,32 +94,68 @@ const actualizarVendedores = async (logs, setLogs) => {
             mensajeError = error.message || 'Error de conexión';
         }
         
-        logs = handleLogs(logs, `Error al sincronizar vendedores: ${mensajeError}`, setLogs);
+        logs = handleLogs(logs, `❌ Error al sincronizar vendedores: ${mensajeError}`, setLogs);
     }
-  };
+};
 
 const actualizarClientes = async (logs, setLogs) => {
     console.log("Trayendo Clientes...");
     try {
-        const endpoint = await configuracionEndPoint();
-        logs = handleLogs(logs, `Conectando a: ${endpoint}clientes`, setLogs);
+        logs = handleLogs(logs, "🔄 Iniciando sincronización de clientes...", setLogs);
         
-        const response = await axios.get(endpoint + 'clientes', {
-            timeout: 30000, // 30 segundos de timeout
-            validateStatus: function (status) {
-                return status < 500; // Resuelve solo si el status es menor a 500
+        // Verificar si estamos en versión web
+        if (typeof window !== 'undefined' && window.localStorage) {
+            // Versión web - sincronización directa
+            logs = handleLogs(logs, "🌐 Usando sincronización web...", setLogs);
+            
+            // Obtener configuración
+            const config = await getConfiguracionDelStorage();
+            const endpoint = config.endPoint;
+            
+            if (!endpoint) {
+                throw new Error('Endpoint no configurado. Configure el servidor primero.');
             }
-        });
+            
+            const url = `${endpoint}clientes`;
+            logs = handleLogs(logs, `📡 Conectando a: ${url}`, setLogs);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const clientes = Array.isArray(data) ? data : (data.items || data.data || []);
+            
+            logs = handleLogs(logs, `📦 Datos recibidos: ${clientes.length} clientes`, setLogs);
+            
+            // Guardar en localStorage
+            localStorage.setItem('clientes', JSON.stringify(clientes));
+            logs = handleLogs(logs, `💾 Clientes guardados en localStorage`, setLogs);
+            
+            logs = handleLogs(logs, `✅ Sincronización web de clientes completada: ${clientes.length} clientes`, setLogs);
+            return clientes.length;
+        } else {
+            // Versión móvil - usar sincronización inteligente
+            // Verificar espacio disponible
+            const espacio = await verificarEspacioDisponible();
+            logs = handleLogs(logs, `📊 Espacio disponible: ${(espacio.disponible / 1024 / 1024).toFixed(2)}MB`, setLogs);
+            
+            if (espacio.porcentajeUsado > 85) {
+                logs = handleLogs(logs, "⚠️ Espacio limitado, cargando solo clientes más importantes", setLogs);
+                // Cargar solo los primeros 500 clientes
+                const resultado = await sincronizarDatosInteligente('clientes', logs, setLogs);
+                logs = handleLogs(logs, `✅ Sincronización limitada de clientes: ${resultado} clientes`, setLogs);
+                return resultado;
+            } else {
+                // Cargar todos los clientes
+                const totalClientes = await sincronizarDatosInteligente('clientes', logs, setLogs);
+                logs = handleLogs(logs, `✅ Sincronización completa de clientes: ${totalClientes} clientes`, setLogs);
+                return totalClientes;
+            }
+        }
         
-        logs = handleLogs(logs, "Conexión exitosa al servidor", setLogs);
-    const data = response.data;
-        logs = handleLogs(logs, `Se obtuvieron ${data.length} clientes del servidor`, setLogs);
-        
-    // Inserta los clientes desde la API a la base de datos
-        const resultado = await insertClientesFromAPI(data);
-        logs = handleLogs(logs, `Sincronización de clientes completada: ${resultado.clientesInsertados} procesados, ${resultado.clientesEliminados} eliminados`, setLogs);
-        
-} catch (error) {
+    } catch (error) {
         console.error('Error en actualizarClientes:', error);
         
         let mensajeError = 'Error desconocido';
@@ -101,36 +176,70 @@ const actualizarClientes = async (logs, setLogs) => {
             mensajeError = error.message || 'Error de conexión';
         }
         
-        logs = handleLogs(logs, `Error al sincronizar clientes: ${mensajeError}`, setLogs);
-}
+        logs = handleLogs(logs, `❌ Error al sincronizar clientes: ${mensajeError}`, setLogs);
+    }
 };
 
 const actualizarArticulos = async (logs, setLogs) => {
     console.log("Trayendo Articulos...");
-    // let logs=[];
     try {
-        const response = await axios.get(await configuracionEndPoint() + 'articulos');
-        logs = handleLogs(logs,("actualizando articulos..."),setLogs);
-        const data = response.data;
-
-        // Define el tamaño del lote
-        const batchSize = 500; // Por ejemplo, 500 artículos por lote
-
-        // Divide los datos en lotes de tamaño fijo
-        const batches = [];
-        for (let i = 0; i < data.length; i += batchSize) {
-            batches.push(data.slice(i, i + batchSize));
+        logs = handleLogs(logs, "🔄 Iniciando sincronización de artículos...", setLogs);
+        
+        // Verificar si estamos en versión web
+        if (typeof window !== 'undefined' && window.localStorage) {
+            // Versión web - sincronización directa
+            logs = handleLogs(logs, "🌐 Usando sincronización web...", setLogs);
+            
+            // Obtener configuración
+            const config = await getConfiguracionDelStorage();
+            const endpoint = config.endPoint;
+            
+            if (!endpoint) {
+                throw new Error('Endpoint no configurado. Configure el servidor primero.');
+            }
+            
+            const url = `${endpoint}articulos`;
+            logs = handleLogs(logs, `📡 Conectando a: ${url}`, setLogs);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const articulos = Array.isArray(data) ? data : (data.items || data.data || []);
+            
+            logs = handleLogs(logs, `📦 Datos recibidos: ${articulos.length} artículos`, setLogs);
+            
+            // Guardar en localStorage
+            localStorage.setItem('articulos', JSON.stringify(articulos));
+            logs = handleLogs(logs, `💾 Artículos guardados en localStorage`, setLogs);
+            
+            logs = handleLogs(logs, `✅ Sincronización web de artículos completada: ${articulos.length} artículos`, setLogs);
+            return articulos.length;
+        } else {
+            // Versión móvil - usar sincronización inteligente
+            // Verificar espacio disponible
+            const espacio = await verificarEspacioDisponible();
+            logs = handleLogs(logs, `📊 Espacio disponible: ${(espacio.disponible / 1024 / 1024).toFixed(2)}MB`, setLogs);
+            
+            if (espacio.porcentajeUsado > 80) {
+                logs = handleLogs(logs, "⚠️ Espacio crítico, cargando solo artículos más importantes", setLogs);
+                // Cargar solo los primeros 5000 artículos
+                const resultado = await sincronizarDatosInteligente('articulos', logs, setLogs);
+                logs = handleLogs(logs, `✅ Sincronización limitada de artículos: ${resultado} artículos`, setLogs);
+                return resultado;
+            } else {
+                // Cargar todos los artículos con paginación
+                const totalArticulos = await sincronizarDatosInteligente('articulos', logs, setLogs);
+                logs = handleLogs(logs, `✅ Sincronización completa de artículos: ${totalArticulos} artículos`, setLogs);
+                return totalArticulos;
+            }
         }
-
-        // Inserta cada lote en la base de datos
-        for (const batch of batches) {
-            console.log();
-            await insertArticulosFromAPI(batch);
-            handleLogs(logs,(`Lote de ${batch.length} artículos actualizado correctamente.`),setLogs);
-        }
-
+        
     } catch (error) {
-      logs = handleLogs(logs,('Error al obtener o insertar articulos: '),setLogs);
+        console.error('Error en actualizarArticulos:', error);
+        logs = handleLogs(logs, `❌ Error al sincronizar artículos: ${error.message}`, setLogs);
     }
 };
 

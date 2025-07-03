@@ -7,8 +7,10 @@ import {
   StyleSheet, 
   Alert, 
   ScrollView,
-  Switch 
+  Switch,
+  ActivityIndicator
 } from 'react-native';
+import indexedDBHandler from '../src/utils/indexedDBHandler';
 
 const ConfigurarWeb = ({ navigation }) => {
   const [config, setConfig] = useState({
@@ -20,17 +22,17 @@ const ConfigurarWeb = ({ navigation }) => {
   });
   const [vendedores, setVendedores] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingVendedores, setIsLoadingVendedores] = useState(false);
 
   useEffect(() => {
     cargarConfiguracion();
     cargarVendedores();
   }, []);
 
-  const cargarConfiguracion = () => {
+  const cargarConfiguracion = async () => {
     try {
-      const configGuardada = localStorage.getItem('configuracion');
-      if (configGuardada) {
-        const configData = JSON.parse(configGuardada);
+      const configData = await indexedDBHandler.obtenerConfiguracion();
+      if (configData && Object.keys(configData).length > 0) {
         setConfig(prev => ({ ...prev, ...configData }));
       }
     } catch (error) {
@@ -38,15 +40,125 @@ const ConfigurarWeb = ({ navigation }) => {
     }
   };
 
-  const cargarVendedores = () => {
+  const cargarVendedores = async () => {
     try {
-      const usuarios = localStorage.getItem('usuarios');
-      if (usuarios) {
-        const usuariosData = JSON.parse(usuarios);
-        setVendedores(usuariosData);
+      setIsLoadingVendedores(true);
+      console.log('🔄 Iniciando carga de vendedores...');
+      
+      // Intentar obtener vendedores desde IndexedDB
+      const vendedores = await indexedDBHandler.obtenerVendedores();
+      console.log('📦 Vendedores obtenidos de IndexedDB:', vendedores);
+      
+      if (vendedores && vendedores.length > 0) {
+        setVendedores(vendedores);
+        console.log(`✅ Se cargaron ${vendedores.length} vendedores desde IndexedDB`);
+      } else {
+        setVendedores([]);
+        console.log('⚠️ No hay vendedores sincronizados disponibles');
       }
+      
     } catch (error) {
-      console.error('Error al cargar vendedores:', error);
+      console.error('❌ Error al cargar vendedores:', error);
+      setVendedores([]);
+    } finally {
+      setIsLoadingVendedores(false);
+    }
+  };
+
+  const irASincronizar = () => {
+    navigation.navigate('Sincronizar');
+  };
+
+  const probarSincronizacionVendedores = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🧪 Probando sincronización completa...');
+      
+      // Obtener configuración desde IndexedDB
+      const config = await indexedDBHandler.obtenerConfiguracion();
+      if (!config || !config.endpoint) {
+        Alert.alert('Error', 'Endpoint no configurado. Configure el servidor primero.');
+        return;
+      }
+      
+      let totalSincronizados = 0;
+      let mensajes = [];
+      
+      // 1. Sincronizar vendedores
+      try {
+        console.log('📋 Sincronizando vendedores...');
+        const vendedoresResponse = await fetch(`${config.endpoint}vendedores`);
+        if (vendedoresResponse.ok) {
+          const vendedores = await vendedoresResponse.json();
+          const vendedoresArray = Array.isArray(vendedores) ? vendedores : (vendedores.items || vendedores.data || []);
+          await indexedDBHandler.guardarVendedores(vendedoresArray);
+          totalSincronizados += vendedoresArray.length;
+          mensajes.push(`${vendedoresArray.length} vendedores`);
+          console.log(`✅ ${vendedoresArray.length} vendedores sincronizados`);
+        } else {
+          mensajes.push('Error en vendedores');
+          console.log('❌ Error al sincronizar vendedores');
+        }
+      } catch (error) {
+        mensajes.push('Error en vendedores');
+        console.log('❌ Error al sincronizar vendedores:', error);
+      }
+      
+      // 2. Sincronizar clientes
+      try {
+        console.log('📋 Sincronizando clientes...');
+        const clientesResponse = await fetch(`${config.endpoint}clientes`);
+        if (clientesResponse.ok) {
+          const clientes = await clientesResponse.json();
+          const clientesArray = Array.isArray(clientes) ? clientes : (clientes.items || clientes.data || []);
+          await indexedDBHandler.guardarClientes(clientesArray);
+          totalSincronizados += clientesArray.length;
+          mensajes.push(`${clientesArray.length} clientes`);
+          console.log(`✅ ${clientesArray.length} clientes sincronizados`);
+        } else {
+          mensajes.push('Error en clientes');
+          console.log('❌ Error al sincronizar clientes');
+        }
+      } catch (error) {
+        mensajes.push('Error en clientes');
+        console.log('❌ Error al sincronizar clientes:', error);
+      }
+      
+      // 3. Sincronizar artículos
+      try {
+        console.log('📋 Sincronizando artículos...');
+        const articulosResponse = await fetch(`${config.endpoint}articulos`);
+        if (articulosResponse.ok) {
+          const articulos = await articulosResponse.json();
+          const articulosArray = Array.isArray(articulos) ? articulos : (articulos.items || articulos.data || []);
+          await indexedDBHandler.guardarArticulos(articulosArray);
+          totalSincronizados += articulosArray.length;
+          mensajes.push(`${articulosArray.length} artículos`);
+          console.log(`✅ ${articulosArray.length} artículos sincronizados`);
+        } else {
+          mensajes.push('Error en artículos');
+          console.log('❌ Error al sincronizar artículos');
+        }
+      } catch (error) {
+        mensajes.push('Error en artículos');
+        console.log('❌ Error al sincronizar artículos:', error);
+      }
+      
+      // Recargar vendedores en el componente
+      const vendedoresActualizados = await indexedDBHandler.obtenerVendedores();
+      setVendedores(vendedoresActualizados);
+      
+      Alert.alert(
+        'Sincronización Completada', 
+        `Total sincronizado: ${totalSincronizados} elementos\n\n${mensajes.join('\n')}`,
+        [{ text: 'OK' }]
+      );
+      
+    } catch (error) {
+      console.error('❌ Error en prueba de sincronización:', error);
+      Alert.alert('Error', `No se pudo sincronizar: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -60,8 +172,14 @@ const ConfigurarWeb = ({ navigation }) => {
         return;
       }
 
-      // Guardar en localStorage
-      localStorage.setItem('configuracion', JSON.stringify(config));
+      // Validar que haya un vendedor seleccionado si hay vendedores disponibles
+      if (vendedores.length > 0 && !config.vendedorSeleccionado) {
+        Alert.alert('Error', 'Debe seleccionar un vendedor');
+        return;
+      }
+
+      // Guardar en IndexedDB
+      await indexedDBHandler.guardarConfiguracion(config);
       
       Alert.alert(
         'Éxito', 
@@ -87,16 +205,22 @@ const ConfigurarWeb = ({ navigation }) => {
         { 
           text: 'Limpiar', 
           style: 'destructive',
-          onPress: () => {
-            localStorage.removeItem('configuracion');
-            setConfig({
-              endpoint: '',
-              vendedorSeleccionado: '',
-              cantidadMaximaArticulos: '50',
-              mostrarPrecios: true,
-              mostrarStock: true,
-            });
-            Alert.alert('Éxito', 'Configuración limpiada');
+          onPress: async () => {
+            try {
+              await indexedDBHandler.limpiarBaseDatos();
+              setConfig({
+                endpoint: '',
+                vendedorSeleccionado: '',
+                cantidadMaximaArticulos: '50',
+                mostrarPrecios: true,
+                mostrarStock: true,
+              });
+              setVendedores([]);
+              Alert.alert('Éxito', 'Configuración y datos limpiados');
+            } catch (error) {
+              console.error('Error al limpiar configuración:', error);
+              Alert.alert('Error', 'No se pudo limpiar la configuración');
+            }
           }
         }
       ]
@@ -156,6 +280,71 @@ const ConfigurarWeb = ({ navigation }) => {
     input.click();
   };
 
+  const renderVendedoresSection = () => {
+    if (isLoadingVendedores) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#30bced" />
+          <Text style={styles.loadingText}>Cargando vendedores...</Text>
+        </View>
+      );
+    }
+
+    if (vendedores.length === 0) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateTitle}>No hay vendedores disponibles</Text>
+          <Text style={styles.emptyStateSubtitle}>
+            Para seleccionar un vendedor, primero debe sincronizar los datos con el servidor
+          </Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.syncButton}
+              onPress={irASincronizar}
+            >
+              <Text style={styles.syncButtonText}>Ir a Sincronizar</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.syncButton, styles.testButton]}
+              onPress={probarSincronizacionVendedores}
+              disabled={isLoading}
+            >
+              <Text style={styles.syncButtonText}>
+                {isLoading ? 'Probando...' : 'Probar Sincronización'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Vendedor Seleccionado</Text>
+        <View style={styles.pickerContainer}>
+          {vendedores.map((vendedor) => (
+            <TouchableOpacity
+              key={vendedor.codigo}
+              style={[
+                styles.vendedorOption,
+                config.vendedorSeleccionado === vendedor.codigo && styles.vendedorOptionSelected
+              ]}
+              onPress={() => setConfig(prev => ({ ...prev, vendedorSeleccionado: vendedor.codigo }))}
+            >
+              <Text style={[
+                styles.vendedorText,
+                config.vendedorSeleccionado === vendedor.codigo && styles.vendedorTextSelected
+              ]}>
+                {vendedor.descripcion} ({vendedor.codigo})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
@@ -182,28 +371,23 @@ const ConfigurarWeb = ({ navigation }) => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Vendedor</Text>
+          {renderVendedoresSection()}
           
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Vendedor Seleccionado</Text>
-            <View style={styles.pickerContainer}>
-              {vendedores.map((vendedor) => (
-                <TouchableOpacity
-                  key={vendedor.id}
-                  style={[
-                    styles.vendedorOption,
-                    config.vendedorSeleccionado === vendedor.id && styles.vendedorOptionSelected
-                  ]}
-                  onPress={() => setConfig(prev => ({ ...prev, vendedorSeleccionado: vendedor.id }))}
-                >
-                  <Text style={[
-                    styles.vendedorText,
-                    config.vendedorSeleccionado === vendedor.id && styles.vendedorTextSelected
-                  ]}>
-                    {vendedor.descripcion} ({vendedor.id})
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          {/* Botón de prueba de sincronización */}
+          <View style={styles.syncTestContainer}>
+            <Text style={styles.syncTestTitle}>Prueba de Sincronización</Text>
+            <Text style={styles.syncTestSubtitle}>
+              Descargue vendedores, clientes y artículos desde el servidor configurado
+            </Text>
+            <TouchableOpacity
+              style={[styles.syncTestButton, isLoading && styles.syncTestButtonDisabled]}
+              onPress={probarSincronizacionVendedores}
+              disabled={isLoading}
+            >
+              <Text style={styles.syncTestButtonText}>
+                {isLoading ? 'Sincronizando...' : 'Probar Sincronización'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -344,6 +528,44 @@ const styles = StyleSheet.create({
     color: '#333',
     backgroundColor: '#fff',
   },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  syncButton: {
+    backgroundColor: '#30bced',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  syncButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   pickerContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -418,6 +640,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#dc3545',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  testButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#30bced',
+  },
+  syncTestContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  syncTestTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  syncTestSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  syncTestButton: {
+    backgroundColor: '#27ae60',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  syncTestButtonDisabled: {
+    backgroundColor: '#95a5a6',
+  },
+  syncTestButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

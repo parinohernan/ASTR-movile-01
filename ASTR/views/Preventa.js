@@ -296,8 +296,12 @@ const Preventa = (props) => {
       console.log('Abriendo Artículos con cliente:', cliente);
       console.log('Cliente ID a pasar:', cliente.id);
       
+      // Detectar si estamos en entorno web
+      const isWeb = typeof window !== 'undefined' && window.document;
+      const screenName = isWeb ? 'ArticulosWeb' : 'Articulos';
+      
       // console.log("cli CLI CLI listaprecio ", dataCliente.listaPrecio);
-      navigation.navigate('Articulos', { numeroPreventa: preventaNumero, cliente: cliente, listaDePrecio: cliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
+      navigation.navigate(screenName, { numeroPreventa: preventaNumero, cliente: cliente, listaDePrecio: cliente.listaPrecio, cantItems: cantidadItems, articulosFrecuentes: articulosFrecuentes, hasInternetAccess: hasInternetAccess });
     }
   };
 

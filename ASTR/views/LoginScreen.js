@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, Modal, StatusBar, Alert, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, Image, StyleSheet, Modal, StatusBar, Alert, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { initDatabase, getData, insertData } from "../database/database";
 import { version, empresa, producto } from "../src/constantes/constantes";
+import { getUsuariosFromStore, initializeDefaultUsers, authenticateUser } from "../src/utils/authUtils";
 
 const LoginScreen = ({ rootUser }) => {
   const navigation = useNavigation();
@@ -19,89 +19,36 @@ const LoginScreen = ({ rootUser }) => {
   const [vendedor, setVendedor] = useState({});
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Función para obtener usuarios
-  const getUsuarios = async () => {
-    try {
-      const result = await getData('SELECT * FROM usuarios');
-      console.log('Usuarios obtenidos:', result);
-      return result || [];
-    } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-      return [];
-    }
-  };
 
-  // Función para insertar usuarios de prueba
-  const insertUsuariosPrueba = async () => {
-    try {
-      const usuariosPrueba = [
-        { id: '001', descripcion: 'Vendedor 1', clave: '123' },
-        { id: '002', descripcion: 'Vendedor 2', clave: '456' },
-        { id: '003', descripcion: 'Vendedor 3', clave: '789' }
-      ];
-
-      for (const usuario of usuariosPrueba) {
-        await insertData(
-          'INSERT OR REPLACE INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)',
-          [usuario.id, usuario.descripcion, usuario.clave]
-        );
-      }
-      console.log('Usuarios de prueba insertados correctamente');
-    } catch (error) {
-      console.error('Error al insertar usuarios de prueba:', error);
-    }
-  };
 
   useEffect(() => {
-    const fetchData = async () => {
+    const initializeData = async () => {
       try {
-        console.log("Iniciando carga de datos...");
-        // Inicializar la base de datos primero
-        await initDatabase();
-
-        const usuariosFromDB = await getUsuarios();
-
-        // Si no hay usuarios, insertar usuarios de prueba
-        if (usuariosFromDB.length === 0) {
-          console.log(
-            "No hay usuarios en la base de datos, insertando usuarios de prueba..."
-          );
-          await insertUsuariosPrueba();
-          const usuariosActualizados = await getUsuarios();
-          setUsuarios(usuariosActualizados);
-        } else {
-          setUsuarios(usuariosFromDB);
-        }
-        console.log("Datos cargados exitosamente");
+        setIsLoading(true);
+        console.log("🔄 Iniciando carga de datos...");
+        
+        const usuariosData = await initializeDefaultUsers();
+        setUsuarios(usuariosData);
+        
+        console.log("✅ Datos cargados exitosamente");
       } catch (error) {
-        console.error("Error al obtener o insertar usuarios: ", error);
+        console.error("❌ Error al cargar datos:", error);
         Alert.alert("Error", "No se pudo cargar la información de usuarios");
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchData();
+    
+    initializeData();
   }, []);
 
   useEffect(() => {
     setMostrar(form.vendedor.length > 0 && form.password.length >= 3);
   }, [form]);
 
-  const isAuthorized = () => {
-    for (let i = 0; i < usuarios.length; i++) {
-      const element = usuarios[i];
-      if (form.password === element.clave && form.vendedor === element.id) {
-        console.log("Usuario ", element, " log", form);
-        const vendedorData = {
-          clave: form.password,
-          id: form.vendedor,
-          descripcion: element.descripcion,
-        };
-        setVendedor(vendedorData);
-        return vendedorData;
-      }
-    }
-    return false;
-  };
+
 
   const handleVendedor = (text) => {
     setForm({ vendedor: text, password: form.password });
@@ -131,29 +78,30 @@ const LoginScreen = ({ rootUser }) => {
       return;
     }
 
-    // Root access
-    if (
-      form.vendedor.toLowerCase() === "root" &&
-      form.password.toLowerCase() === "root"
-    ) {
-      console.log("ingresando como root", form);
-      navigation.navigate("Home", { form });
+    // Autenticar usuario usando la utilidad
+    const userData = authenticateUser(form, usuarios);
+    
+    if (userData) {
+      console.log("✅ Usuario autenticado:", userData);
+      
+      if (userData.isRoot) {
+        // Navegar a Home para root
+        navigation.navigate("Home", { form: userData });
+      } else {
+        // Determinar si estamos en entorno web y navegar al componente correcto
+        const isWeb = typeof window !== 'undefined' && window.localStorage;
+        const targetRoute = isWeb ? "UserMenuPPalWeb" : "UserMenuPPal";
+        
+        console.log(`🌐 Navegando a: ${targetRoute} (${isWeb ? 'Web' : 'Móvil'})`);
+        
+        setTimeout(() => {
+          navigation.navigate(targetRoute, { vendedor: userData });
+        }, 100);
+      }
       return;
     }
 
-    // User access
-    console.log("🔍 Iniciando autenticación de usuario...");
-    const vendedorData = isAuthorized();
-    if (vendedorData) {
-      console.log("✅ Vendedor autorizado: ", vendedorData);
-      // Pequeño delay para asegurar que los datos se procesen
-      setTimeout(() => {
-        navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
-      }, 100);
-      return;
-    }
-
-    // Failed login
+    // Login fallido
     console.log("❌ === LOGIN FALLIDO ===");
     console.log("❌ Login fallido, incrementando intentos. Intentos actuales:", loginAttempts);
     setLoginAttempts(prev => prev + 1);
@@ -168,6 +116,15 @@ const LoginScreen = ({ rootUser }) => {
     setForm({ vendedor: "", password: "" });
     setLoginAttempts(0);
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3498db" />
+        <Text style={styles.loadingText}>Cargando sistema...</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView 
@@ -247,6 +204,25 @@ const LoginScreen = ({ rootUser }) => {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Información de usuarios disponibles (solo en desarrollo) */}
+            {__DEV__ && usuarios.length > 0 && (
+              <View style={styles.devInfo}>
+                <Text style={styles.devInfoTitle}>Usuarios disponibles:</Text>
+                {usuarios.map((user, index) => {
+                  // Determinar la contraseña según el tipo de usuario
+                  const password = user.authToken ? 
+                    (user.codigo === '001' ? '123' : user.codigo === '002' ? '456' : '789') : 
+                    '789';
+                  
+                  return (
+                    <Text key={index} style={styles.devInfoText}>
+                      {user.codigo}: {user.descripcion} (clave: {password})
+                    </Text>
+                  );
+                })}
+              </View>
+            )}
 
             {/* Botón Ingresar */}
             <TouchableOpacity
@@ -331,6 +307,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
@@ -400,6 +387,25 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 4,
+  },
+  devInfo: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  devInfoTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#495057",
+    marginBottom: 8,
+  },
+  devInfoText: {
+    fontSize: 12,
+    color: "#6c757d",
+    marginBottom: 4,
   },
   loginButton: {
     borderRadius: 12,

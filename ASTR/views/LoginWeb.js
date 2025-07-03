@@ -11,6 +11,7 @@ import {
   ScrollView,
   Image 
 } from 'react-native';
+import indexedDBHandler from '../src/utils/indexedDBHandler';
 
 const LoginWeb = ({ navigation, rootUser }) => {
   const [form, setForm] = useState({
@@ -20,47 +21,53 @@ const LoginWeb = ({ navigation, rootUser }) => {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Usuarios de prueba almacenados en localStorage
+  // Usuarios de prueba para inicialización
   const usuariosPrueba = [
-    { id: '001', descripcion: 'Vendedor 1', clave: '123' },
-    { id: '002', descripcion: 'Vendedor 2', clave: '456' },
-    { id: '003', descripcion: 'Vendedor 3', clave: '789' }
+    { id: '001', codigo: '001', descripcion: 'Vendedor 1', clave: '123' },
+    { id: '002', codigo: '002', descripcion: 'Vendedor 2', clave: '456' },
+    { id: '003', codigo: '003', descripcion: 'Vendedor 3', clave: '789' }
   ];
 
   useEffect(() => {
-    // Inicializar usuarios en localStorage si no existen
-    const usuariosGuardados = localStorage.getItem('usuarios');
-    if (!usuariosGuardados) {
-      localStorage.setItem('usuarios', JSON.stringify(usuariosPrueba));
-      console.log('Usuarios de prueba inicializados');
-    }
+    // Inicializar IndexedDB y usuarios de prueba si no existen
+    const inicializarDB = async () => {
+      try {
+        await indexedDBHandler.init();
+        
+        // Verificar si hay vendedores en la base de datos
+        const vendedores = await indexedDBHandler.obtenerVendedores();
+        if (vendedores.length === 0) {
+          // Si no hay vendedores, agregar los de prueba
+          await indexedDBHandler.guardarVendedores(usuariosPrueba);
+          console.log('✅ Usuarios de prueba inicializados en IndexedDB');
+        } else {
+          console.log(`📋 ${vendedores.length} vendedores encontrados en IndexedDB`);
+        }
+      } catch (error) {
+        console.error('❌ Error al inicializar IndexedDB:', error);
+      }
+    };
+
+    inicializarDB();
   }, []);
 
-  const getUsuarios = () => {
+  const isAuthorized = async () => {
     try {
-      const usuarios = localStorage.getItem('usuarios');
-      return usuarios ? JSON.parse(usuarios) : [];
-    } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-      return [];
-    }
-  };
-
-  const isAuthorized = () => {
-    const usuarios = getUsuarios();
-    for (let i = 0; i < usuarios.length; i++) {
-      const element = usuarios[i];
-      if (form.password === element.clave && form.vendedor === element.id) {
-        console.log("Usuario autorizado:", element);
+      const vendedor = await indexedDBHandler.autenticarVendedor(form.vendedor, form.password);
+      if (vendedor) {
+        console.log("✅ Usuario autorizado:", vendedor);
         const vendedorData = {
           clave: form.password,
           id: form.vendedor,
-          descripcion: element.descripcion,
+          descripcion: vendedor.descripcion,
         };
         return vendedorData;
       }
+      return false;
+    } catch (error) {
+      console.error('❌ Error en autenticación:', error);
+      return false;
     }
-    return false;
   };
 
   const handleVendedor = (text) => {
@@ -96,7 +103,7 @@ const LoginWeb = ({ navigation, rootUser }) => {
 
     // User access
     console.log("🔍 Iniciando autenticación de usuario...");
-    const vendedorData = isAuthorized();
+    const vendedorData = await isAuthorized();
     if (vendedorData) {
       console.log("✅ Vendedor autorizado:", vendedorData);
       setTimeout(() => {

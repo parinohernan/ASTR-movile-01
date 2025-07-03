@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../../database/database';
+// import { db } from '../../database/database'; // COMENTADO - SQLite no disponible en web
 
 const STORAGE_KEY = '@MyApp:PreventaData';
 const PREVENTAS_ENVIADAS_KEY = '@MyApp:PreventasEnviadas';
@@ -63,33 +63,38 @@ const obtenerPreventaDeStorage = async () => {
     }
 };
 
+const obtenerItemsPreventaDeStorage = async (numeroPreventa) => {
+  console.log("Función mock: obtenerItemsPreventaDeStorage - SQLite no disponible en web");
+  return Promise.resolve([]);
+};
+
 const preventaDesdeBDD = async (numeroPreventa) => {/*busca la prevenda en BDD sqlite y la carga */
   /* con el numero de preventa la traigo de la BDD local sqlyte y la coloco en locasStorege   */
   console.log("STORAGE83 numero preven", numeroPreventa);
   try {
     return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.iva AS iva, articulos.lista1 AS lista1, articulos.lista2 AS lista2, articulos.lista3 AS lista3, articulos.lista4 AS lista4, articulos.lista5 AS lista5, articulos.precioCosto AS precioCosto, articulos.existencia AS existencia, preventaItem.cantidad AS cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioTotal, preventaItem.porcentajeBonificacion AS descuento, preventaItem.precioLista AS precioLista FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?', 
-          [numeroPreventa],
-          (_, result) => {
-            const preventaItemsBDD = [];
-            for (let i = 0; i < result.rows.length; i++) {
-              const item = result.rows.item(i);
-              // Agregar uniqueId para mantener consistencia
-              item.uniqueId = `${item.id}_${Date.now()}_${Math.random()}`;
-              preventaItemsBDD.push(item);
-            }
-            console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
-            guardarPreventaEditando(preventaItemsBDD);
-            resolve(preventaItemsBDD);
-          },
-          (_, error) => {
-            console.error('Error al cargar items de preventa desde la base de datos:', error);
-            reject(error);
-          }
-        );
-      });
+      // db.transaction((tx) => {
+      //   tx.executeSql(
+      //     'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.iva AS iva, articulos.lista1 AS lista1, articulos.lista2 AS lista2, articulos.lista3 AS lista3, articulos.lista4 AS lista4, articulos.lista5 AS lista5, articulos.precioCosto AS precioCosto, articulos.existencia AS existencia, preventaItem.cantidad AS cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioTotal, preventaItem.porcentajeBonificacion AS descuento, preventaItem.precioLista AS precioLista FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?', 
+      //     [numeroPreventa],
+      //     (_, result) => {
+      //       const preventaItemsBDD = [];
+      //       for (let i = 0; i < result.rows.length; i++) {
+      //         const item = result.rows.item(i);
+      //         // Agregar uniqueId para mantener consistencia
+      //         item.uniqueId = `${item.id}_${Date.now()}_${Math.random()}`;
+      //         preventaItemsBDD.push(item);
+      //       }
+      //       console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
+      //       guardarPreventaEditando(preventaItemsBDD);
+      //       resolve(preventaItemsBDD);
+      //     },
+      //     (_, error) => {
+      //       console.error('Error al cargar items de preventa desde la base de datos:', error);
+      //       reject(error);
+      //     }
+      //   );
+      // });
     });
   } catch (error) {
     console.error('Error en preventaDesdeBDD:', error);

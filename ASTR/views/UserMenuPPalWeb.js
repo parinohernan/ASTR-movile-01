@@ -3,17 +3,16 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions }
 import { Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import NetInfo from '@react-native-community/netinfo';
 import checkServerHandler from '../src/utils/checkServerHandler';
 
 const { width, height } = Dimensions.get('window');
 
-const UserMenuPPal = ({ route }) => {
+const UserMenuPPalWeb = ({ route }) => {
   const { params } = route;
   const vendedor = params?.vendedor;
   const navigation = useNavigation();
   
-  console.log("UserMenuPPal - Datos recibidos:", { params, vendedor });
+  console.log("UserMenuPPalWeb - Datos recibidos:", { params, vendedor });
   
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
@@ -32,7 +31,7 @@ const UserMenuPPal = ({ route }) => {
     id: '0',
   };
   
-  console.log("UserMenuPPal - Usuario procesado:", user);
+  console.log("UserMenuPPalWeb - Usuario procesado:", user);
 
   const menuOptions = [
     { 
@@ -40,14 +39,14 @@ const UserMenuPPal = ({ route }) => {
       icon: 'clipboard-check',
       description: 'Crear y gestionar preventas',
       color: '#3498db',
-      route: 'Clientes'
+      route: 'ClientesWeb'
     },
     { 
       name: 'Informes', 
       icon: 'file-chart',
       description: 'Ver reportes y estadísticas',
       color: '#e74c3c',
-      route: 'Informes'
+      route: 'InformesWeb'
     },
     { 
       name: 'Sincronizar', 
@@ -55,6 +54,13 @@ const UserMenuPPal = ({ route }) => {
       description: 'Sincronizar datos con el servidor',
       color: '#27ae60',
       route: 'Sincronizar'
+    },
+    { 
+      name: 'Configuración', 
+      icon: 'cog',
+      description: 'Configurar sistema',
+      color: '#9b59b6',
+      route: 'ConfigurarWeb'
     },
   ];
 
@@ -87,13 +93,14 @@ const UserMenuPPal = ({ route }) => {
         }),
       ]).start();
 
-      const unsubscribe = NetInfo.addEventListener(state => {
-        setIsConnected(state.isConnected);
-        verServer();
-      });
-
+      // Verificar conexión al cargar
+      verServer();
+      
+      // Verificar conexión periódicamente en web
+      const interval = setInterval(verServer, 30000); // Cada 30 segundos
+      
       return () => {
-        unsubscribe();
+        clearInterval(interval);
       };
     }, [])
   );
@@ -191,11 +198,12 @@ const UserMenuPPal = ({ route }) => {
           />
           <Text style={styles.appTitle}>Osvi</Text>
           <Text style={styles.appSubtitle}>Sistema de Gestión De Preventas</Text>
+          <Text style={styles.webIndicator}>Versión Web</Text>
         </View>
 
         {/* Menú de opciones */}
         <View style={styles.menuContainer}>
-          <Text style={styles.menuTitle}>¿Qué deseas hacer? ppal</Text>
+          <Text style={styles.menuTitle}>¿Qué deseas hacer? web</Text>
           <View style={styles.menuGrid}>
             {menuOptions.map((option, index) => (
               <TouchableOpacity
@@ -212,11 +220,21 @@ const UserMenuPPal = ({ route }) => {
                     style={styles.menuIcon}
                   />
                   <Text style={styles.menuItemTitle}>{option.name}</Text>
-                  {/* <Text style={styles.menuItemDescription}>{option.description}</Text> */}
+                  <Text style={styles.menuItemDescription}>{option.description}</Text>
                 </View>
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Footer con información adicional */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Estado de conexión: {getConnectionStatusText()}
+          </Text>
+          <Text style={styles.footerText}>
+            Sesión activa: {user.vendedor} (ID: {user.id})
+          </Text>
         </View>
       </Animated.View>
     </View>
@@ -317,6 +335,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ffffff',
     opacity: 0.8,
+    marginBottom: 8,
+  },
+  webIndicator: {
+    fontSize: 12,
+    color: '#ffffff',
+    opacity: 0.6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   menuContainer: {
     flex: 1,
@@ -334,8 +362,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   menuItem: {
-    width: (width - 60) / 3,
-    aspectRatio: 1,
+    width: (width - 80) / 2, // 2 columnas en web
+    aspectRatio: 1.2,
     borderRadius: 15,
     marginBottom: 15,
     shadowColor: '#000',
@@ -348,25 +376,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
+    padding: 15,
   },
   menuIcon: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   menuItemTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   menuItemDescription: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#ffffff',
     textAlign: 'center',
     opacity: 0.9,
-    lineHeight: 12,
+    lineHeight: 16,
+  },
+  footer: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 15,
+    padding: 15,
+    marginTop: 20,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#ffffff',
+    textAlign: 'center',
+    opacity: 0.8,
+    marginBottom: 4,
   },
 });
 
-export default UserMenuPPal;
+export default UserMenuPPalWeb; 

@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, ActivityIndicator, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
 import { Searchbar } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { getArticulosFiltrados, getArticulosFiltradosXCodigo, getArticulosFrecuentes } from '../database/controllers/Articulos.Controller';
-import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado, AddArticulo } from '../src/components/AddArticulo';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import indexedDBHandler from '../src/utils/indexedDBHandler';
+import { cantidadYDescuentoCargados, cantidadCargado, descuentoCargado, AddArticulo } from '../src/components/AddArticulo';
 import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
 import { obtenerPreventaDeStorage, obtenerArticulosFrecuentesCombinados, agregarArticuloFrecuente, obtenerArticulosFrecuentesClienteOrdenados, obtenerArticulosFrecuentesGlobalesOrdenados } from '../src/utils/storageUtils';
 
-const Articulos = ({ route }) => {
+const ArticulosWeb = ({ route }) => {
   const [filtroActivo, setFiltroActivo] = useState('todos'); // 'todos', 'cliente', 'globales'
   const isFocused = useIsFocused();
   const navigation = useNavigation();
@@ -69,28 +69,32 @@ const Articulos = ({ route }) => {
     }
       
       let filteredArticulosBDD = [];
+      
+      // Obtener artículos desde IndexedDB
+      const todosArticulos = await indexedDBHandler.obtenerArticulos();
+      
       if (filtroActivo === 'cliente') {
         // Usar artículos frecuentes del cliente
         const articulosFrecuentesCliente = await obtenerArticulosFrecuentesClienteOrdenados(cliente?.id);
         if (articulosFrecuentesCliente.length > 0) {
           const codigosFrecuentes = articulosFrecuentesCliente.map(art => art.id);
-          // Obtener todos los artículos frecuentes del cliente
-          let todosArticulosCliente = await getArticulosFrecuentes(codigosFrecuentes);
+          // Filtrar artículos que están en frecuentes del cliente
+          let articulosCliente = todosArticulos.filter(art => codigosFrecuentes.includes(art.id));
           
           // Si hay búsqueda, filtrar por código o descripción
           if (search.length > 0) {
             if (buscoXCodigo) {
-              todosArticulosCliente = todosArticulosCliente.filter(art => 
+              articulosCliente = articulosCliente.filter(art => 
                 art.id.toLowerCase().includes(search.toLowerCase())
               );
             } else {
-              todosArticulosCliente = todosArticulosCliente.filter(art => 
+              articulosCliente = articulosCliente.filter(art => 
                 art.descripcion.toLowerCase().includes(search.toLowerCase())
               );
             }
           }
           
-          filteredArticulosBDD = todosArticulosCliente;
+          filteredArticulosBDD = articulosCliente;
         } else {
           filteredArticulosBDD = [];
         }
@@ -99,32 +103,40 @@ const Articulos = ({ route }) => {
         const articulosFrecuentesGlobales = await obtenerArticulosFrecuentesGlobalesOrdenados();
         if (articulosFrecuentesGlobales.length > 0) {
           const codigosFrecuentes = articulosFrecuentesGlobales.map(art => art.id);
-          // Obtener todos los artículos frecuentes globales
-          let todosArticulosGlobales = await getArticulosFrecuentes(codigosFrecuentes);
+          // Filtrar artículos que están en frecuentes globales
+          let articulosGlobales = todosArticulos.filter(art => codigosFrecuentes.includes(art.id));
           
           // Si hay búsqueda, filtrar por código o descripción
           if (search.length > 0) {
-        if (buscoXCodigo) {
-              todosArticulosGlobales = todosArticulosGlobales.filter(art => 
+            if (buscoXCodigo) {
+              articulosGlobales = articulosGlobales.filter(art => 
                 art.id.toLowerCase().includes(search.toLowerCase())
               );
             } else {
-              todosArticulosGlobales = todosArticulosGlobales.filter(art => 
+              articulosGlobales = articulosGlobales.filter(art => 
                 art.descripcion.toLowerCase().includes(search.toLowerCase())
               );
             }
           }
           
-          filteredArticulosBDD = todosArticulosGlobales;
+          filteredArticulosBDD = articulosGlobales;
         } else {
           filteredArticulosBDD = [];
         }
       } else {
         // Filtro 'todos' - búsqueda normal
-        if (buscoXCodigo) {
-          filteredArticulosBDD = await getArticulosFiltradosXCodigo(search);
+        if (search.length > 0) {
+          if (buscoXCodigo) {
+            filteredArticulosBDD = todosArticulos.filter(art => 
+              art.id.toLowerCase().includes(search.toLowerCase())
+            );
+          } else {
+            filteredArticulosBDD = todosArticulos.filter(art => 
+              art.descripcion.toLowerCase().includes(search.toLowerCase())
+            );
+          }
         } else {
-          filteredArticulosBDD = await getArticulosFiltrados(search);
+          filteredArticulosBDD = [];
         }
       }
     
@@ -199,12 +211,12 @@ const Articulos = ({ route }) => {
         <View style={styles.detailRow}>
           <View style={styles.detailItem}>
             <MaterialCommunityIcons name="warehouse" size={16} color="#7f8c8d" />
-            <Text style={styles.detailText}>Stock: {item.existencia}</Text>
+            <Text style={styles.detailText}>Stock: {item.existencia || 0}</Text>
           </View>
           
           <View style={styles.detailItem}>
             <MaterialCommunityIcons name="currency-usd" size={16} color="#27ae60" />
-            <Text style={styles.detailText}>${item?.precio?.toFixed(2)}</Text>
+            <Text style={styles.detailText}>${item?.precio?.toFixed(2) || '0.00'}</Text>
           </View>
           
           <View style={styles.indicators}>
@@ -308,6 +320,7 @@ const Articulos = ({ route }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Seleccionar Artículos</Text>
+        <Text style={styles.webIndicator}>Versión Web</Text>
       </View>
       
       {hasInternetAccess && (
@@ -430,23 +443,6 @@ const Articulos = ({ route }) => {
         />
       </View>
       
-      {/* <View style={styles.resultsSection}>
-        <View style={styles.resultsInfo}>
-          <MaterialCommunityIcons name="information" size={16} color="#7f8c8d" />
-          <Text style={styles.resultsText}>
-            {loading ? '...' : articulosList.length} resultados • Lista {listaDePrecios}
-          </Text>
-        </View>
-      
-        <TouchableOpacity 
-          style={styles.gestionarFrecuentesButton} 
-          onPress={() => navigation.navigate('GestionFrecuentes')}
-        >
-          <MaterialCommunityIcons name="star-settings" size={20} color="#f39c12" />
-          <Text style={styles.gestionarFrecuentesText}>Gestionar Frecuentes</Text>
-        </TouchableOpacity>
-      </View> */}
-      
       <View style={styles.content}>
         {renderEmptyState() ? (
           renderEmptyState()
@@ -485,9 +481,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   header: {
-    paddingHorizontal: 2,
-    paddingTop: 2,
-    paddingBottom: 2,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
     backgroundColor: '#0c2f3c',
   },
   title: {
@@ -496,11 +492,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 5,
   },
+  webIndicator: {
+    fontSize: 12,
+    color: '#ffffff',
+    opacity: 0.6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
   searchSection: {
-    // paddingHorizontal: 10,
-    // paddingVertical: 10,
-    // borderBottomWidth: 2,
-    // borderBottomColor: '#ffffff',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#ffffff',
   },
   searchTypeButton: {
     flexDirection: 'row',
@@ -533,56 +538,29 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#3498db',
-    marginHorizontal: 2,
-    marginVertical: 2,
     elevation: 2,
-  },
-  resultsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
-  },
-  resultsInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  resultsText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginLeft: 5,
   },
   filtrosContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#ffffff',
-    marginHorizontal: 2,
-    marginVertical: 2,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
   },
   filtroButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
     backgroundColor: '#f8f9fa',
     borderWidth: 1,
     borderColor: '#ecf0f1',
     flex: 1,
-    marginHorizontal: 2,
+    marginHorizontal: 4,
     justifyContent: 'center',
   },
   filtroButtonActivo: {
@@ -590,10 +568,10 @@ const styles = StyleSheet.create({
     borderColor: '#3498db',
   },
   filtroButtonText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#7f8c8d',
     fontWeight: '600',
-    marginLeft: 3,
+    marginLeft: 4,
   },
   filtroButtonTextActivo: {
     color: '#ffffff',
@@ -603,21 +581,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   listContainer: {
-    padding: 8,
+    padding: 20,
   },
   articuloCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   articuloHeader: {
-    marginBottom: 6,
+    marginBottom: 10,
   },
   articuloTitle: {
     fontSize: 16,
@@ -651,29 +629,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff3cd',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   frecuenteText: {
     fontSize: 12,
     color: '#f39c12',
     fontWeight: 'bold',
-    marginLeft: 2,
+    marginLeft: 3,
   },
   cantidadIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#d4edda',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   cantidadText: {
     fontSize: 12,
     color: '#27ae60',
     fontWeight: 'bold',
-    marginLeft: 2,
+    marginLeft: 3,
   },
   emptyState: {
     flex: 1,
@@ -695,24 +673,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  gestionarFrecuentesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff3cd',
-    padding: 12,
-    marginHorizontal: 20,
-    marginVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f39c12',
-  },
-  gestionarFrecuentesText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#f39c12',
-    marginLeft: 8,
-  },
 });
 
-export default Articulos;
+export default ArticulosWeb; 

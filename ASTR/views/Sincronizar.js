@@ -7,6 +7,7 @@ import ConsoleComponent from '../src/components/ConsoleComponent';
 import { empresa, producto } from '../src/constantes/constantes';
 import checkServerHandler from '../src/utils/checkServerHandler';
 import { limpiarDatos } from '../database/database';
+import indexedDBHandler from '../src/utils/indexedDBHandler';
 
 const Sincronizar = ({ navigation }) => {
   const [actualizarDatos, setActualizarDatos] = useState(false);
@@ -19,6 +20,60 @@ const Sincronizar = ({ navigation }) => {
     } else {
       errorSincronizando(logs, setLogs);
       console.log("error ");
+    }
+  };
+
+  const handleSincronizarDatos = async () => {
+    try {
+      setLogs(["🔄 Iniciando sincronización de datos..."]);
+      
+      // Obtener configuración
+      const config = await indexedDBHandler.obtenerConfiguracion();
+      if (!config || !config.endpoint) {
+        setLogs(prev => [...prev, "❌ Error: Endpoint no configurado"]);
+        return;
+      }
+
+      setLogs(prev => [...prev, "📡 Conectando al servidor..."]);
+      
+      // Sincronizar vendedores
+      setLogs(prev => [...prev, "📋 Descargando vendedores..."]);
+      const vendedoresResponse = await fetch(`${config.endpoint}vendedores`);
+      if (vendedoresResponse.ok) {
+        const vendedores = await vendedoresResponse.json();
+        await indexedDBHandler.guardarVendedores(vendedores);
+        setLogs(prev => [...prev, `✅ ${vendedores.length} vendedores sincronizados`]);
+      } else {
+        setLogs(prev => [...prev, "❌ Error al descargar vendedores"]);
+      }
+
+      // Sincronizar clientes
+      setLogs(prev => [...prev, "📋 Descargando clientes..."]);
+      const clientesResponse = await fetch(`${config.endpoint}clientes`);
+      if (clientesResponse.ok) {
+        const clientes = await clientesResponse.json();
+        await indexedDBHandler.guardarClientes(clientes);
+        setLogs(prev => [...prev, `✅ ${clientes.length} clientes sincronizados`]);
+      } else {
+        setLogs(prev => [...prev, "❌ Error al descargar clientes"]);
+      }
+
+      // Sincronizar artículos
+      setLogs(prev => [...prev, "📋 Descargando artículos..."]);
+      const articulosResponse = await fetch(`${config.endpoint}articulos`);
+      if (articulosResponse.ok) {
+        const articulos = await articulosResponse.json();
+        await indexedDBHandler.guardarArticulos(articulos);
+        setLogs(prev => [...prev, `✅ ${articulos.length} artículos sincronizados`]);
+      } else {
+        setLogs(prev => [...prev, "❌ Error al descargar artículos"]);
+      }
+
+      setLogs(prev => [...prev, "🎉 Sincronización completada exitosamente"]);
+      
+    } catch (error) {
+      console.error('❌ Error en sincronización:', error);
+      setLogs(prev => [...prev, `❌ Error: ${error.message}`]);
     }
   };
   
@@ -79,13 +134,28 @@ const Sincronizar = ({ navigation }) => {
             </View>
             
             <Button 
-              title="Sincronizar" 
+              title="Sincronizar Preventas" 
               onPress={handleEnviarPreventas} 
               buttonStyle={styles.syncButton}
               titleStyle={styles.syncButtonText}
               icon={
                 <MaterialCommunityIcons 
                   name="cloud-upload" 
+                  size={20} 
+                  color="#ffffff" 
+                  style={{ marginRight: 8 }}
+                />
+              }
+            />
+            
+            <Button 
+              title="Descargar Datos" 
+              onPress={handleSincronizarDatos} 
+              buttonStyle={[styles.syncButton, { backgroundColor: '#9b59b6', marginTop: 10 }]}
+              titleStyle={styles.syncButtonText}
+              icon={
+                <MaterialCommunityIcons 
+                  name="cloud-download" 
                   size={20} 
                   color="#ffffff" 
                   style={{ marginRight: 8 }}

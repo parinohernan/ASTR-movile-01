@@ -100,6 +100,24 @@ const AddArticulo = ({route, navigationOverride}) => {
   const navigation = useNavigation();
   const cantidadInputRef = useRef(null);
 
+  // Calcular precio total automáticamente cuando cambien cantidad o descuento
+  useEffect(() => {
+    const calcularPrecioTotal = () => {
+      let cuenta = 0;
+      const cantidadValida = parseFloat(cantidad) || 0;
+      const descuentoValido = parseFloat(descuento) || 0;
+      
+      cuenta = (precioUnitario.toFixed(2)) * cantidadValida; 
+      cuenta = cuenta - (cuenta * (descuentoValido / 100));
+      setPrecioTotal(cuenta);
+      
+      // Habilitar el botón agregar si hay cantidad
+      setVerAgregar(cantidadValida > 0);
+    };
+    
+    calcularPrecioTotal();
+  }, [cantidad, descuento, precioUnitario]);
+
   useEffect(() => {
     const validarLimite = async () => {
       const cantidadMaxima = await configuracionCantidadMaximaArticulos();
@@ -263,18 +281,11 @@ const AddArticulo = ({route, navigationOverride}) => {
   };
   
   const handleEnd = async() => {
-    let cuenta = 0;
+    // El cálculo del precio total ahora se hace automáticamente en el useEffect
+    // Solo necesitamos asegurar que la cantidad sea válida
     if (cantidad == 0) {
       setCantidad(0)
     }
-    
-    // Asegurar que el descuento sea un número válido
-    const descuentoValido = descuento !== null && descuento !== undefined && descuento !== '' ? parseFloat(descuento) : 0;
-    
-    cuenta = (precioUnitario.toFixed(2)) * (cantidad); 
-    cuenta = cuenta - (cuenta * (descuentoValido / 100)) 
-    setPrecioTotal(cuenta);
-    setVerAgregar(true);
   };
 
   const handleCancel = () => {

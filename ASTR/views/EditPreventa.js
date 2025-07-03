@@ -321,7 +321,11 @@ const EditPreventa = (props) => {
       console.log('Abriendo Artículos con cliente:', cliente);
       console.log('Cliente ID a pasar:', cliente.id);
       
-      navigation.navigate('Articulos', { 
+      // Detectar si estamos en entorno web
+      const isWeb = typeof window !== 'undefined' && window.document;
+      const screenName = isWeb ? 'ArticulosWeb' : 'Articulos';
+      
+      navigation.navigate(screenName, { 
         numeroPreventa: preventaNumero, 
         cliente: cliente, 
         listaDePrecio: cliente.listaPrecio, 

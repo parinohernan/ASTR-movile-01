@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Modal, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { borrarPreventaYSusItems } from '../../database/controllers/Preventa.Controller';
-import { getClientes } from '../../database/controllers/Clientes.Controller';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { empresa, producto } from '../constantes/constantes';
-import { sincronizarPreventa } from '../../handlers/actualizarApp';
+import indexedDBHandler from '../utils/indexedDBHandler';
+import { sincronizarPreventaWeb } from '../utils/webSyncHandler';
 
-const ListaPreventas = () => {
+const ListaPreventasWeb = () => {
   const navigation = useNavigation();
   const [preventas, setPreventas] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
   const [syncingItem, setSyncingItem] = useState(null);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [actionToConfirm, setActionToConfirm] = useState(null);
 
   useEffect(() => {
     cargarPreventas();
@@ -21,20 +21,46 @@ const ListaPreventas = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      console.log("🔄 ListaPreventas recibió foco - actualizando datos automáticamente");
+      console.log("🔄 ListaPreventasWeb recibió foco - actualizando datos automáticamente");
       cargarPreventas();
       
-      // Cleanup function (opcional)
       return () => {
-        console.log("📱 ListaPreventas perdió foco");
+        console.log("📱 ListaPreventasWeb perdió foco");
       };
     }, [])
   );
 
-  const cargarPreventas = () => {
-    console.log("📊 Función mock: cargarPreventas - SQLite no disponible en web");
-    setPreventas([]);
-    setLoading(false);
+  const cargarPreventas = async () => {
+    try {
+      setLoading(true);
+      console.log("📊 Cargando preventas desde IndexedDB...");
+      
+      const preventasData = await indexedDBHandler.obtenerTodasPreventas();
+      console.log("📋 Preventas obtenidas:", preventasData.length);
+      
+      // Mapear los datos de IndexedDB al formato esperado
+      const preventasMapeadas = preventasData.map(preventa => ({
+        numero: preventa.numero,
+        cliente: preventa.cliente?.descripcion || 'Cliente sin nombre',
+        clienteCodigo: preventa.cliente?.id || '',
+        importe: preventa.total || 0,
+        cantidadItems: preventa.items?.length || 0,
+        fecha: preventa.fecha,
+        observacion: preventa.nota || '',
+        estado: preventa.estado || 'borrador',
+        // Datos completos para edición
+        clienteCompleto: preventa.cliente,
+        items: preventa.items || []
+      }));
+      
+      setPreventas(preventasMapeadas);
+      console.log("✅ Preventas cargadas correctamente");
+    } catch (error) {
+      console.error('❌ Error al cargar preventas:', error);
+      setPreventas([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -54,13 +80,22 @@ const ListaPreventas = () => {
   };
 
   const ListaPreventasActuales = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color="#3498db" />
+          <Text style={styles.emptyStateText}>Cargando preventas...</Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.containerResults}>
         {preventas.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="file-document-outline" size={60} color="#95a5a6" />
             <Text style={styles.emptyStateText}>No hay preventas</Text>
-            <Text style={styles.emptyStateSubtext}>Las preventas aparecerán aquí</Text>
+            <Text style={styles.emptyStateSubtext}>Las preventas guardadas aparecerán aquí</Text>
           </View>
         ) : (
           <FlatList
@@ -118,6 +153,17 @@ const ListaPreventas = () => {
             <Text style={styles.observacionText} numberOfLines={2}>{item.observacion}</Text>
           </View>
         )}
+
+        <View style={styles.estadoRow}>
+          <MaterialCommunityIcons 
+            name={item.estado === 'enviada' ? 'check-circle' : 'clock-outline'} 
+            size={16} 
+            color={item.estado === 'enviada' ? '#27ae60' : '#f39c12'} 
+          />
+          <Text style={[styles.estadoText, { color: item.estado === 'enviada' ? '#27ae60' : '#f39c12' }]}>
+            {item.estado === 'enviada' ? 'Enviada' : 'Borrador'}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -127,58 +173,57 @@ const ListaPreventas = () => {
     setSelectedItem(null);
   };
 
-  const buscarCliente = async (clienteCodigo, clientes) => {
-    return clientes.find(element => element.id == clienteCodigo);
+  const handleConfirmAction = async () => {
+    if (actionToConfirm === 'Borrar') {
+      console.log("🗑️ Confirmación de borrado aceptada para preventa:", selectedItem?.numero);
+      try {
+        const resultado = await indexedDBHandler.eliminarPreventa(selectedItem.numero);
+        console.log("🗑️ Resultado de eliminación:", resultado);
+        console.log("🗑️ Preventa eliminada de IndexedDB:", selectedItem.numero);
+        await cargarPreventas();
+        setConfirmModalVisible(false);
+        setActionToConfirm(null);
+        closeModal();
+        Alert.alert('✅ Éxito', 'Preventa eliminada correctamente');
+      } catch (error) {
+        console.error('❌ Error al borrar preventa:', error);
+        Alert.alert('❌ Error', 'No se pudo borrar la preventa');
+      }
+    }
+  };
+
+  const handleCancelAction = () => {
+    setConfirmModalVisible(false);
+    setActionToConfirm(null);
   };
 
   const handleAction = async (action) => {
     switch (action) {
       case 'Borrar':
-        Alert.alert(
-          'Confirmar eliminación',
-          '¿Está seguro que desea borrar la preventa?',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Borrar',
-              style: 'destructive',
-              onPress: async () => {
-                setLoading(true);
-                try {
-                  await borrarPreventaYSusItems(selectedItem.numero);
-                  cargarPreventas();
-                  closeModal();
-                } catch (error) {
-                  console.error('Error al borrar preventa:', error);
-                  Alert.alert('Error', 'No se pudo borrar la preventa');
-                } finally {
-                  setLoading(false);
-                }
-              },
-            },
-          ],
-          { cancelable: false }
-        );
+        console.log("🔴 Botón Borrar presionado para preventa:", selectedItem?.numero);
+        setActionToConfirm('Borrar');
+        setConfirmModalVisible(true);
         break;
 
       case 'Editar':
         try {
           setLoading(true);
-          let clientes = await getClientes();
-          let objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
           let preventaNumero = selectedItem.numero;
+          let cliente = selectedItem.clienteCompleto;
           let observacion = selectedItem.observacion;
           let edit = true;
           setModalVisible(false);
           
-          // Detectar si estamos en entorno web
-          const isWeb = typeof window !== 'undefined' && window.document;
-          const screenName = isWeb ? 'EditPreventaWeb' : 'EditPreventa';
-          
-          navigation.navigate(screenName, { preventaNumero, cliente: objCliente, edit, observacion });
+          console.log("✏️ Abriendo preventa para editar:", preventaNumero);
+          navigation.navigate('EditPreventaWeb', { 
+            preventaNumero, 
+            cliente, 
+            edit, 
+            observacion 
+          });
         } catch (error) {
-          console.error('Error al editar preventa:', error);
-          Alert.alert('Error', 'No se pudo abrir la preventa para editar');
+          console.error('❌ Error al editar preventa:', error);
+          Alert.alert('❌ Error', 'No se pudo abrir la preventa para editar');
         } finally {
           setLoading(false);
         }
@@ -188,29 +233,29 @@ const ListaPreventas = () => {
         try {
           setSyncingItem(selectedItem.numero);
           console.log("🔄 Iniciando sincronización de preventa:", selectedItem.numero);
-          let clientes = await getClientes();
-          let objCliente = await buscarCliente(selectedItem.clienteCodigo, clientes);
-          let preventaNumero = selectedItem.numero;
-          let observacion = selectedItem.observacion;
           
-          console.log("📋 Datos preparados para sincronización:", {
-            preventaNumero,
-            cliente: objCliente,
-            observacion
-          });
+          // Usar la función real de sincronización web
+          const resultado = await sincronizarPreventaWeb(selectedItem.numero);
           
-          const resultado = await sincronizarPreventa(preventaNumero, objCliente);
           console.log("📡 Resultado de sincronización:", resultado);
           
-          if (resultado) {
-            console.log("✅ Sincronización exitosa, borrando preventa local");
-            await borrarPreventaYSusItems(selectedItem.numero);
+          if (resultado.exitoso) {
+            console.log("✅ Sincronización exitosa - eliminando preventa local");
+            
+            // Eliminar la preventa de IndexedDB después de sincronización exitosa
+            try {
+              await indexedDBHandler.eliminarPreventa(selectedItem.numero);
+              console.log("🗑️ Preventa eliminada de IndexedDB después de sincronización exitosa:", selectedItem.numero);
+            } catch (deleteError) {
+              console.error('❌ Error al eliminar preventa después de sincronización:', deleteError);
+            }
+            
             cargarPreventas();
             closeModal();
-            Alert.alert('✅ Éxito', 'Preventa procesada correctamente');
+            Alert.alert('✅ Éxito', `${resultado.mensaje}\n\nLa preventa ha sido eliminada del almacenamiento local.`);
           } else {
             console.log("❌ Sincronización falló");
-            Alert.alert('❌ Error', 'Error de sincronización, comuníquese con soporte.');
+            Alert.alert('❌ Error', resultado.mensaje);
           }
         } catch (error) {
           console.error('❌ Error en sincronización:', error);
@@ -231,8 +276,11 @@ const ListaPreventas = () => {
   const renderActionButton = (action, icon, color, backgroundColor) => (
     <TouchableOpacity 
       style={[styles.actionButton, { backgroundColor }]} 
-      onPress={() => handleAction(action)}
-      disabled={loading || (action === 'Sincronizar' && syncingItem === selectedItem?.numero)}
+      onPress={() => {
+        console.log("🔘 Botón presionado:", action);
+        handleAction(action);
+      }}
+      disabled={(action === 'Sincronizar' && syncingItem === selectedItem?.numero)}
     >
       {action === 'Sincronizar' && syncingItem === selectedItem?.numero ? (
         <ActivityIndicator size="small" color="#ffffff" />
@@ -249,8 +297,8 @@ const ListaPreventas = () => {
         <View style={styles.headerContent}>
           <MaterialCommunityIcons name="file-document-multiple" size={32} color="#ffffff" />
           <View style={styles.headerTexts}>
-            {/* <Text style={styles.headerTitle}>{ermpresa} - {producto}</Text> */}
             <Text style={styles.headerSubtitle}>Informe de preventas</Text>
+            <Text style={styles.webIndicator}>Versión Web</Text>
           </View>
         </View>
         <View style={styles.headerStats}>
@@ -279,6 +327,9 @@ const ListaPreventas = () => {
               <View style={styles.selectedItemInfo}>
                 <Text style={styles.selectedItemText}>{selectedItem?.cliente}</Text>
                 <Text style={styles.selectedItemAmount}>${parseFloat(selectedItem?.importe || 0).toFixed(2)}</Text>
+                <Text style={styles.selectedItemStatus}>
+                  {'Estado: ' + (selectedItem?.estado === 'enviada' ? 'Enviada' : 'Borrador')}
+                </Text>
               </View>
               
               <View style={styles.actionsGrid}>
@@ -286,6 +337,45 @@ const ListaPreventas = () => {
                 {renderActionButton('Sincronizar', 'cloud-upload', '#ffffff', '#27ae60')}
                 {renderActionButton('Borrar', 'delete', '#ffffff', '#e74c3c')}
                 {renderActionButton('Cancelar', 'close', '#2c3e50', '#ecf0f1')}
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de confirmación */}
+      <Modal 
+        visible={confirmModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={handleCancelAction}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmModalContainer}>
+            <View style={styles.confirmModalContent}>
+              <MaterialCommunityIcons name="alert-circle" size={48} color="#e74c3c" />
+              <Text style={styles.confirmModalTitle}>Confirmar eliminación</Text>
+              <Text style={styles.confirmModalText}>
+                ¿Está seguro que desea borrar la preventa #{selectedItem?.numero}?
+              </Text>
+              <Text style={styles.confirmModalSubtext}>
+                Esta acción no se puede deshacer.
+              </Text>
+              
+              <View style={styles.confirmModalButtons}>
+                <TouchableOpacity 
+                  style={[styles.confirmButton, styles.cancelButton]} 
+                  onPress={handleCancelAction}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.confirmButton, styles.deleteButton]} 
+                  onPress={handleConfirmAction}
+                >
+                  <Text style={styles.deleteButtonText}>Borrar</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -322,15 +412,20 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 2,
-  },
   headerSubtitle: {
     fontSize: 14,
     color: '#bdc3c7',
+    marginBottom: 2,
+  },
+  webIndicator: {
+    fontSize: 12,
+    color: '#ffffff',
+    opacity: 0.6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
   headerStats: {
     alignItems: 'flex-end',
@@ -432,6 +527,16 @@ const styles = StyleSheet.create({
     flex: 1,
     fontStyle: 'italic',
   },
+  estadoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  estadoText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -511,6 +616,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#27ae60',
+    marginBottom: 5,
+  },
+  selectedItemStatus: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -532,6 +643,74 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  confirmModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  confirmModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    maxWidth: 400,
+    width: '100%',
+  },
+  confirmModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmModalText: {
+    fontSize: 16,
+    color: '#34495e',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  confirmModalSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginBottom: 24,
+    fontStyle: 'italic',
+  },
+  confirmModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#ecf0f1',
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
 });
 
-export default ListaPreventas;
+export default ListaPreventasWeb; 
