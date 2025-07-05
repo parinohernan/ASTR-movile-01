@@ -5,7 +5,15 @@ import { View, Text, StyleSheet } from 'react-native';
 
 // Importaciones específicas para web
 import LoginWeb from './views/LoginWeb';
+import Home from './views/Home';
 import ConfigurarWeb from './views/ConfigurarWeb';
+import UserMenuPPalWeb from './views/UserMenuPPalWeb';
+import ClientesWeb from './views/ClientesWeb';
+import ClientesInfo from './src/components/clientes/ClientesInfo';
+import PreventaWeb from './views/PreventaWeb';
+import ArticulosWeb from './views/ArticulosWeb';
+import ListaPreventasWeb from './src/components/ListaPreventasWeb';
+import Sincronizar from './views/Sincronizar';
 
 const Stack = createStackNavigator();
 
@@ -86,7 +94,16 @@ const AppWeb = () => {
         headerShown: false
       }}>
         <Stack.Screen name="Login" component={LoginWeb} />
+        <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Configuracion" component={ConfigurarWeb} />
+        <Stack.Screen name="UserMenuPPal" component={UserMenuPPalWeb} />
+        <Stack.Screen name="ClientesWeb" component={ClientesWeb} />
+        <Stack.Screen name="ClientesInfo" component={ClientesInfo} />
+        <Stack.Screen name="PreventaWeb" component={PreventaWeb} />
+        <Stack.Screen name="ArticulosWeb" component={ArticulosWeb} />
+        <Stack.Screen name="InformesWeb" component={ListaPreventasWeb} />
+        <Stack.Screen name="Sincronizar" component={Sincronizar} />
+        <Stack.Screen name="ConfigurarWeb" component={ConfigurarWeb} />
       </Stack.Navigator>
     </NavigationContainer>
   );

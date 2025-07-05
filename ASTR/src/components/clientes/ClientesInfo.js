@@ -2,11 +2,13 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Text, FlatList, StyleSheet, View, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
 import { getInformeOnline } from '../../../handlers/actualizarApp';
 import { obtenerArticulosFrecuentesClienteOrdenados } from '../../utils/storageUtils';
 import { getArticuloPorCodigo } from '../../../database/controllers/Articulos.Controller';
 
 const ClientesInfo = (props) => {
+    const navigation = useNavigation();
     const {route} = props;
     const {params} = route;
     const {cliente} = params;
@@ -144,6 +146,13 @@ const ClientesInfo = (props) => {
   return (
   <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+          <Text style={styles.backButtonText}>Atrás</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Información de Cuenta Corriente</Text>
         <Text style={styles.clienteName}>{cliente.descripcion}</Text>
         <Text style={styles.clienteCode}>Código: {cliente.id}</Text>
@@ -544,7 +553,23 @@ const ClientesInfo = (props) => {
     fontWeight: 'bold',
     color: '#f39c12',
     marginLeft: 2,
-    }, 
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: '#3498db',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
 });
 
 export default ClientesInfo;

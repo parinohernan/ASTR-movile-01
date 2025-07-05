@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Switch, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Button } from 'react-native-elements';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { actualizarAPP, errorSincronizando } from '../handlers/actualizarApp';
@@ -110,8 +110,24 @@ const Sincronizar = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{empresa} - {producto}</Text>
-        <Text style={styles.subtitle}>Sincronización</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+            <Text style={styles.backButtonText}>Atrás</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>{empresa} - {producto}</Text>
+          <Text style={styles.subtitle}>Sincronización</Text>
+        </View>
+        
+        <View style={styles.headerRight}>
+          {/* Espacio para futuros elementos */}
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -257,6 +273,35 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: '#0c2f3c',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   title: {
     fontSize: 24,

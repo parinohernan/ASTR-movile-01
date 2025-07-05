@@ -31,7 +31,7 @@ const actualizarVendedores = async (logs, setLogs) => {
             
             // Obtener configuración
             const config = await getConfiguracionDelStorage();
-            const endpoint = config.endPoint;
+            const endpoint = config.endPoint || config.endpoint;
             
             if (!endpoint) {
                 throw new Error('Endpoint no configurado. Configure el servidor primero.');
@@ -110,7 +110,7 @@ const actualizarClientes = async (logs, setLogs) => {
             
             // Obtener configuración
             const config = await getConfiguracionDelStorage();
-            const endpoint = config.endPoint;
+            const endpoint = config.endPoint || config.endpoint;
             
             if (!endpoint) {
                 throw new Error('Endpoint no configurado. Configure el servidor primero.');
@@ -192,7 +192,7 @@ const actualizarArticulos = async (logs, setLogs) => {
             
             // Obtener configuración
             const config = await getConfiguracionDelStorage();
-            const endpoint = config.endPoint;
+            const endpoint = config.endPoint || config.endpoint;
             
             if (!endpoint) {
                 throw new Error('Endpoint no configurado. Configure el servidor primero.');

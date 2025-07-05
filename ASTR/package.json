@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:web": "npx expo export:web",
+    "serve:pwa": "node scripts/serve-pwa.js",
+    "test:pwa": "npm run build:web && npm run serve:pwa"
   },
   "dependencies": {
     "@expo/vector-icons": "^13.0.0",
@@ -45,6 +48,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "workbox-webpack-plugin": "^7.3.0"
   },
   "private": true

@@ -22,17 +22,25 @@ const guardarConfiguracionEnStorage = async (configuracion) => {
 // Obtener la configuracion almacenada en AsyncStorage
 const getConfiguracionDelStorage = async () => {
     try {
+        // En entorno web, usar IndexedDB
+        if (typeof window !== 'undefined' && window.indexedDB) {
+            const indexedDBHandler = require('./indexedDBHandler').default;
+            const configuracion = await indexedDBHandler.obtenerConfiguracion();
+            if (configuracion) {
+                console.log("🌐 Configuración obtenida desde IndexedDB:", configuracion);
+                return configuracion;
+            }
+        }
+        
+        // Fallback a AsyncStorage (para React Native)
         const configuracionStr = await AsyncStorage.getItem(STORAGE_KEY);
-        // console.log("STRCONF 26 obteniendo configuracion de Storage", configuracionStr);
-        // if (configuracionStr.length > 1) {  
-            if (configuracionStr == null) {
-                return JSON.parse('{"endPoint":"https://192.168.1.123:3003/","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
-            }
-            else {
-              return JSON.parse(configuracionStr)
-            }
+        if (configuracionStr == null) {
+            return JSON.parse('{"endPoint":"https://192.168.1.123:3003/","siguientePreventa":"15","vendedor":"0001","usaGeolocalizacion":true,"cantidadMaximaArticulos":"18"}');
+        } else {
+            return JSON.parse(configuracionStr);
+        }
     } catch (error) {
-        console.error('Error al obtener la configuracion desde AsyncStorage:', error);
+        console.error('Error al obtener la configuracion:', error);
         throw error;
     }
 };
@@ -49,12 +57,29 @@ async function configuracionSucursal() {
 
 async function configuracionEndPoint() {
   let conf= await getConfiguracionDelStorage();
-  return conf.endPoint
+  // Manejar tanto 'endPoint' como 'endpoint' para compatibilidad
+  return conf.endPoint || conf.endpoint || 'http://localhost:3003/';
 }
 
 async function configuracionCantidadMaximaArticulos() {
-  let conf= await getConfiguracionDelStorage();
-  return conf.cantidadMaximaArticulos
+  try {
+    let conf = await getConfiguracionDelStorage();
+    const cantidad = conf.cantidadMaximaArticulos;
+    
+    // Convertir a número y validar
+    const cantidadNum = parseInt(cantidad);
+    
+    if (isNaN(cantidadNum) || cantidadNum <= 0) {
+      console.warn('⚠️ Cantidad máxima de artículos inválida:', cantidad, 'usando valor por defecto: 50');
+      return 50;
+    }
+    
+    console.log('✅ Cantidad máxima de artículos configurada:', cantidadNum);
+    return cantidadNum;
+  } catch (error) {
+    console.error('❌ Error al obtener cantidad máxima de artículos:', error);
+    return 50; // Valor por defecto
+  }
 }
 
 
@@ -205,7 +230,7 @@ const limpiarDatosAntiguos = async () => {
 const cargarDatosPaginados = async (tipo, pagina = 1, tamanoPagina = 100) => {
   try {
     const config = await getConfiguracionDelStorage();
-    const endpoint = config.endPoint;
+    const endpoint = config.endPoint || config.endpoint;
     
     let url = '';
     switch (tipo) {
@@ -306,7 +331,7 @@ const sincronizarDatosWeb = async (tipo, logs = [], setLogs = null) => {
     
     // Obtener configuración
     const config = await getConfiguracionDelStorage();
-    const endpoint = config.endPoint;
+    const endpoint = config.endPoint || config.endpoint;
     
     if (!endpoint) {
       throw new Error('Endpoint no configurado. Configure el servidor primero.');

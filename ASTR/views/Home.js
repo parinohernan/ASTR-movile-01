@@ -82,16 +82,32 @@ const Home = ({ user }) => {
             }
           ]}
         >
-          {/* Header con logo y título */}
+          {/* Header con botón atrás, logo y título */}
           <View style={styles.header}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <View style={styles.titleContainer}>
-              <Text style={styles.titleText}>Osvi</Text>
-              <Text style={styles.subtitleText}>Panel de Administración</Text>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <MaterialCommunityIcons name="arrow-left" size={24} color="#073a70" />
+                <Text style={styles.backButtonText}>Atrás</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.headerCenter}>
+              <Image
+                source={require('../assets/images/logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <View style={styles.titleContainer}>
+                <Text style={styles.titleText}>Osvi</Text>
+                <Text style={styles.subtitleText}>Panel de Administración</Text>
+              </View>
+            </View>
+            
+            <View style={styles.headerRight}>
+              {/* Espacio para futuros elementos */}
             </View>
           </View>
 
@@ -181,6 +197,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#ffffff',
     borderRadius: 20,
@@ -191,6 +208,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  backButtonText: {
+    color: '#073a70',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   logo: {
     width: 60,

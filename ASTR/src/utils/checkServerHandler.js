@@ -1,9 +1,59 @@
 import axios from 'axios';
 import { configuracionEndPoint } from './storageConfigData';
+import indexedDBHandler from './indexedDBHandler';
+
+// Función para verificar conexión a internet en web
+const checkInternetConnection = async () => {
+  try {
+    // En web, intentar hacer una petición a un servicio confiable
+    // Usar un timeout para evitar que se quede colgado
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos timeout
+    
+    const response = await fetch('https://httpbin.org/get', {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-cache',
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      console.log('✅ Conexión a internet verificada');
+      return true;
+    } else {
+      console.log('❌ Respuesta no exitosa:', response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error verificando conexión a internet:', error.message);
+    return false;
+  }
+};
 
 const checkServerHandler = async () => {
     try {
-    const endpoint = await configuracionEndPoint();
+    let endpoint;
+    
+    // Detectar si estamos en entorno web
+    const isWeb = typeof window !== 'undefined' && window.localStorage;
+    
+    if (isWeb) {
+      // En web, usar IndexedDB
+      const config = await indexedDBHandler.obtenerConfiguracion();
+      endpoint = config?.endpoint;
+      console.log('🌐 Usando configuración de IndexedDB:', endpoint);
+    } else {
+      // En móvil, usar AsyncStorage
+      endpoint = await configuracionEndPoint();
+      console.log('📱 Usando configuración de AsyncStorage:', endpoint);
+    }
+    
+    if (!endpoint) {
+      console.error('❌ No hay endpoint configurado');
+      return false;
+    }
+    
     console.log('Verificando conectividad con:', endpoint);
     
     const response = await axios.get(endpoint, {
@@ -14,9 +64,9 @@ const checkServerHandler = async () => {
     });
     
     console.log('✅ Servidor accesible - Status:', response.status);
-      return true;
+    return true;
     
-    } catch (error) {
+  } catch (error) {
     console.error('❌ Error de conectividad:', error.message);
     
     if (error.code === 'ECONNREFUSED') {
@@ -37,4 +87,5 @@ const checkServerHandler = async () => {
     }
   };
 
+export { checkInternetConnection };
 export default checkServerHandler;

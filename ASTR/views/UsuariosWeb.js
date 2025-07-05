@@ -1,6 +1,7 @@
-// UsuariosWeb.js - Versión web que lee desde localStorage
+// UsuariosWeb.js - Versión web que lee desde IndexedDB
 import React, { useEffect, useState } from 'react';
 import { Text, FlatList, StyleSheet, View, ActivityIndicator } from 'react-native';
+import indexedDBHandler from '../src/utils/indexedDBHandler';
 
 const UsuariosWeb = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -13,26 +14,21 @@ const UsuariosWeb = () => {
         setLoading(true);
         setError(null);
         
-        console.log('🔄 Cargando vendedores desde localStorage...');
+        console.log('🔄 Cargando vendedores desde IndexedDB...');
         
-        // Obtener usuarios desde localStorage (sincronización web)
-        const usuariosData = localStorage.getItem('usuarios');
-        console.log('📦 Datos de usuarios en localStorage:', usuariosData);
+        // Inicializar IndexedDB si no está inicializado
+        await indexedDBHandler.init();
         
-        if (usuariosData) {
-          const usuariosParsed = JSON.parse(usuariosData);
-          console.log('📋 Usuarios parseados:', usuariosParsed);
-          
-          if (Array.isArray(usuariosParsed) && usuariosParsed.length > 0) {
-            setUsuarios(usuariosParsed);
-            console.log(`✅ Se cargaron ${usuariosParsed.length} vendedores desde localStorage`);
-          } else {
-            setUsuarios([]);
-            console.log('⚠️ No hay vendedores en localStorage o el formato es incorrecto');
-          }
+        // Obtener usuarios desde IndexedDB
+        const vendedores = await indexedDBHandler.obtenerVendedores();
+        console.log('📦 Vendedores obtenidos de IndexedDB:', vendedores);
+        
+        if (vendedores && vendedores.length > 0) {
+          setUsuarios(vendedores);
+          console.log(`✅ Se cargaron ${vendedores.length} vendedores desde IndexedDB`);
         } else {
           setUsuarios([]);
-          console.log('⚠️ No hay datos de usuarios en localStorage');
+          console.log('⚠️ No hay vendedores sincronizados en IndexedDB');
         }
         
       } catch (error) {
@@ -94,8 +90,17 @@ const UsuariosWeb = () => {
             keyExtractor={item => item.codigo.toString()}
             renderItem={({ item }) => (
               <View style={styles.usuarioItem}>
-                <Text style={styles.usuarioCodigo}>Código: {item.codigo}</Text>
+                <View style={styles.usuarioHeader}>
+                  <Text style={styles.usuarioCodigo}>Código: {item.codigo}</Text>
+                  <Text style={styles.usuarioClave}>Clave: {item.clave}</Text>
+                </View>
                 <Text style={styles.usuarioNombre}>{item.descripcion}</Text>
+                {item.email && (
+                  <Text style={styles.usuarioEmail}>Email: {item.email}</Text>
+                )}
+                {item.telefono && (
+                  <Text style={styles.usuarioTelefono}>Teléfono: {item.telefono}</Text>
+                )}
               </View>
             )}
           />
@@ -139,16 +144,37 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#3498db',
   },
+  usuarioHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   usuarioCodigo: {
     fontSize: 14,
     color: '#7f8c8d',
+    fontWeight: '600',
+  },
+  usuarioClave: {
+    fontSize: 14,
+    color: '#e74c3c',
     fontWeight: '600',
   },
   usuarioNombre: {
     fontSize: 18,
     color: '#2c3e50',
     fontWeight: 'bold',
-    marginTop: 5,
+    marginBottom: 5,
+  },
+  usuarioEmail: {
+    fontSize: 12,
+    color: '#3498db',
+    marginTop: 2,
+  },
+  usuarioTelefono: {
+    fontSize: 12,
+    color: '#27ae60',
+    marginTop: 2,
   },
   emptyState: {
     flex: 1,

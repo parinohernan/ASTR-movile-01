@@ -4,6 +4,20 @@ const { GenerateSW } = require('workbox-webpack-plugin');
 module.exports = async function (env, argv) {
   const config = await createExpoWebpackConfigAsync(env, argv);
   
+  // Configurar AppWeb.js como punto de entrada para web
+  console.log('🔧 Configurando webpack para web...');
+  console.log('📁 Entry point:', config.entry);
+  
+  // Forzar el uso de index.web.js para web
+  if (env && env.platform === 'web') {
+    config.entry = './index.web.js';
+    console.log('✅ Configurado index.web.js como entry point');
+  } else {
+    // También forzar para builds web
+    config.entry = './index.web.js';
+    console.log('✅ Forzado index.web.js como entry point');
+  }
+  
   // Configuración para PWA
   config.plugins.push(
     new GenerateSW({

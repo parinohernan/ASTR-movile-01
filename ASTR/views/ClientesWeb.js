@@ -202,12 +202,19 @@ const ClientesWeb = ({ route }) => {
             {user && (
               <View style={styles.switchContainer}>
                 <Text style={styles.switchLabel}>Mostrar solo mis clientes</Text>
-                <Switch
-                  value={showOnlyMyClients}
-                  onValueChange={setShowOnlyMyClients}
-                  trackColor={{ false: "#bdc3c7", true: "#3498db" }}
-                  thumbColor={showOnlyMyClients ? "#ffffff" : "#f4f3f4"}
-                />
+                <TouchableOpacity
+                  style={[
+                    styles.customSwitch,
+                    showOnlyMyClients && styles.customSwitchActive
+                  ]}
+                  onPress={() => setShowOnlyMyClients(!showOnlyMyClients)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.switchThumb,
+                    showOnlyMyClients && styles.switchThumbActive
+                  ]} />
+                </TouchableOpacity>
               </View>
             )}
 
@@ -222,14 +229,27 @@ const ClientesWeb = ({ route }) => {
       </Modal>
 
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+            <Text style={styles.backButtonText}>Atrás</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.headerCenter}>
           <Text style={styles.title}>Seleccionar Cliente</Text>
           <Text style={styles.subtitle}>Elige un cliente para crear una preventa</Text>
           <Text style={styles.webIndicator}>Versión Web</Text>
         </View>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.headerIcon}>
-          <MaterialCommunityIcons name="filter-variant" size={26} color="#ffffff" />
-        </TouchableOpacity>
+        
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.headerIcon}>
+            <MaterialCommunityIcons name="filter-variant" size={26} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.searchContainer}>
@@ -280,6 +300,32 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: '#0c2f3c',
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   headerIcon: {
     padding: 5,
@@ -479,6 +525,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     fontSize: 16,
+  },
+  customSwitch: {
+    width: 50,
+    height: 30,
+    backgroundColor: '#bdc3c7',
+    borderRadius: 15,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  customSwitchActive: {
+    backgroundColor: '#3498db',
+  },
+  switchThumb: {
+    width: 26,
+    height: 26,
+    backgroundColor: '#f4f3f4',
+    borderRadius: 13,
+    alignSelf: 'flex-start',
+  },
+  switchThumbActive: {
+    backgroundColor: '#ffffff',
+    alignSelf: 'flex-end',
   },
 });
 

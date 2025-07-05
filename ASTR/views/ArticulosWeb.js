@@ -27,6 +27,8 @@ const ArticulosWeb = ({ route }) => {
   const flatListRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
+  const [showLimitAlert, setShowLimitAlert] = useState(false);
+  const [limitAlertMessage, setLimitAlertMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -163,9 +165,40 @@ const ArticulosWeb = ({ route }) => {
     });
   }
   
-  const openModal = (articulo) => {
-    setArticuloSeleccionado(articulo);
-    setModalVisible(true);
+  const openModal = async (articulo) => {
+    try {
+      // Verificar límite de artículos antes de abrir el modal
+      const preventa = await obtenerPreventaDeStorage();
+      const cantidadMaxima = await configuracionCantidadMaximaArticulos();
+      
+      console.log('🔍 Verificando límite antes de abrir modal:', {
+        preventaActual: preventa.length,
+        cantidadMaxima: cantidadMaxima,
+        articulo: articulo.id,
+        mostramodal : cantidadMaxima == 0 || preventa.length == cantidadMaxima
+      });
+      
+      if (cantidadMaxima == 0 || preventa.length == cantidadMaxima) {
+        // Limpiar búsqueda y mostrar mensaje de límite alcanzado
+        setSearch('');
+        setLimitAlertMessage(`No se puede agregar más artículos. Límite máximo: ${cantidadMaxima} artículos. Artículos actuales: ${preventa.length}`);
+        setShowLimitAlert(true);
+        console.log("Límite alcanzado - Modal no abierto");
+        return; // No abrir el modal
+      }
+      
+      // Si pasa la validación, abrir el modal
+      setArticuloSeleccionado(articulo);
+      setModalVisible(true);
+      
+    } catch (error) {
+      console.error('❌ Error al verificar límite:', error);
+      Alert.alert(
+        "Error",
+        "No se pudo verificar el límite de artículos. Intente nuevamente.",
+        [{ text: "OK" }]
+      );
+    }
   };
   
   const closeModal = async (articuloActualizado) => {
@@ -249,6 +282,23 @@ const ArticulosWeb = ({ route }) => {
       );
     }
     
+    // Mostrar mensaje de límite alcanzado si está activo
+    if (showLimitAlert) {
+      return (
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons name="alert-circle" size={60} color="#e74c3c" />
+          <Text style={styles.limitAlertText}>Límite de artículos alcanzado</Text>
+          <Text style={styles.limitAlertSubtext}>{limitAlertMessage}</Text>
+          <TouchableOpacity 
+            style={styles.limitAlertDismissButton}
+            onPress={() => setShowLimitAlert(false)}
+          >
+            <Text style={styles.limitAlertDismissButtonText}>Entendido</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
     if (articulosList.length === 0) {
       if (filtroActivo === 'cliente') {
         if (search.length > 0) {
@@ -319,6 +369,13 @@ const ArticulosWeb = ({ route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+          <Text style={styles.backButtonText}>Atrás</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Seleccionar Artículos</Text>
         <Text style={styles.webIndicator}>Versión Web</Text>
       </View>
@@ -471,6 +528,8 @@ const ArticulosWeb = ({ route }) => {
           />
         )}
       </Modal>
+
+
     </View>
   );
 };
@@ -672,6 +731,51 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  // Estilos para el mensaje de límite alcanzado
+  limitAlertText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#e74c3c',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  limitAlertSubtext: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 30,
+    paddingHorizontal: 20,
+  },
+  limitAlertDismissButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  limitAlertDismissButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

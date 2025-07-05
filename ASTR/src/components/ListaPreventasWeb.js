@@ -294,15 +294,30 @@ const ListaPreventasWeb = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <MaterialCommunityIcons name="file-document-multiple" size={32} color="#ffffff" />
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerSubtitle}>Informe de preventas</Text>
-            <Text style={styles.webIndicator}>Versión Web</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+            <Text style={styles.backButtonText}>Atrás</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.headerCenter}>
+          <View style={styles.headerContent}>
+            <MaterialCommunityIcons name="file-document-multiple" size={32} color="#ffffff" />
+            <View style={styles.headerTexts}>
+              <Text style={styles.headerSubtitle}>Informe de preventas</Text>
+              <Text style={styles.webIndicator}>Versión Web</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.headerStats}>
-          <Text style={styles.statsText}>{preventas.length} preventas</Text>
+        
+        <View style={styles.headerRight}>
+          <View style={styles.headerStats}>
+            <Text style={styles.statsText}>{preventas.length} preventas</Text>
+          </View>
         </View>
       </View>
 
@@ -402,6 +417,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   headerContent: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions, Alert } from 'react-native';
 import { Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -32,6 +32,35 @@ const UserMenuPPalWeb = ({ route }) => {
   };
   
   console.log("UserMenuPPalWeb - Usuario procesado:", user);
+
+  // Función para verificar conexión a internet en web
+  const checkInternetConnection = async () => {
+    try {
+      console.log('🌐 Verificando conexión a internet...');
+      // En web, intentar hacer una petición a un servicio confiable
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos timeout
+      
+      const response = await fetch('https://httpbin.org/get', {
+        method: 'GET',
+        signal: controller.signal,
+        cache: 'no-cache',
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        console.log('✅ Conexión a internet verificada');
+        return true;
+      } else {
+        console.log('❌ Respuesta no exitosa:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error verificando conexión a internet:', error.message);
+      return false;
+    }
+  };
 
   const menuOptions = [
     { 
@@ -66,19 +95,22 @@ const UserMenuPPalWeb = ({ route }) => {
 
   const verServer = async () => {
     try {
+      console.log('🔄 Iniciando verificación del servidor...');
       setIsCheckingConnection(true);
       const serverStatus = await checkServerHandler();
+      console.log('📊 Resultado verificación servidor:', serverStatus);
       setIsServerOnline(serverStatus);
     } catch (error) {
-      console.error('Error checking server:', error);
+      console.error('❌ Error checking server:', error);
       setIsServerOnline(false);
     } finally {
       setIsCheckingConnection(false);
+      console.log('✅ Verificación completada');
     }
   };
 
   useFocusEffect(
-    useCallback(() => {
+    useCallback(async () => {
       // Animación de entrada
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -92,8 +124,14 @@ const UserMenuPPalWeb = ({ route }) => {
           useNativeDriver: true,
         }),
       ]).start();
-
-      // Verificar conexión al cargar
+      
+      // verificar internet
+      console.log('🌐 Verificando conexión a internet...');
+      const isConnected = await checkInternetConnection();
+      console.log('📊 Resultado conexión internet:', isConnected);
+      setIsConnected(isConnected);
+      
+      // Verificar conexión al servidor
       verServer();
       
       // Verificar conexión periódicamente en web

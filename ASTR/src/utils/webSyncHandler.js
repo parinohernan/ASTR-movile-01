@@ -17,7 +17,7 @@ export const sincronizarDatosWeb = async (tipo, logs = [], setLogs = null) => {
     
     // Obtener configuración
     const config = await getConfiguracionDelStorage();
-    const endpoint = config.endPoint;
+    const endpoint = config.endPoint || config.endpoint;
     
     if (!endpoint) {
       throw new Error('Endpoint no configurado. Configure el servidor primero.');
@@ -264,8 +264,13 @@ const obtenerSiguienteNumeroDocumento = async () => {
 
 // Convertir preventa de IndexedDB al formato esperado por el servidor
 const convertirPreventaParaServidor = async (preventa) => {
-  // Obtener configuración del vendedor
-  const vendedor = JSON.parse(localStorage.getItem('vendedorActual') || '{}');
+  // Obtener configuración desde IndexedDB
+  const configuracion = await indexedDBHandler.obtenerConfiguracion();
+  console.log("📋 Configuración obtenida para preventa:", configuracion);
+  
+  // Obtener el vendedor seleccionado desde la configuración
+  const vendedorSeleccionado = configuracion?.vendedorSeleccionado;
+  console.log("👤 Vendedor seleccionado:", vendedorSeleccionado);
   
   // Obtener el siguiente número de documento
   const numeroDocumento = await obtenerSiguienteNumeroDocumento();
@@ -285,13 +290,13 @@ const convertirPreventaParaServidor = async (preventa) => {
   
   return {
     DocumentoTipo: 'PRV', // Cambiado de 'PREV' a 'PRV'
-    DocumentoSucursal: vendedor.sucursal || '0006', // Cambiado a '0006' por defecto
+    DocumentoSucursal: (vendedorSeleccionado || '0001').padStart(4, '0'), // Usar vendedor seleccionado como sucursal, agregar 0 a la izquierda hasta 4 dígitos
     DocumentoNumero: numeroDocumento.toString(), // Convertido a string
     Fecha: preventa.fecha || fechaActual,
     FechaHoraEnvio: fechaActual, // Nuevo campo requerido
     ClienteCodigo: preventa.cliente.id,
     ClienteDescripcion: preventa.cliente.descripcion || '', // Nuevo campo requerido
-    VendedorCodigo: vendedor.id || '6', // Cambiado a '6' por defecto
+    VendedorCodigo: vendedorSeleccionado || '0001', // Usar vendedor seleccionado
     ImporteTotal: preventa.total || 0,
     Cant_items: preventa.items?.length || 0,
     Observacion: preventa.nota || '',

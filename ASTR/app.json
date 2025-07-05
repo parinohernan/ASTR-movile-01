@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "OSVI - Sistema de Preventas",
-    "slug": "osvi-preventas",
+    "name": "ASTR - Sistema de Gestión de Preventas",
+    "slug": "astr-preventas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
@@ -33,7 +33,7 @@
         "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
         "apple-mobile-web-app-capable": "yes",
         "apple-mobile-web-app-status-bar-style": "default",
-        "apple-mobile-web-app-title": "OSVI"
+        "apple-mobile-web-app-title": "ASTR"
       }
     },
     "extra": {

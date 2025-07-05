@@ -177,14 +177,54 @@ const AddArticulo = ({route, navigationOverride}) => {
   }
 
   const agregarItemPreventaStorage = async() => {
-    console.log("agregarItemPreventaStorage", articuloConDetalles);
-    const preventa = await obtenerPreventaDeStorage();
-    preventa.push(articuloConDetalles);
-    guardarPreventaEnStorage(preventa);
-    if (navigationOverride) {
-      navigationOverride(articuloConDetalles);
-    } else {
-    navigation.goBack();
+    try {
+      console.log("agregarItemPreventaStorage", articuloConDetalles);
+      
+      // Obtener la preventa actual
+      const preventa = await obtenerPreventaDeStorage();
+      
+      // Verificar límite de artículos antes de agregar
+      const cantidadMaxima = await configuracionCantidadMaximaArticulos();
+      
+      console.log('🔍 Validando límite antes de agregar:', {
+        preventaActual: preventa.length,
+        cantidadMaxima: cantidadMaxima,
+        intentandoAgregar: 1
+      });
+      
+      if (preventa.length >= cantidadMaxima) {
+        Alert.alert(
+          "Límite de artículos alcanzado",
+          `No se puede agregar más artículos. Límite máximo: ${cantidadMaxima} artículos.\n\nArtículos actuales: ${preventa.length}`,
+          [
+            {
+              text: "Entendido",
+              onPress: () => console.log("Límite alcanzado - No se agregó artículo"),
+              style: "cancel"
+            }
+          ]
+        );
+        return; // No agregar el artículo
+      }
+      
+      // Si pasa la validación, agregar el artículo
+      preventa.push(articuloConDetalles);
+      await guardarPreventaEnStorage(preventa);
+      
+      console.log('✅ Artículo agregado exitosamente. Total artículos:', preventa.length);
+      
+      if (navigationOverride) {
+        navigationOverride(articuloConDetalles);
+      } else {
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error('❌ Error al agregar artículo:', error);
+      Alert.alert(
+        "Error",
+        "No se pudo agregar el artículo. Intente nuevamente.",
+        [{ text: "OK" }]
+      );
     }
   }
   

@@ -20,8 +20,9 @@ const LoginWeb = ({ navigation, rootUser }) => {
   });
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [usuariosDisponibles, setUsuariosDisponibles] = useState([]);
 
-  // Usuarios de prueba para inicialización
+  // Usuarios de prueba para inicialización (solo si no hay usuarios sincronizados)
   const usuariosPrueba = [
     { id: '001', codigo: '001', descripcion: 'Vendedor 1', clave: '123' },
     { id: '002', codigo: '002', descripcion: 'Vendedor 2', clave: '456' },
@@ -29,7 +30,7 @@ const LoginWeb = ({ navigation, rootUser }) => {
   ];
 
   useEffect(() => {
-    // Inicializar IndexedDB y usuarios de prueba si no existen
+    // Inicializar IndexedDB y cargar usuarios disponibles
     const inicializarDB = async () => {
       try {
         await indexedDBHandler.init();
@@ -40,8 +41,10 @@ const LoginWeb = ({ navigation, rootUser }) => {
           // Si no hay vendedores, agregar los de prueba
           await indexedDBHandler.guardarVendedores(usuariosPrueba);
           console.log('✅ Usuarios de prueba inicializados en IndexedDB');
+          setUsuariosDisponibles(usuariosPrueba);
         } else {
-          console.log(`📋 ${vendedores.length} vendedores encontrados en IndexedDB`);
+          console.log(`📋 ${vendedores.length} vendedores sincronizados encontrados en IndexedDB`);
+          setUsuariosDisponibles(vendedores);
         }
       } catch (error) {
         console.error('❌ Error al inicializar IndexedDB:', error);
@@ -96,8 +99,22 @@ const LoginWeb = ({ navigation, rootUser }) => {
       form.vendedor.toLowerCase() === "root" &&
       form.password.toLowerCase() === "root"
     ) {
-      console.log("Ingresando como root");
-      navigation.navigate("Home", { form });
+      console.log("✅ === LOGIN ROOT EXITOSO ===");
+      console.log("🔑 Acceso root autorizado");
+      
+      // Crear datos de vendedor para root
+      const rootVendedor = {
+        clave: "root",
+        id: "root",
+        descripcion: "Administrador Root",
+        isRoot: true
+      };
+      
+      console.log("👤 Datos de root:", rootVendedor);
+      
+      setTimeout(() => {
+        navigation.navigate("Home", { vendedor: rootVendedor });
+      }, 100);
       return;
     }
 
@@ -147,6 +164,27 @@ const LoginWeb = ({ navigation, rootUser }) => {
             <Text style={styles.welcomeText}>Bienvenido a ASTR</Text>
             <Text style={styles.subtitleText}>Sistema de Gestión de Preventas</Text>
           </View>
+
+          {/* Mensaje de usuarios sincronizados */}
+          {/* <View style={{marginBottom: 20, backgroundColor: '#e0f7fa', borderRadius: 10, padding: 12, width: '100%', maxWidth: 400, alignSelf: 'center', borderWidth: 1, borderColor: '#30bced'}}>
+            <Text style={{fontWeight: 'bold', color: '#00796b', fontSize: 16, marginBottom: 4}}>
+              {usuariosDisponibles.length > 0 && usuariosDisponibles[0] && usuariosDisponibles[0].codigo !== '001'
+                ? `Usuarios sincronizados encontrados: ${usuariosDisponibles.length}`
+                : 'No hay usuarios sincronizados, usando usuarios de prueba.'}
+            </Text>
+            {usuariosDisponibles.length > 0 && usuariosDisponibles[0] && usuariosDisponibles[0].codigo !== '001' && (
+              <View>
+                {usuariosDisponibles.slice(0, 5).map((u, i) => (
+                  <Text key={i} style={{color: '#00796b', fontSize: 14}}>
+                    {u.codigo} - {u.descripcion}
+                  </Text>
+                ))}
+                {usuariosDisponibles.length > 5 && (
+                  <Text style={{color: '#00796b', fontSize: 13, fontStyle: 'italic'}}>...y más</Text>
+                )}
+              </View>
+            )}
+          </View> */}
 
           <View style={styles.formContainer}>
             {/* Campo Vendedor */}
@@ -211,15 +249,17 @@ const LoginWeb = ({ navigation, rootUser }) => {
               <Text style={styles.clearButtonText}>Limpiar</Text>
             </TouchableOpacity>
 
-            {/* Información de usuarios de prueba */}
+            {/* Información de acceso */}
             <View style={styles.infoContainer}>
-              <Text style={styles.infoTitle}>Usuarios de prueba:</Text>
-              <Text style={styles.infoText}>Vendedor 1: 001 / 123</Text>
-              <Text style={styles.infoText}>Vendedor 2: 002 / 456</Text>
-              <Text style={styles.infoText}>Vendedor 3: 003 / 789</Text>
+              <Text style={styles.infoTitle}>Información de acceso</Text>
               <Text style={styles.infoText}>Root: root / root</Text>
+              {usuariosDisponibles.length > 0 && (
+                <Text style={styles.infoText}>
+                  {usuariosDisponibles.length} vendedores disponibles
+                </Text>
+              )}
             </View>
-          </View>
+          </View> 
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

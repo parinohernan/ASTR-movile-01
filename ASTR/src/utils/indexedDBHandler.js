@@ -81,7 +81,7 @@ class IndexedDBHandler {
           id: vendedor.id || vendedor.codigo || vendedor.vendedor_id || `v_${Date.now()}_${Math.random()}`,
           codigo: vendedor.codigo || vendedor.id || vendedor.vendedor_id,
           descripcion: vendedor.descripcion || vendedor.nombre || vendedor.vendedor_nombre || 'Sin nombre',
-          clave: vendedor.clave || vendedor.password || vendedor.vendedor_clave || '123',
+          clave: vendedor.clave || vendedor.password || vendedor.vendedor_clave || '789', // Contraseña por defecto para usuarios sincronizados
           // Agregar campos adicionales si existen
           ...(vendedor.email && { email: vendedor.email }),
           ...(vendedor.telefono && { telefono: vendedor.telefono }),

@@ -10,6 +10,7 @@ import {
   Switch,
   ActivityIndicator
 } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import indexedDBHandler from '../src/utils/indexedDBHandler';
 
 const ConfigurarWeb = ({ navigation }) => {
@@ -164,35 +165,54 @@ const ConfigurarWeb = ({ navigation }) => {
 
   const guardarConfiguracion = async () => {
     try {
+      console.log('🚀 Iniciando guardado de configuración...');
+      console.log('📝 Configuración a guardar:', config);
+      
       setIsLoading(true);
       
       // Validar endpoint
       if (!config.endpoint.trim()) {
+        console.log('❌ Endpoint vacío');
         Alert.alert('Error', 'El endpoint es obligatorio');
         return;
       }
 
       // Validar que haya un vendedor seleccionado si hay vendedores disponibles
       if (vendedores.length > 0 && !config.vendedorSeleccionado) {
+        console.log('❌ No hay vendedor seleccionado');
         Alert.alert('Error', 'Debe seleccionar un vendedor');
         return;
       }
 
+      console.log('💾 Guardando en IndexedDB...');
       // Guardar en IndexedDB
-      await indexedDBHandler.guardarConfiguracion(config);
+      const resultado = await indexedDBHandler.guardarConfiguracion(config);
+      console.log('✅ Resultado del guardado:', resultado);
       
+      // Mostrar mensaje de éxito
+      console.log('📢 Mostrando mensaje de éxito...');
       Alert.alert(
-        'Éxito', 
-        'Configuración guardada correctamente',
-        [{ text: 'OK' }]
+        '✅ Configuración Guardada', 
+        'La configuración se ha guardado correctamente en la base de datos local.',
+        [{ 
+          text: 'OK',
+          onPress: () => {
+            console.log('👆 Usuario confirmó el mensaje de éxito');
+          }
+        }]
       );
       
-      console.log('Configuración guardada:', config);
+      console.log('🎉 Proceso de guardado completado exitosamente');
     } catch (error) {
-      console.error('Error al guardar configuración:', error);
-      Alert.alert('Error', 'No se pudo guardar la configuración');
+      console.error('❌ Error al guardar configuración:', error);
+      Alert.alert(
+        '❌ Error al Guardar', 
+        `No se pudo guardar la configuración: ${error.message}`,
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsLoading(false);
+      console.log('🏁 Finalizando proceso de guardado');
     }
   };
 
@@ -349,8 +369,24 @@ const ConfigurarWeb = ({ navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Configuración del Sistema</Text>
-          <Text style={styles.subtitle}>Ajustes generales de la aplicación</Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
+              <Text style={styles.backButtonText}>Atrás</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.headerCenter}>
+            <Text style={styles.title}>Configuración del Sistema</Text>
+            <Text style={styles.subtitle}>Ajustes generales de la aplicación</Text>
+          </View>
+          
+          <View style={styles.headerRight}>
+            {/* Espacio para futuros elementos */}
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -476,8 +512,36 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 30,
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  backButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   title: {
     fontSize: 28,

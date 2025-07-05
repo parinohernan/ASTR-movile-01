@@ -22,6 +22,8 @@ const PreventaWeb = (props) => {
   const [editando, setEditando] = useState(false);
   const [articulosFrecuentes, setArticulosFrecuentes] = useState([]);
   const [hasInternetAccess, setHasInternetAccess] = useState(true);
+  const [cantidadMaxima, setCantidadMaxima] = useState(50);
+  const [mostrarAlertaLimite, setMostrarAlertaLimite] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -57,6 +59,17 @@ const PreventaWeb = (props) => {
       // Cargar artículos frecuentes
       const frecuentes = await obtenerArticulosFrecuentesCombinados(cliente?.id);
       setArticulosFrecuentes(frecuentes);
+      
+      // Cargar configuración de límite de artículos
+      const maxArticulos = await configuracionCantidadMaximaArticulos();
+      setCantidadMaxima(maxArticulos);
+      
+      // Verificar si se está cerca del límite
+      if (preventaData && preventaData.length >= maxArticulos) {
+        setMostrarAlertaLimite(true);
+      } else {
+        setMostrarAlertaLimite(false);
+      }
     } catch (error) {
       console.error('Error al cargar datos:', error);
       setCarrito([]);
@@ -70,6 +83,16 @@ const PreventaWeb = (props) => {
   };
 
   const grabarPreventa = async () => {
+    // Validar que el carrito no esté vacío
+    if (carrito.length === 0) {
+      Alert.alert(
+        "Preventa vacía",
+        "No se puede guardar una preventa sin artículos. Agregue al menos un artículo antes de guardar.",
+        [{ text: "Entendido", style: "default" }]
+      );
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -151,24 +174,52 @@ const PreventaWeb = (props) => {
   };
 
   const abrirArticulos = async () => {
-    let cantidad = await configuracionCantidadMaximaArticulos();
-  
-    if (carrito.length >= cantidad) {
-      Alert.alert(
-        "Límite de artículos alcanzado",
-        `Se ha superado la cantidad máxima de ${cantidad} artículos permitidos.`,
-        [
-          {
-            text: "Aceptar",
-            onPress: () => console.log("Aceptar presionado"),
-            style: "cancel"
-          }
-        ]
-      );
-    } else {
-      console.log('Abriendo ArtículosWeb con cliente:', cliente);
-      console.log('Cliente ID a pasar:', cliente.id);
+    try {
+      // La función ya devuelve un número válido
+      const cantidadMaxima = await configuracionCantidadMaximaArticulos();
       
+      console.log('🔍 Verificando límite de artículos:', {
+        carritoActual: carrito.length,
+        cantidadMaxima: cantidadMaxima,
+        tipo: typeof cantidadMaxima
+      });
+    
+      if (carrito.length >= cantidadMaxima) {
+        Alert.alert(
+          "Límite de artículos alcanzado",
+          `Se ha superado la cantidad máxima de ${cantidadMaxima} artículos permitidos.\n\nArtículos actuales: ${carrito.length}`,
+          [
+            {
+              text: "Aceptar",
+              onPress: () => console.log("Límite alcanzado - Aceptar presionado"),
+              style: "cancel"
+            }
+          ]
+        );
+        return; // Salir de la función para evitar navegar
+      } else {
+        console.log('✅ Límite de artículos OK - Abriendo ArtículosWeb');
+        console.log('📋 Cliente:', cliente?.descripcion);
+        console.log('🆔 Cliente ID:', cliente?.id);
+        
+        navigation.navigate('ArticulosWeb', { 
+          numeroPreventa: preventaNumero, 
+          cliente: cliente, 
+          listaDePrecio: cliente.listaPrecio, 
+          cantItems: carrito.length, 
+          articulosFrecuentes: articulosFrecuentes, 
+          hasInternetAccess: hasInternetAccess 
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error al verificar límite de artículos:', error);
+      Alert.alert(
+        "Error de configuración",
+        "No se pudo verificar el límite de artículos. Usando valor por defecto.",
+        [{ text: "OK" }]
+      );
+      
+      // Continuar con valor por defecto
       navigation.navigate('ArticulosWeb', { 
         numeroPreventa: preventaNumero, 
         cliente: cliente, 
@@ -233,15 +284,33 @@ const PreventaWeb = (props) => {
   );
 
   const BarraIcons = () => {
+    const isCarritoVacio = carrito.length === 0;
+    
     return (
       <View style={styles.iconBar}>
-        <TouchableOpacity onPress={grabarPreventa} disabled={loading} style={styles.iconButton}>
+        <TouchableOpacity 
+          onPress={grabarPreventa} 
+          disabled={loading || isCarritoVacio} 
+          style={[
+            styles.iconButton,
+            (loading || isCarritoVacio) && styles.iconButtonDisabled
+          ]}
+        >
           {loading ? (
             <ActivityIndicator size="small" color="#ffffff" />
           ) : (
-            <MaterialCommunityIcons name="content-save" size={24} color="#ffffff" />
+            <MaterialCommunityIcons 
+              name="content-save" 
+              size={24} 
+              color={isCarritoVacio ? "#95a5a6" : "#ffffff"} 
+            />
           )}
-          <Text style={styles.iconButtonText}>Guardar</Text>
+          <Text style={[
+            styles.iconButtonText,
+            isCarritoVacio && styles.iconButtonTextDisabled
+          ]}>
+            Guardar
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={abrirArticulos} style={styles.iconButton}>
@@ -282,11 +351,45 @@ const PreventaWeb = (props) => {
   return (    
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+          <Text style={styles.backButtonText}>Atrás</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>PREVENTA</Text>
         <Text style={styles.webIndicator}>Versión Web</Text>
       </View>
       
       <CabezaPreventa/>
+      
+      {/* Alerta de límite de artículos */}
+      {mostrarAlertaLimite && (
+        <View style={styles.limiteAlerta}>
+          <MaterialCommunityIcons name="alert-circle" size={24} color="#e74c3c" />
+          <Text style={styles.limiteAlertaText}>
+            Límite de artículos alcanzado ({carrito.length}/{cantidadMaxima})
+          </Text>
+        </View>
+      )}
+      
+      {/* Indicador de progreso de artículos */}
+      {!mostrarAlertaLimite && carrito.length > 0 && (
+        <View style={styles.progresoContainer}>
+          <View style={styles.progresoBar}>
+            <View 
+              style={[
+                styles.progresoFill, 
+                { width: `${(carrito.length / cantidadMaxima) * 100}%` }
+              ]} 
+            />
+          </View>
+          <Text style={styles.progresoText}>
+            Artículos: {carrito.length} / {cantidadMaxima}
+          </Text>
+        </View>
+      )}
       
       <View style={styles.itemsContainer}>
         <Modal visible={isModalVisible} animationType="slide" transparent>
@@ -539,6 +642,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
   },
+  iconButtonDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    opacity: 0.5,
+  },
+  iconButtonTextDisabled: {
+    color: '#95a5a6',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -584,6 +694,61 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  limiteAlerta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fdf2f2',
+    borderWidth: 1,
+    borderColor: '#e74c3c',
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  limiteAlertaText: {
+    color: '#e74c3c',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  progresoContainer: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  progresoBar: {
+    height: 8,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 5,
+  },
+  progresoFill: {
+    height: '100%',
+    backgroundColor: '#27ae60',
+    borderRadius: 4,
+  },
+  progresoText: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 
