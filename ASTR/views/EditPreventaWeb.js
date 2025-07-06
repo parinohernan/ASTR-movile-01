@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { configuracionCantidadMaximaArticulos } from '../src/utils/storageConfigData';
-import { obtenerPreventaDeStorage, guardarPreventaEnStorage, obtenerArticulosFrecuentesCombinados } from '../src/utils/storageUtils';
+import { guardarPreventaEnStorage, obtenerPreventaDeStorage, obtenerArticulosFrecuentesCombinados } from '../src/utils/storageUtils';
 import { ModalEliminarEditarCancelar } from '../src/components/preventa/Modal';
+import { AddArticulo } from '../src/components/AddArticulo';
+import indexedDBHandler from '../src/utils/indexedDBHandler';
 
 const EditPreventaWeb = (props) => {
   const navigation = useNavigation();
@@ -21,17 +23,26 @@ const EditPreventaWeb = (props) => {
   const [preventaCargada, setPreventaCargada] = useState(false);
   const [articulosFrecuentes, setArticulosFrecuentes] = useState([]);
   const [hasInternetAccess, setHasInternetAccess] = useState(true);
+  const [cargaInicialCompletada, setCargaInicialCompletada] = useState(false);
+  const [isModalEdicionVisible, setIsModalEdicionVisible] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const { params } = props.route;
+        console.log('📋 EditPreventaWeb - Parámetros recibidos:', params);
+        
         setCliente(params.cliente);
         setPreventaNumero(params.numeroPreventa);
         setHasInternetAccess(params.hasInternetAccess || true);
         
-        await cargarPreventaDesdeBDD();
-        await cargarDatos();
+        // Esperar a que preventaNumero se establezca antes de cargar la preventa
+        if (params.numeroPreventa && !cargaInicialCompletada) {
+          console.log('🔄 Carga inicial desde IndexedDB...');
+          await cargarPreventaDesdeBDD(params.numeroPreventa);
+          await cargarDatos();
+          setCargaInicialCompletada(true);
+        }
       } catch (error) {
         console.error('Error al cargar datos:', error);
       }
@@ -40,27 +51,76 @@ const EditPreventaWeb = (props) => {
     if (isFocused) {
       loadData();
     }
-  }, [isFocused, props.route.params]);
+  }, [isFocused, props.route.params, cargaInicialCompletada]);
 
-  const cargarPreventaDesdeBDD = async () => {
+  // Recargar datos cuando regreses de ArticulosWeb
+  useFocusEffect(
+    useCallback(() => {
+      const recargarDatos = async () => {
+        if (preventaNumero && preventaCargada && cargaInicialCompletada) {
+          console.log('🔄 Recargando datos desde storage local después de regresar de ArticulosWeb...');
+          
+          // Cargar datos actualizados desde storage local (AsyncStorage)
+          await cargarPreventaDesdeStorageLocal();
+          
+          // También recargar artículos frecuentes
+          await cargarDatos();
+        }
+      };
+
+      recargarDatos();
+    }, [preventaNumero, preventaCargada, cargaInicialCompletada])
+  );
+
+  const cargarPreventaDesdeBDD = async (numeroPreventa) => {
     try {
       setLoading(true);
-      const preventaData = await obtenerPreventaDeStorage(preventaNumero);
+      console.log('🔍 Cargando preventa desde IndexedDB:', numeroPreventa);
+      
+      const preventaData = await indexedDBHandler.obtenerPreventa(numeroPreventa);
+      console.log('📋 Datos de preventa obtenidos de IndexedDB:', preventaData);
+      
       if (preventaData) {
         setCarrito(preventaData.items || []);
         setNota(preventaData.nota || '');
         calcularTotal(preventaData.items || []);
         setPreventaCargada(true);
+        console.log('✅ Preventa cargada correctamente desde IndexedDB');
+        console.log('📦 Items cargados:', preventaData.items?.length || 0);
+        console.log('📝 Nota:', preventaData.nota || 'Sin nota');
+        console.log('💰 Total:', preventaData.total || 0);
       } else {
+        console.error('❌ No se encontró la preventa en IndexedDB:', numeroPreventa);
         Alert.alert("Error", "No se encontró la preventa");
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Error al cargar preventa:', error);
+      console.error('Error al cargar preventa desde IndexedDB:', error);
       Alert.alert("Error", "No se pudo cargar la preventa");
       navigation.goBack();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarPreventaDesdeStorageLocal = async () => {
+    try {
+      console.log('🔍 Cargando preventa desde storage local (AsyncStorage)...');
+      
+      const preventaLocal = await obtenerPreventaDeStorage();
+      console.log('📋 Datos de preventa obtenidos de AsyncStorage:', preventaLocal);
+      
+      if (preventaLocal && preventaLocal.length > 0) {
+        setCarrito(preventaLocal);
+        calcularTotal(preventaLocal);
+        console.log('✅ Preventa cargada correctamente desde AsyncStorage');
+        console.log('📦 Items cargados:', preventaLocal.length);
+        console.log('💰 Total calculado:', total);
+      } else {
+        console.log('⚠️ No hay datos en AsyncStorage, manteniendo datos actuales');
+      }
+    } catch (error) {
+      console.error('Error al cargar preventa desde AsyncStorage:', error);
     }
   };
 
@@ -69,6 +129,7 @@ const EditPreventaWeb = (props) => {
       // Cargar artículos frecuentes
       const frecuentes = await obtenerArticulosFrecuentesCombinados(cliente?.id);
       setArticulosFrecuentes(frecuentes);
+      console.log('📦 Artículos frecuentes cargados:', frecuentes.length);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     }
@@ -83,6 +144,10 @@ const EditPreventaWeb = (props) => {
     try {
       setLoading(true);
       
+      // Sincronizar storage local con IndexedDB
+      console.log('💾 Sincronizando storage local con IndexedDB...');
+      await guardarPreventaEnStorage(carrito);
+      
       const preventaData = {
         numero: preventaNumero,
         cliente: cliente,
@@ -93,7 +158,8 @@ const EditPreventaWeb = (props) => {
         estado: 'borrador'
       };
 
-      await guardarPreventaEnStorage(preventaData);
+      console.log('💾 Guardando preventa actualizada en IndexedDB:', preventaData.numero);
+      await indexedDBHandler.guardarPreventa(preventaData);
       
       Alert.alert(
         "Preventa actualizada",
@@ -101,12 +167,12 @@ const EditPreventaWeb = (props) => {
         [
           {
             text: "Aceptar",
-            onPress: () => console.log("Preventa actualizada")
+            onPress: () => console.log("Preventa actualizada en IndexedDB")
           }
         ]
       );
     } catch (error) {
-      console.error('Error al grabar preventa:', error);
+      console.error('Error al grabar preventa en IndexedDB:', error);
       Alert.alert("Error", "No se pudo actualizar la preventa");
     } finally {
       setLoading(false);
@@ -131,11 +197,35 @@ const EditPreventaWeb = (props) => {
     setSelectedItem(null);
   };
 
+  const cerrarModalEdicion = () => {
+    setIsModalEdicionVisible(false);
+    setSelectedItem(null);
+  };
+
   const handleDelete = async() => {
     try {
       const nuevosItems = carrito.filter(item => item.uniqueId !== selectedItem.uniqueId);
       setCarrito(nuevosItems);
       calcularTotal(nuevosItems);
+      
+      // Actualizar tanto el storage local como IndexedDB
+      console.log('🗑️ Actualizando storage local después de eliminar item');
+      await guardarPreventaEnStorage(nuevosItems);
+      
+      // También actualizar IndexedDB para persistencia
+      const preventaActualizada = {
+        numero: preventaNumero,
+        cliente: cliente,
+        items: nuevosItems,
+        nota: nota,
+        total: total,
+        fecha: new Date().toISOString(),
+        estado: 'borrador'
+      };
+      
+      console.log('🗑️ Actualizando preventa en IndexedDB después de eliminar item');
+      await indexedDBHandler.guardarPreventa(preventaActualizada);
+      
       cerrarModalEditar();
     } catch (error) {
       console.error('Error al eliminar item:', error);
@@ -144,16 +234,43 @@ const EditPreventaWeb = (props) => {
 
   const handleEdit = async() => {
     try {
-      // Aquí se abriría el modal de edición
-      // Por ahora solo cerramos el modal
+      console.log('✏️ Abriendo modal de edición para item:', selectedItem);
+      
+      // Cerrar el modal de opciones
       cerrarModalEditar();
+      
+      // Abrir el modal de edición
+      setIsModalEdicionVisible(true);
     } catch (error) {
       console.error('Error al editar item:', error);
     }
   };
 
-  const guardarNota = () => {
-    cerrarModal();
+  const guardarNota = async () => {
+    try {
+      // Actualizar tanto el storage local como IndexedDB
+      console.log('📝 Actualizando nota en storage local');
+      await guardarPreventaEnStorage(carrito);
+      
+      // También actualizar IndexedDB para persistencia
+      const preventaActualizada = {
+        numero: preventaNumero,
+        cliente: cliente,
+        items: carrito,
+        nota: nota,
+        total: total,
+        fecha: new Date().toISOString(),
+        estado: 'borrador'
+      };
+      
+      console.log('📝 Actualizando nota en IndexedDB');
+      await indexedDBHandler.guardarPreventa(preventaActualizada);
+      
+      cerrarModal();
+    } catch (error) {
+      console.error('Error al guardar nota:', error);
+      cerrarModal();
+    }
   };
 
   const abrirArticulos = async () => {
@@ -302,6 +419,13 @@ const EditPreventaWeb = (props) => {
   return (    
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+          <Text style={styles.backButtonText}>Atrás</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>EDITAR PREVENTA</Text>
         <Text style={styles.webIndicator}>Versión Web</Text>
       </View>
@@ -322,7 +446,7 @@ const EditPreventaWeb = (props) => {
                 multiline
               />
               <View style={styles.modalButtonsContainer}>
-                <TouchableOpacity style={styles.modalButton} onPress={cerrarModal}>
+                <TouchableOpacity style={styles.modalButton} onPress={guardarNota}>
                   <Text style={styles.modalButtonText}>Guardar</Text>
                 </TouchableOpacity>
               </View>
@@ -337,6 +461,31 @@ const EditPreventaWeb = (props) => {
             handleDelete={handleDelete} 
             cerrarModalEditar={cerrarModalEditar}
           />
+        )}
+        
+        {isModalEdicionVisible && selectedItem && (
+          <Modal
+            visible={isModalEdicionVisible}
+            animationType="slide"
+            onRequestClose={cerrarModalEdicion}
+            presentationStyle="fullScreen"
+          >
+            <AddArticulo
+              route={{ 
+                params: { 
+                  articulo: {
+                    ...selectedItem,
+                    editandoItem: true,
+                    uniqueIdOriginal: selectedItem.uniqueId
+                  }, 
+                  preventaNumero: preventaNumero, 
+                  cliente: cliente, 
+                  cantItems: carrito.length 
+                } 
+              }}
+              navigationOverride={cerrarModalEdicion}
+            />
+          </Modal>
         )}
         
         <View style={styles.listContainer}>
@@ -386,6 +535,22 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: '#0c2f3c',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   title: {
     fontSize: 24,

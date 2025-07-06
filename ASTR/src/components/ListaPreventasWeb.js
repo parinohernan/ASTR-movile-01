@@ -215,11 +215,12 @@ const ListaPreventasWeb = () => {
           setModalVisible(false);
           
           console.log("✏️ Abriendo preventa para editar:", preventaNumero);
+          console.log("📋 Datos del cliente:", cliente);
           navigation.navigate('EditPreventaWeb', { 
-            preventaNumero, 
-            cliente, 
-            edit, 
-            observacion 
+            numeroPreventa: preventaNumero, 
+            cliente: cliente, 
+            edit: edit, 
+            observacion: observacion 
           });
         } catch (error) {
           console.error('❌ Error al editar preventa:', error);

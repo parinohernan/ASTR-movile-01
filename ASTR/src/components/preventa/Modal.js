@@ -12,12 +12,12 @@ function ModalEliminarEditarCancelar ({ item, handleEdit, handleDelete, cerrarMo
     transparent={true}
     onRequestClose={cerrarModalEditar} >
         <View style={{ flex: 1, flexDirection:"row", justifyContent: 'center', alignItems: 'center',backgroundColor: "#33333389" }}>
-        <TouchableOpacity style={{ backgroundColor: "cyan" , padding: 14, borderBottomLeftRadius: 23}} onPress={handleEdit}>
+        {/* <TouchableOpacity style={{ backgroundColor: "cyan" , padding: 14, borderBottomLeftRadius: 23}} onPress={handleEdit}>
             <View style={styles.modalOption}>
             <Icon name="edit" size={40} color="blue" />
             <Text style={styles.modalOptionText} >Editar</Text>
             </View>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity style={{ backgroundColor: "cyan" , padding: 14, }} onPress={handleDelete}>
             <View style={styles.modalOption}>
             <Icon name="trash" size={40} color="red" />

@@ -13,6 +13,7 @@ import ClientesInfo from './src/components/clientes/ClientesInfo';
 import PreventaWeb from './views/PreventaWeb';
 import ArticulosWeb from './views/ArticulosWeb';
 import ListaPreventasWeb from './src/components/ListaPreventasWeb';
+import EditPreventaWeb from './views/EditPreventaWeb';
 import Sincronizar from './views/Sincronizar';
 
 const Stack = createStackNavigator();
@@ -101,6 +102,7 @@ const AppWeb = () => {
         <Stack.Screen name="ClientesInfo" component={ClientesInfo} />
         <Stack.Screen name="PreventaWeb" component={PreventaWeb} />
         <Stack.Screen name="ArticulosWeb" component={ArticulosWeb} />
+        <Stack.Screen name="EditPreventaWeb" component={EditPreventaWeb} />
         <Stack.Screen name="InformesWeb" component={ListaPreventasWeb} />
         <Stack.Screen name="Sincronizar" component={Sincronizar} />
         <Stack.Screen name="ConfigurarWeb" component={ConfigurarWeb} />
