@@ -32,7 +32,8 @@
     },
     "owner": "hernanpa",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-sqlite"
     ]
   }
 }
