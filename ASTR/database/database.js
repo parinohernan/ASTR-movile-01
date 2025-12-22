@@ -1,5 +1,108 @@
 // database.js
-import * as SQLite from "expo-sqlite";
+// Adaptador de compatibilidad para expo-sqlite v16
+// La nueva API usa openDatabaseSync pero el código existente usa la API antigua con callbacks
+import { openDatabaseSync } from "expo-sqlite";
+
+// Función de compatibilidad que mantiene la API antigua
+function openDatabaseCompat(databaseName) {
+  const db = openDatabaseSync(databaseName);
+  
+  // Crear un objeto compatible con la API antigua
+  return {
+    transaction: (callback, errorCallback, successCallback) => {
+      try {
+        // Usar withTransactionSync para mantener compatibilidad con callbacks
+        db.withTransactionSync(() => {
+          // Crear un objeto transaction compatible con la API antigua
+          const tx = {
+            executeSql: (sql, params = [], success, error) => {
+              try {
+                // Determinar si es una consulta SELECT u otro tipo
+                const sqlUpper = sql.trim().toUpperCase();
+                const isSelect = sqlUpper.startsWith('SELECT') || sqlUpper.startsWith('PRAGMA');
+                
+                if (isSelect) {
+                  // Para SELECT/PRAGMA, usar getAllSync o getFirstSync
+                  // Intentar detectar si necesitamos solo el primero o todos
+                  const needsFirst = sqlUpper.includes('LIMIT 1') || sqlUpper.includes('PRAGMA');
+                  
+                  let rows;
+                  if (needsFirst) {
+                    const first = db.getFirstSync(sql, params);
+                    rows = first ? [first] : [];
+                  } else {
+                    rows = db.getAllSync(sql, params);
+                  }
+                  
+                  // Convertir el resultado al formato esperado por el código antiguo
+                  const compatResult = {
+                    insertId: null,
+                    rowsAffected: 0,
+                    rows: {
+                      length: rows.length,
+                      item: (index) => rows[index] || null,
+                      _array: rows,
+                      raw: () => rows
+                    }
+                  };
+                  
+                  if (success) {
+                    success(null, compatResult);
+                  }
+                  return compatResult;
+                } else {
+                  // Para INSERT/UPDATE/DELETE, usar runSync
+                  const result = db.runSync(sql, params);
+                  
+                  // Convertir el resultado al formato esperado
+                  const compatResult = {
+                    insertId: result.lastInsertRowId,
+                    rowsAffected: result.changes,
+                    rows: {
+                      length: 0,
+                      item: (index) => null,
+                      _array: [],
+                      raw: () => []
+                    }
+                  };
+                  
+                  if (success) {
+                    success(null, compatResult);
+                  }
+                  return compatResult;
+                }
+              } catch (err) {
+                if (error) {
+                  error(null, err);
+                } else {
+                  throw err;
+                }
+                return null;
+              }
+            }
+          };
+          
+          callback(tx);
+        });
+        
+        if (successCallback) {
+          successCallback();
+        }
+      } catch (err) {
+        if (errorCallback) {
+          errorCallback(err);
+        } else {
+          throw err;
+        }
+      }
+    }
+  };
+}
+
+// Usar la función de compatibilidad
+const SQLite = {
+  openDatabase: openDatabaseCompat
+};
 
 const db = SQLite.openDatabase("database.db");
 
