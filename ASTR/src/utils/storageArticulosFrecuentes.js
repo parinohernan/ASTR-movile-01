@@ -36,27 +36,13 @@ const preventaDesdeBDD = async (numeroPreventa) => {
   /* con el numero de preventa la traigo de la BDD locar y la coloco en locasStorege   */
   console.log("STORAGE83 numero preven", numeroPreventa);
   try {
-    return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.existencia AS existencia, preventaItem.cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioFinal FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?',
-          [numeroPreventa],
-          (_, result) => {
-            const preventaItemsBDD = [];
-            for (let i = 0; i < result.rows.length; i++) {
-              preventaItemsBDD.push(result.rows.item(i));
-            }
-            console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
-            guardarPreventaEditando(preventaItemsBDD);
-            resolve(preventaItemsBDD);
-          },
-          (_, error) => {
-            console.error('Error al cargar items de preventa desde la base de datos:', error);
-            reject(error);
-          }
-        );
-      });
-    });
+    const preventaItemsBDD = db.getAllSync(
+      'SELECT preventaItem.articulo AS id, articulos.descripcion AS descripcion, articulos.existencia AS existencia, preventaItem.cantidad, preventaItem.idPreventa AS preventaNumero, preventaItem.importe AS precioFinal FROM preventaItem INNER JOIN articulos ON preventaItem.articulo = articulos.id WHERE preventaItem.idPreventa = ?',
+      [numeroPreventa]
+    );
+    console.log('Items de preventa cargados desde la base de datos:', preventaItemsBDD);
+    guardarPreventaEditando(preventaItemsBDD);
+    return preventaItemsBDD;
   } catch (error) {
     console.error('Error en preventaDesdeBDD:', error);
     throw error;
