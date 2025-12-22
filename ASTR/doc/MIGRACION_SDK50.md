@@ -16,6 +16,7 @@
 - `expo-file-system`: ~15.4.5 → ~16.0.9 ⚠️ **MAJOR UPDATE**
 - `expo-document-picker`: ~11.5.4 → ~11.10.1
 - `expo-clipboard`: ~4.3.1 → ~5.0.1 ⚠️ **MAJOR UPDATE**
+- `expo-font`: ~11.10.3 (nueva dependencia - requerida por @expo/vector-icons)
 
 #### React Native Packages
 - `@react-native-async-storage/async-storage`: 1.18.2 → 1.21.0
@@ -27,6 +28,9 @@
 
 #### Build Tools
 - `@expo/webpack-config`: ^19.0.0 → ~19.0.1
+
+#### Configuración app.json
+- Se agregó plugin `expo-font` en la sección `plugins` (requerido por @expo/vector-icons)
 
 ## ⚠️ Áreas Críticas a Verificar
 
