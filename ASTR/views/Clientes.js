@@ -136,6 +136,18 @@ const Clientes = ({ route }) => {
     return null;
   };
 
+  const construirDireccion = (cliente) => {
+    const partes = [];
+    if (cliente.calle) partes.push(cliente.calle);
+    if (cliente.numero) partes.push(cliente.numero);
+    if (cliente.piso) partes.push(`Piso ${cliente.piso}`);
+    if (cliente.departamento) partes.push(`Depto ${cliente.departamento}`);
+    if (cliente.localidad) partes.push(cliente.localidad);
+    if (cliente.codigoPostal) partes.push(`(${cliente.codigoPostal})`);
+    
+    return partes.length > 0 ? partes.join(', ') : 'Sin dirección';
+  };
+
   const renderClienteItem = ({ item }) => (
     <View style={styles.clienteCard}>
       <View style={styles.clienteInfo}>
@@ -156,6 +168,10 @@ const Clientes = ({ route }) => {
           <View style={styles.metaItem}>
             <MaterialCommunityIcons name="tag" size={16} color="#7f8c8d" />
             <Text style={styles.metaText}>Lista {item.listaPrecio}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <MaterialCommunityIcons name="map-marker" size={16} color="#7f8c8d" />
+            <Text style={styles.metaText}>{construirDireccion(item)}</Text>
           </View>
         </View>
       </View>
