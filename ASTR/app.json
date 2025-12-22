@@ -30,6 +30,9 @@
         "projectId": "cb45e6f4-dabf-4373-84f1-b8e4637f41f8"
       }
     },
-    "owner": "hernanpa"
+    "owner": "hernanpa",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
