@@ -34,27 +34,15 @@ const ListaPreventas = () => {
 
   const cargarPreventas = () => {
     console.log("📊 Iniciando carga de preventas...");
-    db.transaction((tx) => {
-      try {
-        tx.executeSql(
-          'SELECT preventaCabeza.id as numero, clientes.descripcion as cliente, clientes.id as clienteCodigo, preventaCabeza.importetotal as importe, preventaCabeza.observacion as observacion, preventaCabeza.fecha as fecha, preventaCabeza.cantidadItems as cantidadItems FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC',
-          [],
-          (_, result) => {
-            const preventasArray = [];
-            for (let i = 0; i < result.rows.length; i++) {
-              preventasArray.push(result.rows.item(i));
-            }
-            setPreventas(preventasArray);
-            console.log("✅ Preventas cargadas exitosamente:", preventasArray.length, "preventas");
-          },
-          (_, error) => {
-            console.error('❌ Error al cargar preventas:', error);
-          }
-        );
-      } catch (error) {
-        console.error('❌ Excepción al ejecutar la transacción:', error);
-      }
-    });
+    try {
+      const preventasArray = db.getAllSync(
+        'SELECT preventaCabeza.id as numero, clientes.descripcion as cliente, clientes.id as clienteCodigo, preventaCabeza.importetotal as importe, preventaCabeza.observacion as observacion, preventaCabeza.fecha as fecha, preventaCabeza.cantidadItems as cantidadItems FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC'
+      );
+      setPreventas(preventasArray);
+      console.log("✅ Preventas cargadas exitosamente:", preventasArray.length, "preventas");
+    } catch (error) {
+      console.error('❌ Error al cargar preventas:', error);
+    }
   };
 
   const formatDate = (dateString) => {
