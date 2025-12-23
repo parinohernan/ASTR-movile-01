@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { Button } from 'react-native-elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { guardarConfiguracionEnStorage, getConfiguracionDelStorage, limpiarConfiguracionDelStorage, establecerConfiguracionPrueba } from '../src/utils/storageConfigData';
 import axios  from 'axios';
 import { getUsuarios, insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
