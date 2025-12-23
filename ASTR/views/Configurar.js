@@ -492,8 +492,15 @@ const Configurar = () => {
     }
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView 
+      contentContainerStyle={{ 
+        flexGrow: 1,
+        paddingBottom: Math.max(insets.bottom, 20) 
+      }}
+    >
       <View style={styles.container}>
         <Modal
           visible={vendedorModalVisible}
