@@ -138,7 +138,7 @@ const AddArticulo = ({route, navigationOverride}) => {
   const articuloConDetalles = {
     ...articulo,
     cantidad: parseFloat(cantidad),
-    descuento: parseInt(descuento || 0),
+    descuento: parseFloat(descuento || 0),
     precioTotal: parseFloat(precioTotal),
     // Preservar el precioLista original si existe
     precioLista: articulo.precioLista || precioUnitario,
@@ -251,14 +251,19 @@ const AddArticulo = ({route, navigationOverride}) => {
   }
 
   const handleDescuento = (text) => {
-    // Limpiar el texto y permitir solo números
-    const cleanText = text.replace(/[^0-9]/g, '');
-    
-    // Si el texto está vacío, establecer 0
-    if (cleanText === '') {
-      setDescuento(0);
+    // Permite solo números y un solo punto decimal
+    const newText = text.replace(/[^0-9.]/g, '');
+
+    // Asegura que solo haya un punto decimal
+    if (newText.split('.').length > 2) {
+      setDescuento(newText.slice(0, -1)); // Elimina el último carácter si hay más de un punto
     } else {
-      setDescuento(cleanText);
+      // Si el texto está vacío, establecer 0
+      if (newText === '' || newText === '.') {
+        setDescuento(0);
+      } else {
+        setDescuento(newText);
+      }
     }
   };
   
