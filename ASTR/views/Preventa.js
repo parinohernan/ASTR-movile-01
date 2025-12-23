@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, Modal, Alert, ActivityIndicator} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useIsFocused, useFocusEffect} from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { obtenerPreventaDeStorage, preventaDesdeBDD, calcularTotal, limpiarPreventaDeStorage, eliminarItemEnPreventaEnStorage } from "../src/utils/storageUtils";
 import { grabarPreventaEnBDD } from '../database/controllers/Preventa.Controller';
 import { getClientes } from '../database/controllers/Clientes.Controller';
@@ -356,9 +357,10 @@ const Preventa = (props) => {
     </View>
   );
 
-  const BarraIcons = () =>{
+  const BarraIcons = () => {
+    const insets = useSafeAreaInsets();
     return (
-      <View style={styles.iconBar}>
+      <View style={[styles.iconBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <TouchableOpacity onPress={grabarPreventa} disabled={loading} style={styles.iconButton}>
           {loading ? (
             <ActivityIndicator size="small" color="#ffffff" />
@@ -685,7 +687,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: "#0c2f3c",
-    padding: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20, // Se sobrescribe dinámicamente con useSafeAreaInsets
   },
   iconButton: {
     alignItems: 'center',

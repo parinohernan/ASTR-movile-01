@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoginScreen from './views/LoginScreen';
 import Home from './views/Home';
 import Clientes from './views/Clientes';
@@ -48,10 +49,11 @@ const App = () => {
   const RenderPreventasEnviadasScreen = (props) => <PreventasEnviadas {...props} />;
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={{
-    headerShown: false
-  }}>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{
+      headerShown: false
+    }}>
         <Stack.Screen name="Login" component={RenderLoginScreen} />
         <Stack.Screen name="Home" component={RenderHomeScreen} />
         <Stack.Screen name="Informes" component={RenderListaPreventasScreen} />
@@ -69,8 +71,9 @@ const App = () => {
         <Stack.Screen name="UserMenuPPal" component={RenderUserMenuPPal} />
         <Stack.Screen name="PreventasEnviadas" component={RenderPreventasEnviadasScreen} />
 
-      </Stack.Navigator>
-    </NavigationContainer>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 
