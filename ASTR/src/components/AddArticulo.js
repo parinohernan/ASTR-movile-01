@@ -135,6 +135,22 @@ const AddArticulo = ({route, navigationOverride}) => {
     verificarSiEstaCargado();
   }, [articulo.id]);
 
+  // Calcular precio total automáticamente cuando cambian cantidad o descuento
+  useEffect(() => {
+    const cantidadNum = parseFloat(cantidad) || 0;
+    const descuentoValido = descuento !== null && descuento !== undefined && descuento !== '' ? parseFloat(descuento) : 0;
+    
+    if (cantidadNum > 0 && precioUnitario > 0) {
+      let cuenta = precioUnitario * cantidadNum;
+      cuenta = cuenta - (cuenta * (descuentoValido / 100));
+      setPrecioTotal(cuenta);
+      setVerAgregar(true);
+    } else {
+      setPrecioTotal(0);
+      setVerAgregar(false);
+    }
+  }, [cantidad, descuento, precioUnitario]);
+
   const articuloConDetalles = {
     ...articulo,
     cantidad: parseFloat(cantidad),
@@ -182,9 +198,13 @@ const AddArticulo = ({route, navigationOverride}) => {
   }
 
   const handleSave = async () => {
-    await handleEnd();
+    // Asegurar que cantidad sea válida
+    const cantidadFinal = parseFloat(cantidad) || 0;
+    if (cantidadFinal === 0) {
+      setCantidad(0);
+    }
     
-    if ((cantidad == 0) && (cantItems == 1)) {
+    if ((cantidadFinal == 0) && (cantItems == 1)) {
       await vaciarPreventaStorage();
       return;
     } 
@@ -267,19 +287,10 @@ const AddArticulo = ({route, navigationOverride}) => {
     }
   };
   
-  const handleEnd = async() => {
-    let cuenta = 0;
-    if (cantidad == 0) {
-      setCantidad(0)
-    }
-    
-    // Asegurar que el descuento sea un número válido
-    const descuentoValido = descuento !== null && descuento !== undefined && descuento !== '' ? parseFloat(descuento) : 0;
-    
-    cuenta = (precioUnitario.toFixed(2)) * (cantidad); 
-    cuenta = cuenta - (cuenta * (descuentoValido / 100)) 
-    setPrecioTotal(cuenta);
-    setVerAgregar(true);
+  // handleEnd ya no es necesario - el cálculo se hace automáticamente con useEffect
+  // Se mantiene solo para evitar errores si se referencia desde algún lugar
+  const handleEnd = () => {
+    // Ya no hace nada - el cálculo es automático
   };
 
   const handleCancel = () => {
@@ -355,7 +366,6 @@ const AddArticulo = ({route, navigationOverride}) => {
         style={styles.input}
         onFocus={handleFocusCant}
         onChangeText={handleCantidad}
-        onEndEditing={handleEnd}
         onBlur={() => setCantidad(formatCantidad(cantidad))}
         value={String(cantidad)}
         keyboardType="numeric"
@@ -366,7 +376,6 @@ const AddArticulo = ({route, navigationOverride}) => {
         editable={true}
         onFocus={handleFocusDescuento}
         onChangeText={handleDescuento}
-        onEndEditing={handleEnd}
         value={String(descuento || 0)}
         keyboardType="numeric"
       />

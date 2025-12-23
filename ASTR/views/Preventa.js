@@ -74,7 +74,13 @@ const Preventa = (props) => {
   useEffect(() => {
     const loadData = async () => {
       if (isFocused) {
-      // Cargar datos aquí
+        // Si es una nueva preventa (no edición), limpiar el storage primero
+        // para evitar que queden artículos de sesiones anteriores
+        if (nueva && !edit) {
+          console.log("Nueva preventa detectada - limpiando storage previo para evitar duplicados");
+          await limpiarPreventaDeStorage();
+        }
+        // Cargar datos aquí
         cargarDatos();
       }
     };
@@ -99,6 +105,18 @@ const Preventa = (props) => {
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
     // console.log("prv166 ",carritoData);
+    
+    // Si es una nueva preventa y hay datos en el storage, limpiar para evitar duplicados
+    // (esto es una doble verificación por si acaso)
+    if (nueva && !edit && carritoData.length > 0) {
+      console.log("Advertencia: Nueva preventa con datos en storage - limpiando para evitar duplicados");
+      await limpiarPreventaDeStorage();
+      setCarrito([]);
+      setCantidadItems(0);
+      setTotal(0);
+      return;
+    }
+    
     if (carritoData.length != 0) {
       setCarrito(carritoData.map(item => {
         let precioLista = 0;
