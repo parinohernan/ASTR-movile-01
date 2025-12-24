@@ -10,11 +10,13 @@
     },
     "preview": {
       "distribution": "internal",
+      "node": "20.11.0",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "node": "20.11.0",
       "android": {
         "buildType": "apk"
       }
