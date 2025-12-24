@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "osvi 314",
+    "name": "OSVI 314 v2",
     "slug": "ASTR",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.hernanpa.osvi314"
+      "package": "com.hernanpa.osvi314v2"
     },
     "web": {
       "favicon": "./assets/favicon.png"
