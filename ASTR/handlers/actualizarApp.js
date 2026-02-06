@@ -468,15 +468,15 @@ const enviarPreventas = async (logs, setLogs) => {
   };  
 
   const getInformeOnline = async (cliente) => {
-    console.log("cargando documentos de ",cliente);
+    console.log("cargando documentos de ", cliente);
    
     try {
       const response = await axios.get(await configuracionEndPoint() + "clientesdeuda?clienteCodigo=" + cliente );
       const data = response.data;
-      // console.log(data);
+      console.log('Resultado endpoint clientesdeuda:', JSON.stringify(data, null, 2));
       return data;
     } catch (error) {
-      console.log('Error al obtener artículos frecuentes ', error);
+      console.log('Error al obtener documentos/informe: ', error);
     }
   };  
 

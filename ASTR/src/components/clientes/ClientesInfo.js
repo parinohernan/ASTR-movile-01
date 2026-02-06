@@ -22,6 +22,7 @@ const ClientesInfo = (props) => {
         setLoading(true);
         try {
           const informeOnline = await getInformeOnline(cliente.id);
+          console.log('Documentos recibidos (incluye facturas, recibos, notas de crédito):', informeOnline);
           setInforme(informeOnline || []);
         } catch (error) {
           console.error('Error al obtener informe: ', error);
@@ -101,11 +102,31 @@ const ClientesInfo = (props) => {
       return `$${parseFloat(importe || 0).toFixed(2)}`;
     }
 
-    const renderItem = ({ item }) => (
-      <View style={[
-        styles.documentoCard,
-        item.DocumentoTipo === "RCF" ? styles.documentoRecibo : styles.documentoFactura
-      ]}>
+    const esNotaCredito = (item) =>
+      item?.DocumentoTipo === 'NCF' || (item?.Origen || '').toLowerCase() === 'nota de credito';
+
+    const getEstiloDocumento = (item) => {
+      if (item?.DocumentoTipo === 'RCF') return styles.documentoRecibo;
+      if (esNotaCredito(item)) return styles.documentoNotaCredito;
+      return styles.documentoFactura;
+    };
+
+    const getIconoDocumento = (item) => {
+      if (item?.DocumentoTipo === 'RCF') return 'receipt';
+      if (esNotaCredito(item)) return 'receipt-text';
+      return 'file-document';
+    };
+
+    const getColorDocumento = (item) => {
+      if (item?.DocumentoTipo === 'RCF') return '#27ae60';
+      if (esNotaCredito(item)) return '#e67e22';
+      return '#3498db';
+    };
+
+    const renderItem = ({ item }) => {
+      const esNC = esNotaCredito(item);
+      return (
+      <View style={[styles.documentoCard, getEstiloDocumento(item)]}>
         <View style={styles.documentoHeader}>
           <View style={styles.documentoInfo}>
             <Text style={styles.documentoFecha}>{formatFecha(item.Fecha)}</Text>
@@ -114,9 +135,9 @@ const ClientesInfo = (props) => {
             </Text>
           </View>
           <MaterialCommunityIcons 
-            name={item.DocumentoTipo === "RCF" ? "receipt" : "file-document"} 
+            name={getIconoDocumento(item)} 
             size={24} 
-            color={item.DocumentoTipo === "RCF" ? "#27ae60" : "#3498db"} 
+            color={getColorDocumento(item)} 
           />
         </View>
         
@@ -125,13 +146,14 @@ const ClientesInfo = (props) => {
             Total: {item.DocumentoTipo === "RCF" ? "-" : ""}{formatImporte(item.ImporteTotal)}
           </Text>
           {item.DocumentoTipo !== "RCF" && (
-            <Text style={styles.documentoPagado}>
-              Pagado: {formatImporte(item.ImportePagado)}
+            <Text style={[styles.documentoPagado, esNC && styles.documentoUtilizado]}>
+              {esNC ? 'Utilizado' : 'Pagado'}: {formatImporte(item.ImportePagado)}
             </Text>
           )}
         </View>
       </View>
     );
+    };
 
     const renderEmptyState = () => (
       <View style={styles.emptyState}>
@@ -429,6 +451,13 @@ const ClientesInfo = (props) => {
   documentoFactura: {
     borderLeftWidth: 4,
     borderLeftColor: '#3498db',
+  },
+  documentoNotaCredito: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#e67e22',
+  },
+  documentoUtilizado: {
+    color: '#e67e22',
   },
   documentoHeader: {
     flexDirection: 'row',
