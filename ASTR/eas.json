@@ -20,6 +20,16 @@
       "android": {
         "buildType": "apk"
       }
+    },
+    "osvi2026": {
+      "distribution": "internal",
+      "node": "20.11.0",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_VARIANT": "osvi2026"
+      }
     }
   },
   "submit": {

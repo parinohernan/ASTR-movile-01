@@ -4,6 +4,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getClientes } from '../database/controllers/Clientes.Controller';
 import { nextPreventa, getConfiguracionDelStorage } from '../src/utils/storageConfigData';
+import { limpiarPreventaDeStorage } from '../src/utils/storageUtils';
 import { Searchbar } from 'react-native-paper';
 import checkServerHandler from '../src/utils/checkServerHandler';
 
@@ -84,9 +85,10 @@ const Clientes = ({ route }) => {
 
   const handleClientClick = async (cliente) => {
     try {
-    let preventaNumero = await nextPreventa(); 
+      await limpiarPreventaDeStorage();
+      let preventaNumero = await nextPreventa(); 
       let edit = false;
-    navigation.navigate('Preventa', { preventaNumero, cliente, edit });
+      navigation.navigate('Preventa', { preventaNumero, cliente, edit });
     } catch (error) {
       console.error("Error al crear preventa:", error);
       Alert.alert("Error", "No se pudo crear la preventa.");

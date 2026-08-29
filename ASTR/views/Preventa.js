@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, TextInput, Modal, Alert, ActivityIndicator} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useIsFocused, useFocusEffect} from '@react-navigation/native';
@@ -71,21 +71,9 @@ const Preventa = (props) => {
   const [loading, setLoading] = useState(false);
   // const [listaDePrecios,setListaDePrecios]=useState();
   
-  // Ref para trackear si ya se inicializó la preventa (limpieza inicial)
-  const inicializadoRef = useRef(false);
-
   useEffect(() => {
     const loadData = async () => {
       if (isFocused) {
-        // Si es una nueva preventa (no edición), limpiar el storage SOLO la primera vez
-        // para evitar que queden artículos de sesiones anteriores, pero no limpiar
-        // cuando se vuelve de agregar artículos
-        if (nueva && !edit && !inicializadoRef.current) {
-          console.log("Nueva preventa detectada - limpiando storage previo para evitar duplicados (primera vez)");
-          await limpiarPreventaDeStorage();
-          inicializadoRef.current = true; // Marcar como inicializado
-        }
-        // Cargar datos aquí
         cargarDatos();
       }
     };
@@ -110,9 +98,6 @@ const Preventa = (props) => {
   const cargarDatos = async () => {
     const carritoData = await obtenerPreventaDeStorage();
     // console.log("prv166 ",carritoData);
-    
-    // Eliminamos la doble verificación ya que ahora se controla con inicializadoRef
-    // La limpieza solo se hace una vez al inicio con el useEffect
     
     if (carritoData.length != 0) {
       setCarrito(carritoData.map(item => {

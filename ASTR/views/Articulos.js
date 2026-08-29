@@ -197,31 +197,34 @@ const Articulos = ({ route }) => {
       
       <View style={styles.articuloDetails}>
         <View style={styles.detailRow}>
-          <View style={styles.detailItem}>
+          <View style={styles.detailItemStock}>
             <MaterialCommunityIcons name="warehouse" size={16} color="#7f8c8d" />
-            <Text style={styles.detailText}>Stock: {item.existencia}</Text>
+            <Text style={styles.detailLabel}>Stock:</Text>
+            <Text style={styles.stockValue}>{item.existencia ?? '-'}</Text>
           </View>
-          
-          <View style={styles.detailItem}>
-            <MaterialCommunityIcons name="currency-usd" size={16} color="#27ae60" />
-            <Text style={styles.detailText}>${item?.precio?.toFixed(2)}</Text>
+
+          <View style={styles.detailRowRight}>
+            <View style={styles.detailItemPrice}>
+              <MaterialCommunityIcons name="currency-usd" size={16} color="#27ae60" />
+              <Text style={styles.priceText}>{item?.precio?.toFixed(2)}</Text>
+            </View>
+
+            <View style={styles.indicators}>
+              {item.frecuente && (
+                <View style={styles.frecuenteIndicator}>
+                  <MaterialCommunityIcons name="star" size={16} color="#f39c12" />
+                  <Text style={styles.frecuenteText}>F</Text>
+                </View>
+              )}
+
+              {item.seleccionados !== 0 && (
+                <View style={styles.cantidadIndicator}>
+                  <MaterialCommunityIcons name="check-circle" size={16} color="#27ae60" />
+                  <Text style={styles.cantidadText}>{item.seleccionados}</Text>
+                </View>
+              )}
+            </View>
           </View>
-          
-          <View style={styles.indicators}>
-            {item.frecuente && (
-              <View style={styles.frecuenteIndicator}>
-                <MaterialCommunityIcons name="star" size={16} color="#f39c12" />
-                <Text style={styles.frecuenteText}>F</Text>
-              </View>
-            )}
-            
-            {item.seleccionados !== 0 && (
-              <View style={styles.cantidadIndicator}>
-                <MaterialCommunityIcons name="check-circle" size={16} color="#27ae60" />
-                <Text style={styles.cantidadText}>{item.seleccionados}</Text>
-        </View>
-            )}
-           </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -631,6 +634,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  detailItemStock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    marginRight: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginLeft: 5,
+  },
+  stockValue: {
+    fontSize: 14,
+    color: '#2c3e50',
+    fontWeight: '600',
+    marginLeft: 4,
+    flexShrink: 0,
+  },
+  detailRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    marginLeft: 'auto',
+    gap: 8,
+  },
+  detailItemPrice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  priceText: {
+    fontSize: 14,
+    color: '#27ae60',
+    fontWeight: '600',
+    marginLeft: 5,
+    flexShrink: 0,
   },
   detailItem: {
     flexDirection: 'row',
@@ -645,6 +687,7 @@ const styles = StyleSheet.create({
   indicators: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
     gap: 10,
   },
   frecuenteIndicator: {
