@@ -98,7 +98,9 @@ const initDatabase = async (logs, setLogs) => {
           observacion TEXT, 
           fecha TEXT, 
           cantidadItems INTEGER, 
-          importeTotal REAL
+          importeTotal REAL,
+          latitud REAL,
+          longitud REAL
         )`);
         logs = handleLogs(logs, "Tabla preventaCabeza creada exitosamente", setLogs);
         console.log("Tabla preventaCabeza creada/verificada exitosamente");
@@ -236,6 +238,27 @@ const migrateDatabase = async () => {
           console.log("Columna iva agregada");
         } catch (error) {
           console.error("Error agregando iva:", error);
+        }
+      }
+
+      const cabezaInfo = db.getAllSync("PRAGMA table_info(preventaCabeza)");
+      const cabezaColumns = cabezaInfo.map((col) => col.name);
+
+      if (!cabezaColumns.includes('latitud')) {
+        try {
+          db.execSync("ALTER TABLE preventaCabeza ADD COLUMN latitud REAL");
+          console.log("Columna latitud agregada a preventaCabeza");
+        } catch (error) {
+          console.error("Error agregando latitud:", error);
+        }
+      }
+
+      if (!cabezaColumns.includes('longitud')) {
+        try {
+          db.execSync("ALTER TABLE preventaCabeza ADD COLUMN longitud REAL");
+          console.log("Columna longitud agregada a preventaCabeza");
+        } catch (error) {
+          console.error("Error agregando longitud:", error);
         }
       }
     });

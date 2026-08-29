@@ -27,6 +27,18 @@ export default {
       }
     },
     owner: "hernanpa",
-    plugins: ["expo-font", "expo-sqlite"]
+    plugins: [
+      "expo-font",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "expo-location",
+        {
+          locationAlwaysAndWhenInUsePermission:
+            "OSVI usa tu ubicación al guardar pedidos para registrar dónde se crearon.",
+        },
+      ],
+    ],
   }
 };

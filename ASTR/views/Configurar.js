@@ -4,7 +4,7 @@ import { Button } from 'react-native-elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { guardarConfiguracionEnStorage, getConfiguracionDelStorage, limpiarConfiguracionDelStorage, establecerConfiguracionPrueba } from '../src/utils/storageConfigData';
 import axios  from 'axios';
-import { getUsuarios, insertUsuariosFromAPI } from '../database/controllers/Usuarios.controler';
+import { getUsuarios } from '../database/controllers/Usuarios.controler';
 import { Searchbar } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { actualizarSoloVendedores } from '../handlers/actualizarApp';
@@ -12,6 +12,8 @@ import checkServerHandler from '../src/utils/checkServerHandler';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Clipboard from 'expo-clipboard';
+import { activarAccesoOnline } from '../src/services/accesoOsviService';
+import { aplicarProvisionLocal } from '../src/utils/provisionLocal';
 
 const Configurar = () => {
  
@@ -36,6 +38,10 @@ const Configurar = () => {
   // Nuevos estados para configuración por archivo
   const [isLoadingConfigFile, setIsLoadingConfigFile] = useState(false);
   const [configuracionMode, setConfiguracionMode] = useState('simple'); // 'simple' o 'advanced'
+  const [accesoCodigo, setAccesoCodigo] = useState('');
+  const [accesoClave, setAccesoClave] = useState('');
+  const [isActivandoAcceso, setIsActivandoAcceso] = useState(false);
+  const [mostrarRespaldoImport, setMostrarRespaldoImport] = useState(false);
 
   useEffect(() => {
     handleGetConfiguracion();
@@ -278,7 +284,7 @@ const Configurar = () => {
     
     const camposRequeridos = ['version', 'empresa', 'vendedor', 'configuracion'];
     const configRequeridos = ['endpoint', 'sucursal'];
-    const vendedorRequeridos = ['id', 'nombre', 'sucursal'];
+    const vendedorRequeridos = ['id', 'nombre'];
 
     // Verificar campos principales
     for (const campo of camposRequeridos) {
@@ -299,124 +305,53 @@ const Configurar = () => {
     // Verificar vendedor
     for (const campo of vendedorRequeridos) {
       if (!configData.vendedor[campo]) {
-        console.error(`❌ Campo de vendedor faltante: ${campo}`);
+        console.error(`❌ Campo de usuario faltante: ${campo}`);
         return false;
       }
+    }
+
+    if (!configData.vendedor.clave && !configData.vendedor.sucursal) {
+      console.error('❌ Falta clave o sucursal en vendedor');
+      return false;
     }
 
     console.log("✅ Validación exitosa");
     return true;
   };
 
-  // Aplicar configuración desde archivo
+  const normalizarPaqueteConfig = (configData) => ({
+    ...configData,
+    vendedor: {
+      ...configData.vendedor,
+      clave: configData.vendedor.clave || configData.vendedor.sucursal,
+    },
+  });
+
   const aplicarConfiguracionDesdeArchivo = async (configData) => {
+    const paquete = normalizarPaqueteConfig(configData);
+    const nuevaConfig = await aplicarProvisionLocal(paquete, { syncVendedores: true });
+    setConfiguracion(nuevaConfig);
+    await handeBuscarVendedores();
+  };
+
+  const handleActivarAccesoOnline = async () => {
+    if (!accesoCodigo.trim() || !accesoClave.trim()) {
+      Alert.alert('Error', 'Ingrese usuario y clave');
+      return;
+    }
+
+    setIsActivandoAcceso(true);
     try {
-      console.log("🔄 Aplicando configuración desde archivo:", configData);
-      
-      // Crear vendedor desde el archivo con la estructura correcta
-      const vendedor = {
-        codigo: configData.vendedor.id,        // La función insertUsuariosFromAPI espera 'codigo'
-        descripcion: configData.vendedor.nombre,
-        clave: configData.vendedor.sucursal    // Usar 'sucursal' como 'clave'
-      };
-
-      console.log("🔄 Vendedor creado:", vendedor);
-
-      // Insertar vendedor en la base de datos con parámetros correctos
-      const logs = [];
-      await insertUsuariosFromAPI([vendedor], logs, (newLogs) => {
-        console.log("Logs de inserción:", newLogs[newLogs.length - 1]);
+      const { config } = await activarAccesoOnline(accesoCodigo.trim(), accesoClave.trim(), {
+        syncVendedores: true,
       });
-      console.log("✅ Vendedor insertado en BD");
-
-      // Aplicar configuración con valores por defecto para campos faltantes
-      const nuevaConfig = {
-        ...configuracion,
-        endPoint: configData.configuracion.endpoint,
-        sucursal: configData.configuracion.sucursal,
-        vendedor: vendedor.codigo,  // Usar 'codigo' para la configuración
-        cantidadMaximaArticulos: configData.configuracion.cantidadMaximaArticulos || "18",
-        filtrarClientesPorVendedor: configData.configuracion.filtrarClientesPorVendedor !== false, // true por defecto
-        usaGeolocalizacion: configData.configuracion.usaGeolocalizacion !== false, // true por defecto
-        siguientePreventa: configData.configuracion.siguientePreventa || 100
-      };
-
-      console.log("⚙️ Nueva configuración:", nuevaConfig);
-
-      // Actualizar estado
-      setConfiguracion(nuevaConfig);
-
-      // Guardar en storage
-      await guardarConfiguracionEnStorage(nuevaConfig);
-      console.log("💾 Configuración guardada en storage");
-
-      // PASO 1: Sincronizar vendedores desde el endpoint
-      console.log("🔄 Sincronizando vendedores desde el endpoint...");
-      try {
-        if (await checkServerHandler()) {
-          const logs = [];
-          const setLogs = (newLogs) => {
-            console.log("Log de sincronización:", newLogs[newLogs.length - 1]);
-          };
-          
-          const resultado = await actualizarSoloVendedores(logs, setLogs);
-          
-          if (resultado.success) {
-            console.log("✅ Vendedores sincronizados desde el endpoint");
-          } else {
-            console.warn("⚠️ Error al sincronizar vendedores:", resultado.message);
-          }
-        } else {
-          console.warn("⚠️ No se puede conectar al servidor para sincronizar vendedores");
-        }
-      } catch (error) {
-        console.warn("⚠️ Error al sincronizar vendedores:", error);
-      }
-
-      // PASO 2: Recargar vendedores de la base de datos local
+      setConfiguracion(config);
       await handeBuscarVendedores();
-      console.log("🔄 Vendedores recargados desde BD local");
-
-      // PASO 3: Verificar que el vendedor se seleccionó correctamente
-      const vendedoresActualizados = await getUsuarios();
-      const vendedorSeleccionado = vendedoresActualizados.find(v => v.id === vendedor.codigo);
-      
-      if (vendedorSeleccionado) {
-        console.log("✅ Vendedor seleccionado automáticamente:", vendedorSeleccionado.descripcion);
-      } else {
-        console.warn("⚠️ No se pudo encontrar el vendedor en la lista actualizada");
-        console.log("🔍 Vendedores disponibles:", vendedoresActualizados.map(v => `${v.id}: ${v.descripcion}`));
-        console.log("🔍 Buscando vendedor con ID:", vendedor.codigo);
-        
-        // Si no se encuentra, intentar insertar el vendedor localmente como respaldo
-        console.log("🔄 Insertando vendedor localmente como respaldo...");
-        const logs = [];
-        await insertUsuariosFromAPI([vendedor], logs, (newLogs) => {
-          console.log("Logs de inserción local:", newLogs[newLogs.length - 1]);
-        });
-        
-        // Recargar nuevamente
-        await handeBuscarVendedores();
-        const vendedoresFinales = await getUsuarios();
-        const vendedorFinal = vendedoresFinales.find(v => v.id === vendedor.codigo);
-        
-        if (vendedorFinal) {
-          console.log("✅ Vendedor insertado localmente y seleccionado:", vendedorFinal.descripcion);
-        } else {
-          console.error("❌ No se pudo insertar ni encontrar el vendedor");
-        }
-      }
-
-      console.log("✅ Configuración aplicada exitosamente:", {
-        empresa: configData.empresa,
-        vendedor: vendedor.descripcion,
-        vendedorId: vendedor.codigo,
-        endpoint: configData.configuracion.endpoint
-      });
-
+      Alert.alert('Éxito', 'Acceso activado y guardado en el dispositivo');
     } catch (error) {
-      console.error('❌ Error al aplicar configuración:', error);
-      throw error;
+      Alert.alert('Error', error.message || 'No se pudo activar el acceso online');
+    } finally {
+      setIsActivandoAcceso(false);
     }
   };
 
@@ -565,69 +500,112 @@ const Configurar = () => {
         </View>
 
         {configuracionMode === 'simple' ? (
-          /* Configuración Simplificada */
           <View style={styles.simpleConfig}>
-            <Text style={styles.sectionTitle}>Configuración Rápida</Text>
-            
-            {/* Botón Importar */}
+            <Text style={styles.sectionTitle}>Activar acceso online</Text>
+            <Text style={styles.instructionsText}>
+              Ingresá tu código y clave. La app guardará la configuración localmente para uso offline.
+            </Text>
+
+            <Text style={styles.label}>Usuario</Text>
+            <TextInput
+              style={styles.input}
+              value={accesoCodigo}
+              onChangeText={setAccesoCodigo}
+              placeholder="usuario"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Clave</Text>
+            <TextInput
+              style={styles.input}
+              value={accesoClave}
+              onChangeText={setAccesoClave}
+              placeholder="1234"
+              secureTextEntry
+              autoCapitalize="none"
+            />
+
             <TouchableOpacity
               style={[styles.actionButton, styles.importButton]}
-              onPress={handleImportarConfiguracion}
-              disabled={isLoadingConfigFile}
+              onPress={handleActivarAccesoOnline}
+              disabled={isActivandoAcceso}
             >
               <View style={styles.buttonContent}>
-                <MaterialCommunityIcons name="file-import" size={28} color="#ffffff" />
+                <MaterialCommunityIcons name="cloud-sync" size={28} color="#ffffff" />
                 <View style={styles.buttonTextContainer}>
                   <Text style={styles.actionButtonText}>
-                    {isLoadingConfigFile ? "Importando..." : "Importar Configuración"}
+                    {isActivandoAcceso ? 'Activando...' : 'Activar / Actualizar acceso'}
                   </Text>
-                  <Text style={styles.actionButtonSubtext}>Selecciona tu archivo .json</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Botón Crear Backup */}
-            <TouchableOpacity
-              style={[styles.actionButton, styles.backupButton]}
-              onPress={handleCrearBackup}
-            >
-              <View style={styles.buttonContent}>
-                <MaterialCommunityIcons name="backup-restore" size={28} color="#ffffff" />
-                <View style={styles.buttonTextContainer}>
-                  <Text style={styles.actionButtonText}>Crear Backup</Text>
-                  <Text style={styles.actionButtonSubtext}>Guardar configuración actual</Text>
+                  <Text style={styles.actionButtonSubtext}>Requiere conexión a internet</Text>
                 </View>
               </View>
             </TouchableOpacity>
 
             <View style={styles.currentConfig}>
-              <Text style={styles.currentConfigTitle}>Configuración Actual:</Text>
+              <Text style={styles.currentConfigTitle}>Configuración actual</Text>
               <Text style={styles.currentConfigText}>
-                {configuracion.endPoint ? `📍 ${configuracion.endPoint}` : '❌ No configurado'}
+                {configuracion.empresaCodigo ? `Empresa: ${configuracion.empresaCodigo}` : 'Empresa: no sincronizada'}
               </Text>
               <Text style={styles.currentConfigText}>
-                {configuracion.sucursal ? ` Sucursal: ${configuracion.sucursal}` : '❌ Sucursal no configurada'}
+                {configuracion.endPoint ? `Endpoint: ${configuracion.endPoint}` : 'Endpoint: no configurado'}
               </Text>
               <Text style={styles.currentConfigText}>
-                {selectedVendedor ? ` ${selectedVendedor.descripcion}` : '❌ Vendedor no seleccionado'}
+                {configuracion.sucursal ? `Sucursal: ${configuracion.sucursal}` : 'Sucursal: no configurada'}
               </Text>
+              <Text style={styles.currentConfigText}>
+                {selectedVendedor ? `Vendedor: ${selectedVendedor.descripcion}` : 'Vendedor: no seleccionado'}
+              </Text>
+              {configuracion.ultimaSincronizacionAcceso ? (
+                <Text style={styles.currentConfigText}>
+                  Última sync: {new Date(configuracion.ultimaSincronizacionAcceso).toLocaleString()}
+                </Text>
+              ) : null}
             </View>
 
-            <View style={styles.instructions}>
-              <Text style={styles.instructionsTitle}>📋 Instrucciones:</Text>
-              <Text style={styles.instructionsText}>
-                1. Recibe el archivo de configuración por WhatsApp
-              </Text>
-              <Text style={styles.instructionsText}>
-                2. Toca "Importar Configuración"
-              </Text>
-              <Text style={styles.instructionsText}>
-                3. Selecciona el archivo .json recibido
-              </Text>
-              <Text style={styles.instructionsText}>
-                4. ¡Listo! Tu app estará configurada
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={styles.respaldoToggle}
+              onPress={() => setMostrarRespaldoImport(!mostrarRespaldoImport)}
+            >
+              <MaterialCommunityIcons
+                name={mostrarRespaldoImport ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color="#7f8c8d"
+              />
+              <Text style={styles.respaldoToggleText}>Respaldo: importar JSON / backup</Text>
+            </TouchableOpacity>
+
+            {mostrarRespaldoImport ? (
+              <View>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.importButton]}
+                  onPress={handleImportarConfiguracion}
+                  disabled={isLoadingConfigFile}
+                >
+                  <View style={styles.buttonContent}>
+                    <MaterialCommunityIcons name="file-import" size={28} color="#ffffff" />
+                    <View style={styles.buttonTextContainer}>
+                      <Text style={styles.actionButtonText}>
+                        {isLoadingConfigFile ? 'Importando...' : 'Importar configuración JSON'}
+                      </Text>
+                      <Text style={styles.actionButtonSubtext}>Archivo recibido por WhatsApp</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.backupButton]}
+                  onPress={handleCrearBackup}
+                >
+                  <View style={styles.buttonContent}>
+                    <MaterialCommunityIcons name="backup-restore" size={28} color="#ffffff" />
+                    <View style={styles.buttonTextContainer}>
+                      <Text style={styles.actionButtonText}>Crear backup</Text>
+                      <Text style={styles.actionButtonSubtext}>Guardar configuración actual</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         ) : (
           /* Configuración Avanzada (actual) */
@@ -978,6 +956,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#34495e',
     marginBottom: 5,
+  },
+  respaldoToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+    paddingVertical: 8,
+  },
+  respaldoToggleText: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: '#7f8c8d',
+    fontWeight: '600',
   },
   advancedConfig: {
     marginBottom: 20,

@@ -56,6 +56,13 @@ const UserMenuPPal = ({ route }) => {
       color: '#27ae60',
       route: 'Sincronizar'
     },
+    { 
+      name: 'Configuración', 
+      icon: 'cog',
+      description: 'Activar o actualizar acceso',
+      color: '#9b59b6',
+      route: 'Configuracion'
+    },
   ];
 
   const verServer = async () => {

@@ -6,7 +6,11 @@ const handleLogs = (logs, mensaje, setLogs) => {
   return [...logs, mensaje];
 };
 
-const insertUsuariosFromAPI = (data, logs, setLogs) => {
+const insertUsuariosFromAPI = (data, logs, setLogs, options = {}) => {
+  const { fullSync = false } = options;
+  let usuariosProcesados = 0;
+  let usuariosEliminados = 0;
+
   logs = handleLogs(
     logs,
     "Verificando y creando tabla usuarios si no existe...",
@@ -15,7 +19,6 @@ const insertUsuariosFromAPI = (data, logs, setLogs) => {
 
   try {
     db.withTransactionSync(() => {
-      // Verificar y crear la tabla usuarios si no existe
       db.execSync("CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT)");
       logs = handleLogs(
         logs,
@@ -23,14 +26,23 @@ const insertUsuariosFromAPI = (data, logs, setLogs) => {
         setLogs
       );
 
-      // Insertar datos en la tabla usuarios
+      const codigosEnDB = new Set();
+      if (fullSync) {
+        const rows = db.getAllSync("SELECT id FROM usuarios");
+        rows.forEach((row) => codigosEnDB.add(String(row.id)));
+      }
+
       data.forEach((item) => {
         try {
-          const result = db.runSync(
+          const codigo = String(item.codigo);
+          db.runSync(
             "INSERT OR REPLACE INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)",
-            [item.codigo, item.descripcion, item.clave]
+            [codigo, item.descripcion, item.clave]
           );
-          console.log("Usuario insertado con ID: ", result.lastInsertRowId);
+          usuariosProcesados++;
+          if (fullSync) {
+            codigosEnDB.delete(codigo);
+          }
         } catch (error) {
           console.log(
             "Error al insertar usuario: ",
@@ -46,10 +58,35 @@ const insertUsuariosFromAPI = (data, logs, setLogs) => {
           );
         }
       });
+
+      if (fullSync) {
+        codigosEnDB.forEach((codigo) => {
+          try {
+            db.runSync("DELETE FROM usuarios WHERE id = ?", [codigo]);
+            usuariosEliminados++;
+          } catch (error) {
+            console.log("Error al eliminar usuario:", codigo, error);
+            logs = handleLogs(
+              logs,
+              "Error al eliminar usuario: " + error.message + " " + codigo,
+              setLogs
+            );
+          }
+        });
+      }
     });
 
-    handleLogs(logs, "Transacción completada exitosamente", setLogs);
-    return Promise.resolve();
+    if (fullSync) {
+      handleLogs(
+        logs,
+        `Sincronización de vendedores: ${usuariosProcesados} procesados, ${usuariosEliminados} eliminados`,
+        setLogs
+      );
+    } else {
+      handleLogs(logs, "Transacción completada exitosamente", setLogs);
+    }
+
+    return Promise.resolve({ usuariosProcesados, usuariosEliminados });
   } catch (error) {
     handleLogs(logs, "Error en la transacción: " + error.message, setLogs);
     return Promise.reject(error);

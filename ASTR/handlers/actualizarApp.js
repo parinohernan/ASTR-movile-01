@@ -30,9 +30,13 @@ const actualizarVendedores = async (logs, setLogs) => {
       const data = response.data;
         logs = handleLogs(logs, `Se obtuvieron ${data.length} vendedores del servidor`, setLogs);
       
-      // Inserta los usuarios desde la API a la base de datos
-      await insertUsuariosFromAPI(data, logs, setLogs);
-        logs = handleLogs(logs, "Sincronización de vendedores completada", setLogs);
+      // Reemplaza el listado local: elimina vendedores que ya no vienen del servidor
+      const resultado = await insertUsuariosFromAPI(data, logs, setLogs, { fullSync: true });
+        logs = handleLogs(
+          logs,
+          `Sincronización de vendedores completada: ${resultado.usuariosProcesados} procesados, ${resultado.usuariosEliminados} eliminados`,
+          setLogs
+        );
         
     } catch (error) {
         console.error('Error en actualizarVendedores:', error);

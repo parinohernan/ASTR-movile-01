@@ -9,6 +9,18 @@ import {
 } from "../database/controllers/Usuarios.controler";
 import { initDatabase } from "../database/database";
 import { version, empresa, producto } from "../src/constantes/constantes";
+import NetInfo from '@react-native-community/netinfo';
+import { activarAccesoOnline, registrarYActivar } from "../src/services/accesoOsviService";
+import { validarClaveRegistro, REQUISITOS_CLAVE_TEXTO } from "../src/utils/clavePolicy";
+import {
+  authenticateWithBiometric,
+  disableBiometricLogin,
+  enableBiometricLogin,
+  getBiometricCredentials,
+  getBiometricLabel,
+  isBiometricAvailable,
+  isBiometricLoginEnabled,
+} from "../src/services/biometricLoginService";
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -24,6 +36,16 @@ const LoginScreen = () => {
   const [vendedor, setVendedor] = useState({});
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [registroModalVisible, setRegistroModalVisible] = useState(false);
+  const [registroCodigo, setRegistroCodigo] = useState("");
+  const [registroClave, setRegistroClave] = useState("");
+  const [registroNombre, setRegistroNombre] = useState("");
+  const [showRegistroClave, setShowRegistroClave] = useState(false);
+  const [isLoadingOnline, setIsLoadingOnline] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState("huella digital");
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,24 +77,140 @@ const LoginScreen = () => {
   }, []);
 
   useEffect(() => {
+    const loadBiometricStatus = async () => {
+      const available = await isBiometricAvailable();
+      setBiometricAvailable(available);
+
+      if (!available) {
+        setBiometricEnabled(false);
+        return;
+      }
+
+      const [label, enabled] = await Promise.all([
+        getBiometricLabel(),
+        isBiometricLoginEnabled(),
+      ]);
+      setBiometricLabel(label);
+      setBiometricEnabled(enabled);
+    };
+
+    loadBiometricStatus();
+  }, []);
+
+  useEffect(() => {
     setMostrar(form.vendedor.length > 0 && form.password.length >= 3);
   }, [form]);
 
-  const isAuthorized = () => {
-    for (let i = 0; i < usuarios.length; i++) {
-      const element = usuarios[i];
-      if (form.password === element.clave && form.vendedor === element.id) {
-        console.log("Usuario ", element, " log", form);
-        const vendedorData = {
-          clave: form.password,
-          id: form.vendedor,
+  const authorizeWithCredentials = (vendedorId, clave, usuariosList = usuarios) => {
+    for (let i = 0; i < usuariosList.length; i++) {
+      const element = usuariosList[i];
+      if (clave === element.clave && vendedorId === element.id) {
+        return {
+          clave,
+          id: vendedorId,
           descripcion: element.descripcion,
         };
-        setVendedor(vendedorData);
-        return vendedorData;
       }
     }
     return false;
+  };
+
+  const isAuthorized = () => {
+    const vendedorData = authorizeWithCredentials(form.vendedor, form.password);
+    if (vendedorData) {
+      console.log("Usuario autorizado:", vendedorData);
+      setVendedor(vendedorData);
+    }
+    return vendedorData;
+  };
+
+  const offerBiometricOptIn = (vendedorId, clave) => {
+    if (!biometricAvailable || biometricEnabled) {
+      return;
+    }
+
+    Alert.alert(
+      "Ingreso con huella",
+      `¿Activar ingreso con ${biometricLabel}?`,
+      [
+        { text: "Ahora no", style: "cancel" },
+        {
+          text: "Activar",
+          onPress: async () => {
+            try {
+              await enableBiometricLogin(vendedorId, clave);
+              setBiometricEnabled(true);
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                error.message || "No se pudo activar el ingreso biométrico"
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const navigateAfterLogin = (vendedorData, vendedorId, clave) => {
+    setTimeout(() => {
+      navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
+      offerBiometricOptIn(vendedorId, clave);
+    }, 100);
+  };
+
+  const handleBiometricLogin = async () => {
+    if (isBiometricLoading) {
+      return;
+    }
+
+    setIsBiometricLoading(true);
+    try {
+      const authenticated = await authenticateWithBiometric("Ingresar a OSVI");
+      if (!authenticated) {
+        return;
+      }
+
+      const credentials = await getBiometricCredentials({ requireAuth: false });
+      if (!credentials) {
+        await disableBiometricLogin();
+        setBiometricEnabled(false);
+        Alert.alert(
+          "Error",
+          "No hay credenciales guardadas. Ingresá con código y clave."
+        );
+        return;
+      }
+
+      const vendedorData = authorizeWithCredentials(
+        credentials.vendedorId,
+        credentials.clave
+      );
+
+      if (!vendedorData) {
+        await disableBiometricLogin();
+        setBiometricEnabled(false);
+        Alert.alert(
+          "Acceso desactualizado",
+          "Tu usuario o clave cambió. Ingresá manualmente y volvé a activar la huella."
+        );
+        return;
+      }
+
+      setForm({
+        vendedor: credentials.vendedorId,
+        password: credentials.clave,
+      });
+      setVendedor(vendedorData);
+      navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error.message || "No se pudo ingresar con biometría"
+      );
+    } finally {
+      setIsBiometricLoading(false);
+    }
   };
 
   const handleVendedor = (text) => {
@@ -81,6 +219,106 @@ const LoginScreen = () => {
 
   const handlePassword = (text) => {
     setForm({ vendedor: form.vendedor, password: text });
+  };
+
+  const recargarUsuarios = async () => {
+    const usuariosFromDB = await getUsuarios();
+    setUsuarios(usuariosFromDB);
+    return usuariosFromDB;
+  };
+
+  const tieneInternet = async () => {
+    const state = await NetInfo.fetch();
+    return state.isConnected && state.isInternetReachable !== false;
+  };
+
+  const handleBuscarAccesoOnline = async () => {
+    if (!form.vendedor.trim() || !form.password.trim()) {
+      Alert.alert("Error", "Complete código y contraseña para buscar acceso online");
+      return;
+    }
+
+    if (!(await tieneInternet())) {
+      Alert.alert("Sin conexión", "Necesitás internet para buscar acceso online");
+      return;
+    }
+
+    setIsLoadingOnline(true);
+    try {
+      await activarAccesoOnline(form.vendedor.trim(), form.password.trim());
+      await recargarUsuarios();
+      Alert.alert("Éxito", "Acceso encontrado y guardado. Ya podés ingresar offline.");
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", error.message || "No se encontró acceso online");
+    } finally {
+      setIsLoadingOnline(false);
+    }
+  };
+
+  const abrirRegistroModal = () => {
+    setRegistroCodigo(form.vendedor);
+    setRegistroClave(form.password);
+    setRegistroModalVisible(true);
+  };
+
+  const cerrarRegistroModal = () => {
+    setRegistroModalVisible(false);
+    setRegistroCodigo("");
+    setRegistroClave("");
+    setRegistroNombre("");
+    setShowRegistroClave(false);
+  };
+
+  const handleRegistrarse = async () => {
+    if (!registroCodigo.trim() || !registroClave.trim() || registroNombre.trim().length < 2) {
+      Alert.alert("Error", "Complete código, clave y nombre (mínimo 2 caracteres)");
+      return;
+    }
+
+    const claveValida = validarClaveRegistro(registroClave.trim());
+    if (!claveValida.ok) {
+      Alert.alert("Clave inválida", claveValida.error);
+      return;
+    }
+
+    if (!(await tieneInternet())) {
+      Alert.alert("Sin conexión", "El registro requiere conexión a internet");
+      return;
+    }
+
+    setIsLoadingOnline(true);
+    try {
+      const codigo = registroCodigo.trim();
+      const clave = registroClave.trim();
+      const nombre = registroNombre.trim();
+
+      await registrarYActivar(codigo, clave, nombre);
+      await recargarUsuarios();
+      setForm({
+        vendedor: codigo,
+        password: clave,
+      });
+      cerrarRegistroModal();
+      Alert.alert(
+        "Registro exitoso",
+        "Tu cuenta fue creada en modo TEST. Ya podés ingresar offline.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              if (biometricAvailable && !biometricEnabled) {
+                offerBiometricOptIn(codigo, clave);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert("Error", error.message || "No se pudo completar el registro");
+    } finally {
+      setIsLoadingOnline(false);
+    }
   };
 
   const handleIngresar = async () => {
@@ -118,10 +356,7 @@ const LoginScreen = () => {
     const vendedorData = isAuthorized();
     if (vendedorData) {
       console.log("✅ Vendedor autorizado: ", vendedorData);
-      // Pequeño delay para asegurar que los datos se procesen
-      setTimeout(() => {
-        navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
-      }, 100);
+      navigateAfterLogin(vendedorData, form.vendedor, form.password);
       return;
     }
 
@@ -176,7 +411,7 @@ const LoginScreen = () => {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Código de Vendedor"
+                  placeholder="Usuario"
                   placeholderTextColor="#95a5a6"
                   onChangeText={handleVendedor}
                   value={form.vendedor}
@@ -235,13 +470,30 @@ const LoginScreen = () => {
                 {mostrar ? "Iniciar Sesión" : "Completa los campos"}
               </Button>
 
+              {biometricAvailable && biometricEnabled ? (
+                <Button
+                  mode="outlined"
+                  onPress={handleBiometricLogin}
+                  style={styles.biometricButton}
+                  labelStyle={styles.biometricButtonText}
+                  loading={isBiometricLoading}
+                  disabled={isBiometricLoading}
+                  icon={({ size, color }) => (
+                    <MaterialCommunityIcons name="fingerprint" size={size} color={color} />
+                  )}
+                >
+                  Ingresar con {biometricLabel}
+                </Button>
+              ) : null}
+
               <Button
                 mode="outlined"
-                onPress={() => navigation.navigate("Home", { form: { vendedor: "root", password: "root" } })}
-                style={styles.configButton}
-                labelStyle={styles.configButtonText}
+                onPress={abrirRegistroModal}
+                style={styles.registerButton}
+                labelStyle={styles.registerButtonText}
+                disabled={isLoadingOnline}
               >
-                Configuración
+                Registrarse (online)
               </Button>
             </View>
 
@@ -277,7 +529,7 @@ const LoginScreen = () => {
             />
             <Text style={styles.modalTitle}>Error de Autenticación</Text>
             <Text style={styles.modalMessage}>
-              El código de vendedor o la contraseña son incorrectos.
+              El usuario o la contraseña son incorrectos.
             </Text>
             <View style={styles.modalButtons}>
               <Button
@@ -289,10 +541,98 @@ const LoginScreen = () => {
               </Button>
               <Button
                 mode="outlined"
+                onPress={handleBuscarAccesoOnline}
+                style={styles.modalButton}
+                loading={isLoadingOnline}
+                disabled={isLoadingOnline}
+              >
+                Buscar acceso online
+              </Button>
+              <Button
+                mode="outlined"
                 onPress={resetForm}
                 style={styles.modalButton}
               >
                 Limpiar campos
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={registroModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={cerrarRegistroModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <MaterialCommunityIcons
+              name="account-plus"
+              size={60}
+              color="#3498db"
+              style={styles.modalIcon}
+            />
+            <Text style={styles.modalTitle}>Registrarse</Text>
+            <Text style={styles.modalMessage}>
+              Se creará una cuenta en empresa TEST. Luego podés ingresar sin internet.
+            </Text>
+            <TextInput
+              style={styles.registroInput}
+              placeholder="Usuario"
+              placeholderTextColor="#95a5a6"
+              value={registroCodigo}
+              onChangeText={setRegistroCodigo}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.registroClaveRow}>
+              <TextInput
+                style={[styles.registroInput, styles.registroClaveInput]}
+                placeholder="Clave"
+                placeholderTextColor="#95a5a6"
+                value={registroClave}
+                onChangeText={setRegistroClave}
+                secureTextEntry={!showRegistroClave}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity
+                style={styles.registroEyeIcon}
+                onPress={() => setShowRegistroClave(!showRegistroClave)}
+              >
+                <MaterialCommunityIcons
+                  name={showRegistroClave ? "eye-off" : "eye"}
+                  size={22}
+                  color="#7f8c8d"
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.registroHint}>{REQUISITOS_CLAVE_TEXTO}</Text>
+            <TextInput
+              style={styles.registroInput}
+              placeholder="Nombre completo"
+              placeholderTextColor="#95a5a6"
+              value={registroNombre}
+              onChangeText={setRegistroNombre}
+            />
+            <View style={styles.modalButtons}>
+              <Button
+                mode="contained"
+                onPress={handleRegistrarse}
+                style={styles.modalButton}
+                loading={isLoadingOnline}
+                disabled={isLoadingOnline}
+              >
+                Crear cuenta
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={cerrarRegistroModal}
+                style={styles.modalButton}
+              >
+                Cancelar
               </Button>
             </View>
           </View>
@@ -392,16 +732,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  configButton: {
+  biometricButton: {
     borderColor: "#ffffff",
     borderWidth: 2,
     borderRadius: 10,
     paddingVertical: 8,
+    marginBottom: 15,
   },
-  configButtonText: {
+  biometricButtonText: {
     color: "#ffffff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
+  },
+  registerButton: {
+    borderColor: "#ffffff",
+    borderWidth: 2,
+    borderRadius: 10,
+    paddingVertical: 8,
+    marginBottom: 15,
+  },
+  registerButtonText: {
+    color: "#ffffff",
   },
   attemptsText: {
     textAlign: "center",
@@ -458,14 +809,44 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     lineHeight: 22,
   },
-  modalButtons: {
+  registroInput: {
+    width: "100%",
+    height: 44,
+    borderWidth: 1,
+    borderColor: "#bdc3c7",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    color: "#2c3e50",
+    backgroundColor: "#fff",
+  },
+  registroClaveRow: {
+    width: "100%",
     flexDirection: "row",
-    justifyContent: "space-around",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  registroClaveInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  registroEyeIcon: {
+    marginLeft: 8,
+    padding: 8,
+  },
+  registroHint: {
+    width: "100%",
+    fontSize: 12,
+    color: "#7f8c8d",
+    marginBottom: 8,
+    lineHeight: 16,
+  },
+  modalButtons: {
+    flexDirection: "column",
     width: "100%",
   },
   modalButton: {
-    flex: 1,
-    marginHorizontal: 5,
+    marginVertical: 4,
   },
 });
 

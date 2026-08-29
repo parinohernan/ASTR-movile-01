@@ -2,22 +2,23 @@ import { db } from '../database';
 import { limpiarPreventaDeStorage } from '../../src/utils/storageUtils';
 import { mas1NexPreventa } from '../../src/utils/storageConfigData';
 import { configuracionVendedor, configuracionSucursal } from '../../src/utils/storageConfigData';
+import { obtenerUbicacionPedido } from '../../src/utils/geolocationService';
 
 const syncPreventas = () => {
     //sube las preventas a la BDD del servidor
     console.log("Subiento preventas al servidor");
 };
 
-const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, importeTotal, vendedor, sucursal) => {
+const grabarCabezaPreventaEnBDD = async (numero, nota, cliente, cantItems, importeTotal, vendedor, sucursal, latitud = null, longitud = null) => {
     const fecha = new Date().toISOString();  // Formato ISO 8601
     
-    console.log('PrvControler51. grabando cabeza en la bdd numero, cliente:', numero, cliente, vendedor, nota, fecha, cantItems, importeTotal, "suc", sucursal);
+    console.log('PrvControler51. grabando cabeza en la bdd numero, cliente:', numero, cliente, vendedor, nota, fecha, cantItems, importeTotal, "suc", sucursal, "lat", latitud, "lng", longitud);
     
     try {
         db.withTransactionSync(() => {
             const result = db.runSync(
-                'INSERT OR REPLACE INTO preventaCabeza (id, cliente, vendedor, observacion, fecha, cantidadItems, importeTotal) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [numero, cliente, vendedor, nota, fecha, cantItems, importeTotal]
+                'INSERT OR REPLACE INTO preventaCabeza (id, cliente, vendedor, observacion, fecha, cantidadItems, importeTotal, latitud, longitud) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [numero, cliente, vendedor, nota, fecha, cantItems, importeTotal, latitud, longitud]
             );
             console.log('Cabeza insertada o actualizada con ID:', result.lastInsertRowId, numero, cliente, vendedor, nota, fecha, cantItems, importeTotal);
         });
@@ -61,9 +62,21 @@ const grabarPreventaEnBDD = async (numero, nota, cliente, items) => {
         console.error("no tenes items cargados");
         return;
     }
+
+    const { latitud, longitud } = await obtenerUbicacionPedido();
     
     try {
-        await grabarCabezaPreventaEnBDD(numero, nota, cliente, items.length, importeTotal, vendedor, sucursal);
+        await grabarCabezaPreventaEnBDD(
+            numero,
+            nota,
+            cliente,
+            items.length,
+            importeTotal,
+            vendedor,
+            sucursal,
+            latitud,
+            longitud
+        );
         await grabarItemsPreventaEnBDD(numero, items);
         limpiarPreventaDeStorage();
         mas1NexPreventa();
@@ -98,7 +111,7 @@ const validarPreventaParaEnvio = (preventa) => {
     }
     
     if (!preventa.VendedorCodigo) {
-        errores.push("Falta código de vendedor");
+        errores.push("Falta usuario");
     }
     
     if (preventa.ImporteTotal === null || preventa.ImporteTotal === undefined || preventa.ImporteTotal < 0) {
@@ -179,7 +192,7 @@ const asyncPreventasBDDToArray = async () => {
     
     try {
         const rows = db.getAllSync(
-            'SELECT preventaCabeza.cantidadItems, preventaCabeza.vendedor, preventaCabeza.observacion, preventaCabeza.fecha, preventaCabeza.id as DocumentoNumero, clientes.id as ClienteCodigo, clientes.descripcion as ClienteDescripcion, preventaCabeza.importetotal as ImporteTotal FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC'
+            'SELECT preventaCabeza.cantidadItems, preventaCabeza.vendedor, preventaCabeza.observacion, preventaCabeza.fecha, preventaCabeza.latitud, preventaCabeza.longitud, preventaCabeza.id as DocumentoNumero, clientes.id as ClienteCodigo, clientes.descripcion as ClienteDescripcion, preventaCabeza.importetotal as ImporteTotal FROM preventaCabeza JOIN clientes ON preventaCabeza.cliente = clientes.id ORDER BY preventaCabeza.id DESC'
         );
         
         const preventasArray = rows.map((row) => {
@@ -199,6 +212,8 @@ const asyncPreventasBDDToArray = async () => {
                 ListaNumero: 1,
                 ImporteBonificado: 0,
                 PagoTipo: "CC",
+                Latitud: row.latitud ?? null,
+                Longitud: row.longitud ?? null,
                 items: []
             };
         });
