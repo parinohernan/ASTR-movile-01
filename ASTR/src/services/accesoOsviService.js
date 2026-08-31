@@ -73,14 +73,38 @@ export const refreshEnSheet = async (codigo_vendedor, clave) => {
   return callSheet({ action: 'refresh', codigo_vendedor, clave });
 };
 
+export const actualizarSiguientePreventaEnSheet = async (
+  codigo_vendedor,
+  clave,
+  siguientePreventa
+) => {
+  return callSheet({
+    action: 'update_siguiente_preventa',
+    codigo_vendedor,
+    clave,
+    siguiente_preventa: Number(siguientePreventa),
+  });
+};
+
+const PROVISION_DEFAULTS = {
+  syncVendedores: false,
+  preservarPreventas: true,
+};
+
 export const activarAccesoOnline = async (codigo_vendedor, clave, options = {}) => {
   const paquete = await loginEnSheet(codigo_vendedor, clave);
-  const config = await aplicarProvisionLocal(paquete, options);
+  const config = await aplicarProvisionLocal(paquete, {
+    ...PROVISION_DEFAULTS,
+    ...options,
+  });
   return { paquete, config };
 };
 
 export const registrarYActivar = async (codigo_vendedor, clave, nombre, options = {}) => {
   const paquete = await registrarEnSheet(codigo_vendedor, clave, nombre);
-  const config = await aplicarProvisionLocal(paquete, options);
+  const config = await aplicarProvisionLocal(paquete, {
+    ...PROVISION_DEFAULTS,
+    ...options,
+  });
   return { paquete, config };
 };

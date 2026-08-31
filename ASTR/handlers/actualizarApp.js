@@ -5,7 +5,10 @@ import { insertUsuariosFromAPI } from '../database/controllers/Usuarios.controle
 import { insertClientesFromAPI } from '../database/controllers/Clientes.Controller';
 import { preventasBDDToArray } from '../database/controllers/Preventa.Controller';
 import { borrarContenidoPreventasEnBDD } from '../database/controllers/Preventa.Controller';
-import { configuracionEndPoint } from '../src/utils/storageConfigData';
+import { configuracionEndPoint, getConfiguracionDelStorage, guardarConfiguracionEnStorage } from '../src/utils/storageConfigData';
+import { getClaveVendedor } from '../database/controllers/Usuarios.controler';
+import { actualizarSiguientePreventaEnSheet } from '../src/services/accesoOsviService';
+import { calcularSiguienteTrasEnvio } from '../src/utils/preventaNumeracion';
 
 const handleLogs = (logs, mensaje, setLogs) => {
   console.log("handleLogs actualizaAPP ",mensaje);
@@ -410,6 +413,46 @@ const enviarPreventas = async (logs, setLogs) => {
       if (!mensajes.hayErrores || preventasConError.length === 0) {
           await borrarContenidoPreventasEnBDD();
           logs = handleLogs(logs, ("✅ Preventas borradas correctamente"),setLogs);
+
+          try {
+            const conf = await getConfiguracionDelStorage();
+            const nuevoSiguiente = calcularSiguienteTrasEnvio(preventas, conf);
+            await guardarConfiguracionEnStorage({
+              ...conf,
+              siguientePreventa: nuevoSiguiente,
+            });
+            logs = handleLogs(
+              logs,
+              `Siguiente preventa local actualizada a ${nuevoSiguiente}`,
+              setLogs
+            );
+
+            const clave = getClaveVendedor(conf.vendedor);
+            if (clave) {
+              await actualizarSiguientePreventaEnSheet(
+                conf.vendedor,
+                clave,
+                nuevoSiguiente
+              );
+              logs = handleLogs(
+                logs,
+                `Siguiente preventa sincronizada en acceso online (${nuevoSiguiente})`,
+                setLogs
+              );
+            } else {
+              logs = handleLogs(
+                logs,
+                "⚠️ No se pudo sincronizar siguiente preventa: clave local no encontrada",
+                setLogs
+              );
+            }
+          } catch (syncError) {
+            logs = handleLogs(
+              logs,
+              `⚠️ Preventas enviadas pero falló sync de numeración: ${syncError.message}`,
+              setLogs
+            );
+          }
       } else {
           logs = handleLogs(logs, (`⚠️ No se borraron las preventas. Errores en: ${preventasConError.join(', ')}`),setLogs);
           console.error('no se borraron las preventas porque hay errores en:', preventasConError);

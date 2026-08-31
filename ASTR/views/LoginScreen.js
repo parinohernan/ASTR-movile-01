@@ -102,12 +102,18 @@ const LoginScreen = () => {
   }, [form]);
 
   const authorizeWithCredentials = (vendedorId, clave, usuariosList = usuarios) => {
+    const idNormalizado = String(vendedorId).trim();
+    const claveNormalizada = String(clave).trim();
+
     for (let i = 0; i < usuariosList.length; i++) {
       const element = usuariosList[i];
-      if (clave === element.clave && vendedorId === element.id) {
+      if (
+        claveNormalizada === String(element.clave).trim() &&
+        idNormalizado === String(element.id).trim()
+      ) {
         return {
-          clave,
-          id: vendedorId,
+          clave: claveNormalizada,
+          id: idNormalizado,
           descripcion: element.descripcion,
         };
       }
@@ -245,10 +251,20 @@ const LoginScreen = () => {
 
     setIsLoadingOnline(true);
     try {
-      await activarAccesoOnline(form.vendedor.trim(), form.password.trim());
-      await recargarUsuarios();
-      Alert.alert("Éxito", "Acceso encontrado y guardado. Ya podés ingresar offline.");
+      const codigo = form.vendedor.trim();
+      const clave = form.password.trim();
+      await activarAccesoOnline(codigo, clave);
+      const usuariosFromDB = await recargarUsuarios();
+      const vendedorData = authorizeWithCredentials(codigo, clave, usuariosFromDB);
       setModalVisible(false);
+
+      if (vendedorData) {
+        setVendedor(vendedorData);
+        navigateAfterLogin(vendedorData, codigo, clave);
+        return;
+      }
+
+      Alert.alert("Éxito", "Acceso guardado en el dispositivo. Ya podés ingresar offline.");
     } catch (error) {
       Alert.alert("Error", error.message || "No se encontró acceso online");
     } finally {
@@ -294,25 +310,23 @@ const LoginScreen = () => {
       const nombre = registroNombre.trim();
 
       await registrarYActivar(codigo, clave, nombre);
-      await recargarUsuarios();
+      const usuariosFromDB = await recargarUsuarios();
       setForm({
         vendedor: codigo,
         password: clave,
       });
       cerrarRegistroModal();
+
+      const vendedorData = authorizeWithCredentials(codigo, clave, usuariosFromDB);
+      if (vendedorData) {
+        setVendedor(vendedorData);
+        navigateAfterLogin(vendedorData, codigo, clave);
+        return;
+      }
+
       Alert.alert(
         "Registro exitoso",
-        "Tu cuenta fue creada en modo TEST. Ya podés ingresar offline.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              if (biometricAvailable && !biometricEnabled) {
-                offerBiometricOptIn(codigo, clave);
-              }
-            },
-          },
-        ]
+        "Tu cuenta fue creada. Configuración guardada en el dispositivo."
       );
     } catch (error) {
       Alert.alert("Error", error.message || "No se pudo completar el registro");
@@ -322,16 +336,9 @@ const LoginScreen = () => {
   };
 
   const handleIngresar = async () => {
-    console.log("🚀 === INICIO DE LOGIN ===");
-    console.log("📝 Datos del formulario:", {
-      vendedor: form.vendedor,
-      password: form.password,
-      vendedorType: typeof form.vendedor,
-      passwordType: typeof form.password,
-      vendedorLength: form.vendedor.length,
-      passwordLength: form.password.length
-    });
-    
+    const codigo = form.vendedor.trim();
+    const clave = form.password.trim();
+
     if (loginAttempts >= 3) {
       Alert.alert(
         "Demasiados intentos",
@@ -341,30 +348,61 @@ const LoginScreen = () => {
       return;
     }
 
+    if (!codigo || !clave) {
+      Alert.alert("Error", "Complete código y contraseña");
+      return;
+    }
+
     // Root access
     if (
-      form.vendedor.toLowerCase() === "root" &&
-      form.password.toLowerCase() === "root"
+      codigo.toLowerCase() === "root" &&
+      clave.toLowerCase() === "root"
     ) {
-      console.log("ingresando como root", form);
-      navigation.navigate("Home", { form });
+      navigation.navigate("Home", { form: { vendedor: codigo, password: clave } });
       return;
     }
 
-    // User access
-    console.log("🔍 Iniciando autenticación de usuario...");
-    const vendedorData = isAuthorized();
-    if (vendedorData) {
-      console.log("✅ Vendedor autorizado: ", vendedorData);
-      navigateAfterLogin(vendedorData, form.vendedor, form.password);
+    // 1) Intento offline (SQLite local)
+    const vendedorLocal = authorizeWithCredentials(codigo, clave);
+    if (vendedorLocal) {
+      setVendedor(vendedorLocal);
+      navigateAfterLogin(vendedorLocal, codigo, clave);
       return;
     }
 
-    // Failed login
-    console.log("❌ === LOGIN FALLIDO ===");
-    console.log("❌ Login fallido, incrementando intentos. Intentos actuales:", loginAttempts);
-    setLoginAttempts(prev => prev + 1);
-    setModalVisible(true);
+    // 2) Sin coincidencia local: buscar en Google Sheet si hay internet
+    if (!(await tieneInternet())) {
+      setLoginAttempts((prev) => prev + 1);
+      Alert.alert(
+        "Acceso incorrecto",
+        "Usuario o clave incorrectos. Sin internet no se puede verificar acceso online."
+      );
+      return;
+    }
+
+    setIsLoadingOnline(true);
+    try {
+      await activarAccesoOnline(codigo, clave);
+      const usuariosFromDB = await recargarUsuarios();
+      const vendedorOnline = authorizeWithCredentials(codigo, clave, usuariosFromDB);
+
+      if (vendedorOnline) {
+        setVendedor(vendedorOnline);
+        navigateAfterLogin(vendedorOnline, codigo, clave);
+        return;
+      }
+
+      setLoginAttempts((prev) => prev + 1);
+      Alert.alert(
+        "Error",
+        "Acceso online guardado pero no se pudo iniciar sesión localmente."
+      );
+    } catch (error) {
+      setLoginAttempts((prev) => prev + 1);
+      Alert.alert("Error", error.message || "Usuario o clave incorrectos");
+    } finally {
+      setIsLoadingOnline(false);
+    }
   };
 
   const closeModal = () => {
@@ -459,15 +497,15 @@ const LoginScreen = () => {
               <Button
                 mode="contained"
                 onPress={handleIngresar}
-                disabled={!mostrar}
-                loading={false}
+                disabled={!mostrar || isLoadingOnline}
+                loading={isLoadingOnline}
                 style={[
                   styles.loginButton,
-                  !mostrar && styles.loginButtonDisabled
+                  (!mostrar || isLoadingOnline) && styles.loginButtonDisabled
                 ]}
                 labelStyle={styles.loginButtonText}
               >
-                {mostrar ? "Iniciar Sesión" : "Completa los campos"}
+                {isLoadingOnline ? "Verificando acceso..." : mostrar ? "Iniciar Sesión" : "Completa los campos"}
               </Button>
 
               {biometricAvailable && biometricEnabled ? (

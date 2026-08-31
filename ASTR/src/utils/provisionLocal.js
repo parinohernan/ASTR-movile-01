@@ -2,6 +2,7 @@ import { insertUsuariosFromAPI } from '../../database/controllers/Usuarios.contr
 import { guardarConfiguracionEnStorage, getConfiguracionDelStorage } from './storageConfigData';
 import { actualizarSoloVendedores } from '../../handlers/actualizarApp';
 import checkServerHandler from './checkServerHandler';
+import { calcularSiguientePreventaSeguro } from './preventaNumeracion';
 
 export const validarPaqueteProvision = (configData) => {
   if (!configData?.vendedor?.id || !configData?.vendedor?.nombre) {
@@ -16,22 +17,28 @@ export const validarPaqueteProvision = (configData) => {
   return true;
 };
 
-export const buildConfigFromPaquete = async (configData, currentConfig = null) => {
+export const buildConfigFromPaquete = async (configData, currentConfig = null, options = {}) => {
   const base = currentConfig || (await getConfiguracionDelStorage()) || {};
+  const propuestoSheet =
+    configData.configuracion?.siguientePreventa ?? base.siguientePreventa ?? 100;
+
+  const siguientePreventa =
+    options.preservarPreventas !== false
+      ? await calcularSiguientePreventaSeguro(propuestoSheet)
+      : String(propuestoSheet);
+
   return {
     ...base,
     endPoint: configData.configuracion.endpoint,
     sucursal: configData.configuracion.sucursal,
-    vendedor: configData.vendedor.id,
+    vendedor: String(configData.vendedor.id),
     cantidadMaximaArticulos: String(
       configData.configuracion.cantidadMaximaArticulos || base.cantidadMaximaArticulos || '18'
     ),
     filtrarClientesPorVendedor:
       configData.configuracion.filtrarClientesPorVendedor !== false,
     usaGeolocalizacion: configData.configuracion.usaGeolocalizacion !== false,
-    siguientePreventa: String(
-      configData.configuracion.siguientePreventa || base.siguientePreventa || 100
-    ),
+    siguientePreventa,
     empresaCodigo: configData.empresa?.codigo || base.empresaCodigo || '',
     empresaNombre: configData.empresa?.nombre || base.empresaNombre || '',
     ultimaSincronizacionAcceso: new Date().toISOString(),
@@ -41,7 +48,7 @@ export const buildConfigFromPaquete = async (configData, currentConfig = null) =
 /**
  * Guarda usuario + config en el dispositivo (offline-first).
  * @param {object} configData - paquete de provisión
- * @param {{ syncVendedores?: boolean }} options
+ * @param {{ syncVendedores?: boolean, preservarPreventas?: boolean }} options
  */
 export const aplicarProvisionLocal = async (configData, options = {}) => {
   if (!validarPaqueteProvision(configData)) {
@@ -49,7 +56,7 @@ export const aplicarProvisionLocal = async (configData, options = {}) => {
   }
 
   const vendedor = {
-    codigo: configData.vendedor.id,
+    codigo: String(configData.vendedor.id),
     descripcion: configData.vendedor.nombre,
     clave: configData.vendedor.clave,
   };
@@ -57,7 +64,9 @@ export const aplicarProvisionLocal = async (configData, options = {}) => {
   const logs = [];
   await insertUsuariosFromAPI([vendedor], logs, () => {});
 
-  const nuevaConfig = await buildConfigFromPaquete(configData);
+  const nuevaConfig = await buildConfigFromPaquete(configData, null, {
+    preservarPreventas: options.preservarPreventas !== false,
+  });
   await guardarConfiguracionEnStorage(nuevaConfig);
 
   if (options.syncVendedores) {

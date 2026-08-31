@@ -329,7 +329,10 @@ const Configurar = () => {
 
   const aplicarConfiguracionDesdeArchivo = async (configData) => {
     const paquete = normalizarPaqueteConfig(configData);
-    const nuevaConfig = await aplicarProvisionLocal(paquete, { syncVendedores: true });
+    const nuevaConfig = await aplicarProvisionLocal(paquete, {
+      syncVendedores: true,
+      preservarPreventas: true,
+    });
     setConfiguracion(nuevaConfig);
     await handeBuscarVendedores();
   };
@@ -344,6 +347,7 @@ const Configurar = () => {
     try {
       const { config } = await activarAccesoOnline(accesoCodigo.trim(), accesoClave.trim(), {
         syncVendedores: true,
+        preservarPreventas: true,
       });
       setConfiguracion(config);
       await handeBuscarVendedores();

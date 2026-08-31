@@ -103,4 +103,7 @@ La app valida claves al registrarse: **mínimo 8 caracteres** y **al menos un s�
 { "token": "...", "action": "login", "codigo_vendedor": "0001", "clave": "1234" }
 { "token": "...", "action": "registro", "codigo_vendedor": "0001", "clave": "1234", "nombre": "Juan" }
 { "token": "...", "action": "refresh", "codigo_vendedor": "0001", "clave": "1234" }
+{ "token": "...", "action": "update_siguiente_preventa", "codigo_vendedor": "0001", "clave": "1234", "siguiente_preventa": 105 }
 ```
+
+Tras enviar preventas desde la app, se llama automáticamente a `update_siguiente_preventa` para mantener la numeración en la Sheet alineada con el dispositivo.

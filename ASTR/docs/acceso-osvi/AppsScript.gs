@@ -203,6 +203,15 @@ function doPost(e) {
       return jsonResponse(paquete);
     }
 
+    if (action === 'update_siguiente_preventa') {
+      const siguiente = actualizarSiguientePreventa(
+        data.codigo_vendedor,
+        data.clave,
+        data.siguiente_preventa
+      );
+      return jsonResponse({ ok: true, siguiente_preventa: siguiente });
+    }
+
     return jsonResponse({ error: 'Acción inválida' });
   } catch (err) {
     return jsonResponse({ error: String(err.message || err) });
@@ -345,6 +354,32 @@ function buscarUsuario(codigo, clave) {
     }
   }
   return null;
+}
+
+function actualizarSiguientePreventa(codigo, clave, siguientePreventa) {
+  const sheet = getSheet(SHEET_USUARIOS);
+  const headers = getHeaders(sheet);
+
+  if (headers.siguiente_preventa === undefined) {
+    throw new Error('Columna siguiente_preventa no encontrada en usuarios');
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const valor = Number(siguientePreventa);
+
+  if (!Number.isFinite(valor) || valor < 1) {
+    throw new Error('siguiente_preventa inválido');
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    const row = rowToObject(data[i], headers);
+    if (String(row.codigo_vendedor) === String(codigo) && String(row.clave) === String(clave)) {
+      sheet.getRange(i + 1, headers.siguiente_preventa + 1).setValue(valor);
+      return valor;
+    }
+  }
+
+  throw new Error('Usuario o clave incorrectos');
 }
 
 function validarClaveRegistro(clave) {

@@ -106,6 +106,18 @@ const getUsuarios = () => {
   }
 };
 
+const getClaveVendedor = (vendedorId) => {
+  try {
+    const rows = db.getAllSync("SELECT clave FROM usuarios WHERE id = ?", [
+      String(vendedorId),
+    ]);
+    return rows[0]?.clave || null;
+  } catch (error) {
+    console.warn("No se pudo obtener clave del vendedor:", error);
+    return null;
+  }
+};
+
 const insertUsuariosPrueba = () => {
   try {
     console.log("Insertando usuarios de prueba");
@@ -138,4 +150,4 @@ const insertUsuariosPrueba = () => {
   }
 };
 
-export { insertUsuariosFromAPI, getUsuarios, insertUsuariosPrueba };
+export { insertUsuariosFromAPI, getUsuarios, getClaveVendedor, insertUsuariosPrueba };
