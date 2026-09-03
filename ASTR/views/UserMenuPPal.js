@@ -5,12 +5,14 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
 import checkServerHandler from '../src/utils/checkServerHandler';
+import { limpiarSesionActiva } from '../src/services/empresaSesionService';
 
 const { width, height } = Dimensions.get('window');
 
 const UserMenuPPal = ({ route }) => {
   const { params } = route;
   const vendedor = params?.vendedor;
+  const esAuditor = params?.esAuditor === true;
   const navigation = useNavigation();
   
   console.log("UserMenuPPal - Datos recibidos:", { params, vendedor });
@@ -57,11 +59,11 @@ const UserMenuPPal = ({ route }) => {
       route: 'Sincronizar'
     },
     { 
-      name: 'Configuración', 
-      icon: 'cog',
-      description: 'Activar o actualizar acceso',
+      name: 'Gestión', 
+      icon: 'tools',
+      description: 'Configuración y administración',
       color: '#9b59b6',
-      route: 'Configuracion'
+      route: 'Gestion'
     },
   ];
 
@@ -110,6 +112,14 @@ const UserMenuPPal = ({ route }) => {
     navigation.navigate(option.route, { user });
   };
 
+  const handleCerrarSesion = async () => {
+    await limpiarSesionActiva();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
+
   const getConnectionStatusText = () => {
     if (isCheckingConnection) return 'Verificando conexión...';
     if (!isConnected) return 'Sin conexión a internet';
@@ -147,6 +157,12 @@ const UserMenuPPal = ({ route }) => {
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{user.vendedor}</Text>
               <Text style={styles.userId}>ID: {user.id}</Text>
+              {esAuditor ? (
+                <View style={styles.auditorBadge}>
+                  <MaterialCommunityIcons name="shield-account" size={14} color="#8e44ad" />
+                  <Text style={styles.auditorBadgeText}>Modo auditoría</Text>
+                </View>
+              ) : null}
             </View>
           </View>
           
@@ -175,6 +191,15 @@ const UserMenuPPal = ({ route }) => {
             </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleCerrarSesion}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="logout" size={20} color="#e74c3c" />
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
 
         {/* Logo central */}
         <View style={styles.logoContainer}>
@@ -258,6 +283,34 @@ const styles = StyleSheet.create({
   userId: {
     fontSize: 14,
     color: '#7f8c8d',
+  },
+  auditorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  auditorBadgeText: {
+    marginLeft: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8e44ad',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignSelf: 'flex-end',
+  },
+  logoutText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#e74c3c',
   },
   connectionStatus: {
     flexDirection: 'row',

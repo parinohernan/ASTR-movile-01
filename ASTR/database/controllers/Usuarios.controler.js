@@ -1,10 +1,18 @@
 import { db } from "../database";
 
+const ROL_VENDEDOR = 'vendedor';
+const ROL_AUDITOR = 'auditor';
+
 const handleLogs = (logs, mensaje, setLogs) => {
   console.log("haldlerLogs UsersControler", mensaje);
   setLogs([...logs, mensaje]);
   return [...logs, mensaje];
 };
+
+const normalizarRol = (rol) =>
+  String(rol || ROL_VENDEDOR).trim().toLowerCase() === ROL_AUDITOR
+    ? ROL_AUDITOR
+    : ROL_VENDEDOR;
 
 const insertUsuariosFromAPI = (data, logs, setLogs, options = {}) => {
   const { fullSync = false } = options;
@@ -19,7 +27,9 @@ const insertUsuariosFromAPI = (data, logs, setLogs, options = {}) => {
 
   try {
     db.withTransactionSync(() => {
-      db.execSync("CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT)");
+      db.execSync(
+        "CREATE TABLE IF NOT EXISTS usuarios (id TEXT PRIMARY KEY, descripcion TEXT, clave TEXT, empresa_codigo TEXT, rol TEXT DEFAULT 'vendedor')"
+      );
       logs = handleLogs(
         logs,
         "Tabla usuarios verificada/creada exitosamente",
@@ -34,10 +44,15 @@ const insertUsuariosFromAPI = (data, logs, setLogs, options = {}) => {
 
       data.forEach((item) => {
         try {
-          const codigo = String(item.codigo);
+          const codigo = String(item.codigo || item.id);
+          const empresaCodigo = item.empresa_codigo
+            ? String(item.empresa_codigo).trim().toUpperCase()
+            : null;
+          const rol = normalizarRol(item.rol);
+
           db.runSync(
-            "INSERT OR REPLACE INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)",
-            [codigo, item.descripcion, item.clave]
+            "INSERT OR REPLACE INTO usuarios (id, descripcion, clave, empresa_codigo, rol) VALUES (?, ?, ?, ?, ?)",
+            [codigo, item.descripcion, item.clave, empresaCodigo, rol]
           );
           usuariosProcesados++;
           if (fullSync) {
@@ -93,16 +108,34 @@ const insertUsuariosFromAPI = (data, logs, setLogs, options = {}) => {
   }
 };
 
+const eliminarUsuariosVendedores = () => {
+  try {
+    db.runSync("DELETE FROM usuarios WHERE rol IS NULL OR rol != ?", [ROL_AUDITOR]);
+    return Promise.resolve();
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
 const getUsuarios = () => {
   try {
-    console.log("traigo los usuarios de la api");
     const usuarios = db.getAllSync("SELECT * FROM usuarios");
-    console.log("Usuarios obtenidos:", usuarios);
     return Promise.resolve(usuarios || []);
   } catch (error) {
     console.log("Error al obtener usuarios:", error);
-    // Si hay error, retornar array vacío en lugar de rechazar
     return Promise.resolve([]);
+  }
+};
+
+const getUsuarioPorId = (vendedorId) => {
+  try {
+    const rows = db.getAllSync("SELECT * FROM usuarios WHERE id = ?", [
+      String(vendedorId),
+    ]);
+    return rows[0] || null;
+  } catch (error) {
+    console.warn("No se pudo obtener usuario:", error);
+    return null;
   }
 };
 
@@ -120,34 +153,33 @@ const getClaveVendedor = (vendedorId) => {
 
 const insertUsuariosPrueba = () => {
   try {
-    console.log("Insertando usuarios de prueba");
     db.withTransactionSync(() => {
-      // Insertar algunos usuarios de prueba
       const usuariosPrueba = [
-        { id: "1", descripcion: "Hernan Parino", clave: "1234" },
-        { id: "2", descripcion: "Usuario Test", clave: "5678" },
-        { id: "3", descripcion: "Admin Demo", clave: "9999" },
+        { id: "1", descripcion: "Hernan Parino", clave: "1234", empresa_codigo: "TEST", rol: ROL_VENDEDOR },
+        { id: "2", descripcion: "Usuario Test", clave: "5678", empresa_codigo: "TEST", rol: ROL_VENDEDOR },
+        { id: "3", descripcion: "Admin Demo", clave: "9999", empresa_codigo: "TEST", rol: ROL_VENDEDOR },
       ];
 
       usuariosPrueba.forEach((usuario) => {
-        try {
-          db.runSync(
-            "INSERT OR REPLACE INTO usuarios (id, descripcion, clave) VALUES (?, ?, ?)",
-            [usuario.id, usuario.descripcion, usuario.clave]
-          );
-          console.log("Usuario de prueba insertado: ", usuario.descripcion);
-        } catch (error) {
-          console.log("Error al insertar usuario de prueba: ", error);
-        }
+        db.runSync(
+          "INSERT OR REPLACE INTO usuarios (id, descripcion, clave, empresa_codigo, rol) VALUES (?, ?, ?, ?, ?)",
+          [usuario.id, usuario.descripcion, usuario.clave, usuario.empresa_codigo, usuario.rol]
+        );
       });
     });
-
-    console.log("Usuarios de prueba insertados exitosamente");
     return Promise.resolve();
   } catch (error) {
-    console.error("Error en transacción de usuarios de prueba:", error);
     return Promise.reject(error);
   }
 };
 
-export { insertUsuariosFromAPI, getUsuarios, getClaveVendedor, insertUsuariosPrueba };
+export {
+  insertUsuariosFromAPI,
+  getUsuarios,
+  getUsuarioPorId,
+  getClaveVendedor,
+  eliminarUsuariosVendedores,
+  insertUsuariosPrueba,
+  ROL_AUDITOR,
+  ROL_VENDEDOR,
+};

@@ -7,7 +7,7 @@ Crear un Google Spreadsheet con dos pestañas:
 ### Pestaña `usuarios` (fila 1 = encabezados)
 
 ```
-codigo_vendedor | clave | nombre | empresa_codigo | endpoint | sucursal | cantidad_maxima_articulos | filtrar_clientes_por_vendedor | usa_geolocalizacion | siguiente_preventa | activo | created_at
+codigo_vendedor | clave | nombre | empresa_codigo | endpoint | sucursal | cantidad_maxima_articulos | filtrar_clientes_por_vendedor | usa_geolocalizacion | siguiente_preventa | activo | created_at | rol
 ```
 
 ### Pestaña `empresas` (fila 1 = encabezados)
@@ -107,3 +107,25 @@ La app valida claves al registrarse: **mínimo 8 caracteres** y **al menos un s�
 ```
 
 Tras enviar preventas desde la app, se llama automáticamente a `update_siguiente_preventa` para mantener la numeración en la Sheet alineada con el dispositivo.
+
+## 6. Usuario auditor (universal)
+
+Para auditar un dispositivo sin borrar datos de otra empresa, agregá una fila en `usuarios` con `rol = auditor`:
+
+```
+AUDITOR | TuClaveSegura! | Auditor OSVI | AUDIT | https://cualquiera/ | 0001 | 18 | TRUE | TRUE | 100 | TRUE | | auditor
+```
+
+Comportamiento en la app:
+- Entra con acceso completo usando los datos ya cargados en el celular
+- No borra preventas, catálogo ni configuración de la empresa activa
+- No bloquea por preventas pendientes al ingresar
+
+## 7. Cambio de empresa en el dispositivo
+
+| Situación | Comportamiento |
+|-----------|----------------|
+| Mismo vendedor / misma empresa | Catálogo y preventas se mantienen |
+| Otro vendedor, misma empresa | Solo cambia el vendedor activo en config |
+| Otra empresa sin preventas pendientes | Se borran datos locales y se carga la nueva empresa (requiere login online) |
+| Otra empresa con preventas sin enviar | Login bloqueado hasta enviar o usar auditor |

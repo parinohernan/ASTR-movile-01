@@ -261,6 +261,27 @@ const migrateDatabase = async () => {
           console.error("Error agregando longitud:", error);
         }
       }
+
+      const usuariosInfo = db.getAllSync("PRAGMA table_info(usuarios)");
+      const usuariosColumns = usuariosInfo.map((col) => col.name);
+
+      if (!usuariosColumns.includes('empresa_codigo')) {
+        try {
+          db.execSync("ALTER TABLE usuarios ADD COLUMN empresa_codigo TEXT");
+          console.log("Columna empresa_codigo agregada a usuarios");
+        } catch (error) {
+          console.error("Error agregando empresa_codigo:", error);
+        }
+      }
+
+      if (!usuariosColumns.includes('rol')) {
+        try {
+          db.execSync("ALTER TABLE usuarios ADD COLUMN rol TEXT DEFAULT 'vendedor'");
+          console.log("Columna rol agregada a usuarios");
+        } catch (error) {
+          console.error("Error agregando rol:", error);
+        }
+      }
     });
   } catch (error) {
     console.error("Error en migración:", error);

@@ -49,6 +49,7 @@ const USUARIOS_HEADERS = [
   'siguiente_preventa',
   'activo',
   'created_at',
+  'rol',
 ];
 
 /**
@@ -317,13 +318,28 @@ function buscarFilaEmpresa(codigoEmpresa, spreadsheet) {
   return null;
 }
 
+function normalizarRol(rol) {
+  const value = String(rol || 'vendedor').trim().toLowerCase();
+  if (value === 'auditor') return 'auditor';
+  return 'vendedor';
+}
+
+function esFilaAuditor(row) {
+  const codigo = String(row.codigo_vendedor || '').trim().toUpperCase();
+  const empresa = String(row.empresa_codigo || '').trim().toUpperCase();
+  const rol = String(row.rol || '').trim().toLowerCase();
+  return rol === 'auditor' || codigo === 'AUDITOR' || empresa === 'AUDIT';
+}
+
 function buildPaquete(row) {
+  const rol = esFilaAuditor(row) ? 'auditor' : normalizarRol(row.rol);
   return {
     version: '1.0',
     vendedor: {
       id: String(row.codigo_vendedor),
       nombre: String(row.nombre),
       clave: String(row.clave),
+      rol: rol,
     },
     empresa: {
       codigo: String(row.empresa_codigo),
@@ -332,7 +348,6 @@ function buildPaquete(row) {
     configuracion: {
       endpoint: String(row.endpoint),
       sucursal: String(row.sucursal),
-      vendedor: String(row.codigo_vendedor),
       cantidadMaximaArticulos: String(row.cantidad_maxima_articulos || 18),
       filtrarClientesPorVendedor: row.filtrar_clientes_por_vendedor !== false && row.filtrar_clientes_por_vendedor !== 'FALSE',
       usaGeolocalizacion: row.usa_geolocalizacion !== false && row.usa_geolocalizacion !== 'FALSE',
@@ -430,6 +445,7 @@ function registrarUsuario(codigo, clave, nombre) {
       case 'siguiente_preventa': newRow.push(defaults.siguiente_preventa || 100); break;
       case 'activo': newRow.push(true); break;
       case 'created_at': newRow.push(new Date().toISOString()); break;
+      case 'rol': newRow.push('vendedor'); break;
       default: newRow.push(''); break;
     }
   });

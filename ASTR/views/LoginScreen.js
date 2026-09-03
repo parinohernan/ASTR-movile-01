@@ -3,14 +3,21 @@ import { View, Text, Image, StyleSheet, Modal, StatusBar, Alert, TouchableOpacit
 import { Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { loginEnSheet, registrarEnSheet } from "../src/services/accesoOsviService";
 import {
   getUsuarios,
-  insertUsuariosPrueba,
+  getUsuarioPorId,
 } from "../database/controllers/Usuarios.controler";
+import {
+  aplicarLoginConReglas,
+  aplicarLoginOfflineConReglas,
+  esRolAuditor,
+  esCodigoAuditor,
+  resolverRolDesdeUsuario,
+} from "../src/services/empresaSesionService";
 import { initDatabase } from "../database/database";
 import { version, empresa, producto } from "../src/constantes/constantes";
 import NetInfo from '@react-native-community/netinfo';
-import { activarAccesoOnline, registrarYActivar } from "../src/services/accesoOsviService";
 import { validarClaveRegistro, REQUISITOS_CLAVE_TEXTO } from "../src/utils/clavePolicy";
 import {
   authenticateWithBiometric,
@@ -55,18 +62,7 @@ const LoginScreen = () => {
         await initDatabase([], () => {});
 
         const usuariosFromDB = await getUsuarios();
-
-        // Si no hay usuarios, insertar usuarios de prueba
-        if (usuariosFromDB.length === 0) {
-          console.log(
-            "No hay usuarios en la base de datos, insertando usuarios de prueba..."
-          );
-          await insertUsuariosPrueba();
-          const usuariosActualizados = await getUsuarios();
-          setUsuarios(usuariosActualizados);
-        } else {
-          setUsuarios(usuariosFromDB);
-        }
+        setUsuarios(usuariosFromDB);
         console.log("Datos cargados exitosamente");
       } catch (error) {
         console.error("Error al obtener o insertar usuarios: ", error);
@@ -115,6 +111,8 @@ const LoginScreen = () => {
           clave: claveNormalizada,
           id: idNormalizado,
           descripcion: element.descripcion,
+          rol: element.rol,
+          empresa_codigo: element.empresa_codigo,
         };
       }
     }
@@ -160,9 +158,26 @@ const LoginScreen = () => {
 
   const navigateAfterLogin = (vendedorData, vendedorId, clave) => {
     setTimeout(() => {
-      navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
+      navigation.navigate("UserMenuPPal", {
+        vendedor: vendedorData,
+        esAuditor: esRolAuditor(vendedorData.rol),
+      });
       offerBiometricOptIn(vendedorId, clave);
     }, 100);
+  };
+
+  const finalizarLogin = async (codigo, clave, vendedorData) => {
+    const usuarioDb = getUsuarioPorId(codigo) || vendedorData;
+    const rol = resolverRolDesdeUsuario(usuarioDb, codigo);
+    const usuarioConRol = { ...usuarioDb, rol };
+    const { evaluacion } = await aplicarLoginOfflineConReglas(usuarioConRol);
+    const vendedorFinal = {
+      ...vendedorData,
+      rol,
+      esAuditor: evaluacion.accion === 'auditor' || esRolAuditor(rol),
+    };
+    setVendedor(vendedorFinal);
+    navigateAfterLogin(vendedorFinal, codigo, clave);
   };
 
   const handleBiometricLogin = async () => {
@@ -207,8 +222,11 @@ const LoginScreen = () => {
         vendedor: credentials.vendedorId,
         password: credentials.clave,
       });
-      setVendedor(vendedorData);
-      navigation.navigate("UserMenuPPal", { vendedor: vendedorData });
+      await finalizarLogin(
+        credentials.vendedorId,
+        credentials.clave,
+        vendedorData
+      );
     } catch (error) {
       Alert.alert(
         "Error",
@@ -253,14 +271,19 @@ const LoginScreen = () => {
     try {
       const codigo = form.vendedor.trim();
       const clave = form.password.trim();
-      await activarAccesoOnline(codigo, clave);
+      const paquete = await loginEnSheet(codigo, clave);
+      await aplicarLoginConReglas(paquete);
       const usuariosFromDB = await recargarUsuarios();
       const vendedorData = authorizeWithCredentials(codigo, clave, usuariosFromDB);
       setModalVisible(false);
 
       if (vendedorData) {
-        setVendedor(vendedorData);
-        navigateAfterLogin(vendedorData, codigo, clave);
+        const vendedorFinal = {
+          ...vendedorData,
+          esAuditor: esRolAuditor(vendedorData.rol),
+        };
+        setVendedor(vendedorFinal);
+        navigateAfterLogin(vendedorFinal, codigo, clave);
         return;
       }
 
@@ -309,7 +332,7 @@ const LoginScreen = () => {
       const clave = registroClave.trim();
       const nombre = registroNombre.trim();
 
-      await registrarYActivar(codigo, clave, nombre);
+      await aplicarLoginConReglas(await registrarEnSheet(codigo, clave, nombre));
       const usuariosFromDB = await recargarUsuarios();
       setForm({
         vendedor: codigo,
@@ -319,8 +342,12 @@ const LoginScreen = () => {
 
       const vendedorData = authorizeWithCredentials(codigo, clave, usuariosFromDB);
       if (vendedorData) {
-        setVendedor(vendedorData);
-        navigateAfterLogin(vendedorData, codigo, clave);
+        const vendedorFinal = {
+          ...vendedorData,
+          esAuditor: esRolAuditor(vendedorData.rol),
+        };
+        setVendedor(vendedorFinal);
+        navigateAfterLogin(vendedorFinal, codigo, clave);
         return;
       }
 
@@ -362,16 +389,26 @@ const LoginScreen = () => {
       return;
     }
 
-    // 1) Intento offline (SQLite local)
+    // 1) Intento offline, salvo AUDITOR con internet (priorizar Sheet para obtener rol)
+    const hayInternet = await tieneInternet();
     const vendedorLocal = authorizeWithCredentials(codigo, clave);
-    if (vendedorLocal) {
-      setVendedor(vendedorLocal);
-      navigateAfterLogin(vendedorLocal, codigo, clave);
-      return;
+    const saltarOfflinePorAuditor = esCodigoAuditor(codigo) && hayInternet;
+
+    if (vendedorLocal && !saltarOfflinePorAuditor) {
+      try {
+        await finalizarLogin(codigo, clave, vendedorLocal);
+        return;
+      } catch (error) {
+        if (!hayInternet) {
+          Alert.alert("Acceso bloqueado", error.message || "No se pudo iniciar sesión");
+          return;
+        }
+        // Con internet: reintentar online (ej. auditor sin rol guardado localmente)
+      }
     }
 
-    // 2) Sin coincidencia local: buscar en Google Sheet si hay internet
-    if (!(await tieneInternet())) {
+    // 2) Sin coincidencia local o reintento online
+    if (!hayInternet) {
       setLoginAttempts((prev) => prev + 1);
       Alert.alert(
         "Acceso incorrecto",
@@ -382,13 +419,18 @@ const LoginScreen = () => {
 
     setIsLoadingOnline(true);
     try {
-      await activarAccesoOnline(codigo, clave);
+      const paquete = await loginEnSheet(codigo, clave);
+      await aplicarLoginConReglas(paquete);
       const usuariosFromDB = await recargarUsuarios();
       const vendedorOnline = authorizeWithCredentials(codigo, clave, usuariosFromDB);
 
       if (vendedorOnline) {
-        setVendedor(vendedorOnline);
-        navigateAfterLogin(vendedorOnline, codigo, clave);
+        const vendedorFinal = {
+          ...vendedorOnline,
+          esAuditor: esRolAuditor(vendedorOnline.rol),
+        };
+        setVendedor(vendedorFinal);
+        navigateAfterLogin(vendedorFinal, codigo, clave);
         return;
       }
 

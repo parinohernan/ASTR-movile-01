@@ -1,5 +1,5 @@
 import { accesoOsviSheetUrl, accesoOsviToken } from '../constantes/constantes';
-import { aplicarProvisionLocal } from '../utils/provisionLocal';
+import { aplicarLoginConReglas } from './empresaSesionService';
 
 const parseResponseBody = async (response) => {
   const text = await response.text();
@@ -86,25 +86,14 @@ export const actualizarSiguientePreventaEnSheet = async (
   });
 };
 
-const PROVISION_DEFAULTS = {
-  syncVendedores: false,
-  preservarPreventas: true,
-};
-
 export const activarAccesoOnline = async (codigo_vendedor, clave, options = {}) => {
   const paquete = await loginEnSheet(codigo_vendedor, clave);
-  const config = await aplicarProvisionLocal(paquete, {
-    ...PROVISION_DEFAULTS,
-    ...options,
-  });
+  const { config } = await aplicarLoginConReglas(paquete, options);
   return { paquete, config };
 };
 
 export const registrarYActivar = async (codigo_vendedor, clave, nombre, options = {}) => {
   const paquete = await registrarEnSheet(codigo_vendedor, clave, nombre);
-  const config = await aplicarProvisionLocal(paquete, {
-    ...PROVISION_DEFAULTS,
-    ...options,
-  });
+  const { config } = await aplicarLoginConReglas(paquete, options);
   return { paquete, config };
 };

@@ -111,7 +111,7 @@ const validarPreventaParaEnvio = (preventa) => {
     }
     
     if (!preventa.VendedorCodigo) {
-        errores.push("Falta usuario");
+        errores.push("Falta código de vendedor");
     }
     
     if (preventa.ImporteTotal === null || preventa.ImporteTotal === undefined || preventa.ImporteTotal < 0) {

@@ -10,6 +10,7 @@ import EditPreventa from './views/EditPreventa';
 import Articulos from './views/Articulos';
 import ArticulosFrecuentes from './views/ArticulosFrecuentes';
 import GestionFrecuentes from './views/GestionFrecuentes';
+import Gestion from './views/Gestion';
 // import Informes from './views/Informes';
 import Sincronizar from './views/Sincronizar';
 import Configurar from './views/Configurar';
@@ -38,6 +39,7 @@ const App = () => {
   const RenderArticulosScreen = (props) => <Articulos {...props} />;
   const RenderArticulosFrecuentesScreen = (props) => <ArticulosFrecuentes {...props} />;
   const RenderGestionFrecuentesScreen = (props) => <GestionFrecuentes {...props} />;
+  const RenderGestionScreen = (props) => <Gestion {...props} />;
   const RenderAddArticuloScreen = (props) => <AddArticulo {...props} />;
   // const RenderAbout = (props) => <About />;
   const RenderUsuariosScreen = (props) => <Usuarios />;
@@ -62,6 +64,7 @@ const App = () => {
         <Stack.Screen name="Articulos" component={RenderArticulosScreen} />
         <Stack.Screen name="ArticulosFrecuentes" component={RenderArticulosFrecuentesScreen} />
         <Stack.Screen name="GestionFrecuentes" component={RenderGestionFrecuentesScreen} />
+        <Stack.Screen name="Gestion" component={RenderGestionScreen} />
         <Stack.Screen name="AddArticulo" component={RenderAddArticuloScreen} />
         <Stack.Screen name="Usuarios" component={RenderUsuariosScreen} />
         <Stack.Screen name="Clientes" component={RenderClientesScreen} />

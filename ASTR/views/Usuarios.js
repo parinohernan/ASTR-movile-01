@@ -5,7 +5,13 @@ import { Text, FlatList, StyleSheet, View } from 'react-native';
 // import { initDatabase, getUsuarios, insertUsuariosFromAPI } from '../database/database';
 
 import { getUsuarios } from '../database/controllers/Usuarios.controler';
-const Usuarios = () => {
+
+const Usuarios = ({ route }) => {
+  const titulo = route.params?.titulo || 'Vendedores';
+  const subtitulo =
+    titulo === 'Gestión de usuarios'
+      ? 'Administración de usuarios del sistema'
+      : 'Listado de vendedores registrados';
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,7 +68,8 @@ const Usuarios = () => {
   <View style={styles.container}>
     <View style={styles.titulo}>
         <Text style={styles.tituloText}>ASTR</Text>
-      <Text style={styles.subtituloText}>Listado de vendedores</Text>
+      <Text style={styles.subtituloText}>{titulo}</Text>
+      <Text style={styles.descripcionHeader}>{subtitulo}</Text>
     </View>
       
       {renderEmptyState() ? (
@@ -106,7 +113,13 @@ const styles = StyleSheet.create({
   subtituloText: {
     fontSize: 16,
     color: '#7f8c8d',
-  }, 
+  },
+  descripcionHeader: {
+    fontSize: 13,
+    color: '#95a5a6',
+    marginTop: 6,
+    textAlign: 'center',
+  },
   description: {
     fontSize: 16,
     color: '#34495e',

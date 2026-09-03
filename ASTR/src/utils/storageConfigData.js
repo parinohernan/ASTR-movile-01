@@ -37,9 +37,26 @@ const getConfiguracionDelStorage = async () => {
     }
 };
 
+const codigoVendedorDesdeSucursal = (sucursal) => {
+  const str = String(sucursal ?? '').trim();
+  if (!str) {
+    return '';
+  }
+  const numero = parseInt(str, 10);
+  if (Number.isFinite(numero)) {
+    return String(numero);
+  }
+  const sinCeros = str.replace(/^0+/, '');
+  return sinCeros || str;
+};
+
 async function configuracionVendedor() {
-  let conf= await getConfiguracionDelStorage();
-  return conf.vendedor
+  const conf = await getConfiguracionDelStorage();
+  const codigo = String(conf.vendedor ?? '').trim();
+  if (codigo) {
+    return codigo;
+  }
+  return codigoVendedorDesdeSucursal(conf.sucursal);
 }
 
 async function configuracionSucursal() {
@@ -140,7 +157,8 @@ export {
   obtenerNextPreventa, 
   mas1NexPreventa, 
   configuracionEndPoint, 
-  configuracionVendedor, 
+  configuracionVendedor,
+  codigoVendedorDesdeSucursal,
   configuracionSucursal, 
   configuracionCantidadMaximaArticulos,
   limpiarConfiguracionDelStorage,
